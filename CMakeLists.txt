@@ -8,7 +8,10 @@ find_package(Matplot++ REQUIRED)
 find_package (Eigen3 3.3 REQUIRED)
 
 
-add_executable(main main.cc src/LayerDense.cc src/Helpers.cc)
+add_executable(main main.cc src/LayerDense.cc 
+                            src/Helpers.cc
+                            src/ActivationReLU.cc
+                            src/ActivationSoftmax.cc)
 
 target_include_directories(main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(main PRIVATE Matplot++::matplot Eigen3::Eigen)
