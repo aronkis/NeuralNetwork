@@ -8,7 +8,7 @@
 
 void Helpers::ReadSpiralIntoEigen(const std::string& filename,
                                   Eigen::MatrixXd& coordinates,
-                                  Eigen::RowVectorXi& classes) 
+                                  Eigen::MatrixXi& classes) 
 {
     std::ifstream inputFile(filename);
 
@@ -16,7 +16,7 @@ void Helpers::ReadSpiralIntoEigen(const std::string& filename,
     {
         std::cerr << "Error: Could not open file " << filename << std::endl;
         coordinates.resize(0, 0); 
-        classes.resize(0);
+        classes.resize(0, 0);
         return;
     }
 
@@ -52,7 +52,7 @@ void Helpers::ReadSpiralIntoEigen(const std::string& filename,
 
     if (num_rows > 0) {
         coordinates.resize(num_rows, 2); 
-        classes.resize(num_rows);        
+        classes.resize(num_rows, 1);        
         
         for (long i = 0; i < num_rows; ++i) 
         {
@@ -65,6 +65,24 @@ void Helpers::ReadSpiralIntoEigen(const std::string& filename,
     {
         std::cout << "No valid data lines found in the file." << std::endl;
         coordinates.resize(0, 0);
-        classes.resize(0);
+        classes.resize(0, 0);
     }
+}
+
+double Helpers::CalculateAccuracy(const Eigen::MatrixXd& output, 
+                                        Eigen::MatrixXi  targets) 
+{
+    Eigen::VectorXi predictions(output.rows());
+    for (int i = 0; i < output.rows(); ++i) 
+    {
+        output.row(i).maxCoeff(&predictions(i));
+    }
+    
+    if (targets.cols() == 2)
+    {
+        targets = targets.colwise().maxCoeff();
+    }
+
+    double accuracy = (predictions.array() == targets.array()).cast<double>().mean();
+    return accuracy;
 }

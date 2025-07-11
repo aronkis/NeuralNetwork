@@ -6,13 +6,14 @@
 #include "Helpers.h"
 #include "ActivationReLU.h"
 #include "ActivationSoftmax.h"
- 
+#include "LossCategoricalCrossentropy.h"
+
 int main() {
 
     std::string filename = "../data/points.txt"; 
 
     Eigen::MatrixXd X;      
-    Eigen::RowVectorXi y;      
+    Eigen::MatrixXi y;      
 
     Helpers::ReadSpiralIntoEigen(filename, X, y);
 
@@ -38,6 +39,13 @@ int main() {
     activation_softmax.forward(l2.GetOutput());
     
     std::cout << activation_softmax.GetOutput().topRows(5) << std::endl;
+
+    LossCategoricalCrossentropy loss;
+    loss.calculateLoss(activation_softmax.GetOutput(), y);
+    std::cout << "Loss: " << loss.GetLoss() << std::endl;
+
+    double accuracy = Helpers::CalculateAccuracy(activation_softmax.GetOutput(), y);
+    std::cout << "Accuracy: " << accuracy << std::endl;
 
     return 0;
 }

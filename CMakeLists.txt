@@ -10,8 +10,13 @@ find_package (Eigen3 3.3 REQUIRED)
 
 add_executable(main main.cc src/LayerDense.cc 
                             src/Helpers.cc
-                            src/ActivationReLU.cc
-                            src/ActivationSoftmax.cc)
+                            src/Activation/ActivationReLU.cc
+                            src/Activation/ActivationSoftmax.cc
+                            src/Loss/Loss.cc
+                            src/Loss/LossCategoricalCrossentropy.cc)
 
-target_include_directories(main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/
+                                        ${CMAKE_CURRENT_SOURCE_DIR}/include/Activation
+                                        ${CMAKE_CURRENT_SOURCE_DIR}/include/Loss)
+
 target_link_libraries(main PRIVATE Matplot++::matplot Eigen3::Eigen)

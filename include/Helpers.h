@@ -11,7 +11,10 @@ public:
     
     static void ReadSpiralIntoEigen(const std::string& filename,
                                     Eigen::MatrixXd& coordinates,
-                                    Eigen::RowVectorXi& classes);
+                                    Eigen::MatrixXi& classes);
+
+    static double CalculateAccuracy(const Eigen::MatrixXd& output, 
+                                          Eigen::MatrixXi  targets);
 };
 
 #endif // __HELPERS_H__
