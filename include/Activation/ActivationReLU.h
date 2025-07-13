@@ -5,7 +5,6 @@
 
 namespace NEURAL_NETWORK
 {
-
 	class ActivationReLU
 	{
 	public:

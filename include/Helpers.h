@@ -5,7 +5,6 @@
 
 namespace NEURAL_NETWORK
 {
-
 	namespace Helpers
 	{
 		void ReadSpiralIntoEigen(const std::string& filename,

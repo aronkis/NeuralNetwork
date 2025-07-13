@@ -53,13 +53,13 @@ int main() {
 			  << l1.GetDWeights() << std::endl;
 
 	std::cout << "\nBiases of L1 after backward pass:\n"
-				<< l1.GetDBiases() << std::endl;
+			  << l1.GetDBiases() << std::endl;
 
 	std::cout << "\nWeights of L2 after backward pass:\n" 
 			  << l2.GetDWeights() << std::endl;
 
 	std::cout << "\nBiases of L2 after backward pass:\n"
-				<< l2.GetDBiases() << std::endl;
+			  << l2.GetDBiases() << std::endl;
 
 	return 0;
 }

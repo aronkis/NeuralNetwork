@@ -6,7 +6,6 @@
 
 namespace NEURAL_NETWORK
 {
-
     class ActivationSoftmaxLossCategoricalCrossentropy
     {
     public:
@@ -14,7 +13,7 @@ namespace NEURAL_NETWORK
         ~ActivationSoftmaxLossCategoricalCrossentropy() = default;
 
         ActivationSoftmaxLossCategoricalCrossentropy(const ActivationSoftmaxLossCategoricalCrossentropy&) = delete;
-		ActivationSoftmaxLossCategoricalCrossentropy& operator=(const ActivationSoftmaxLossCategoricalCrossentropy&) = delete;
+	    ActivationSoftmaxLossCategoricalCrossentropy& operator=(const ActivationSoftmaxLossCategoricalCrossentropy&) = delete;
 
         void forward(const Eigen::MatrixXd& inputs,
                      const Eigen::MatrixXi& targets);

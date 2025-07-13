@@ -71,7 +71,7 @@ void NEURAL_NETWORK::Helpers::ReadSpiralIntoEigen(const std::string& filename,
 }
 
 double NEURAL_NETWORK::Helpers::CalculateAccuracy(const Eigen::MatrixXd& output, 
-												  Eigen::MatrixXi&  targets) 
+												  Eigen::MatrixXi& targets) 
 {
 	Eigen::VectorXi predictions(output.rows());
 	
