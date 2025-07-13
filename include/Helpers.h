@@ -3,18 +3,19 @@
 
 #include <Eigen/Dense>
 
-class Helpers
+namespace NEURAL_NETWORK
 {
-public:
-    Helpers() = delete;
-    ~Helpers() = delete;
-    
-    static void ReadSpiralIntoEigen(const std::string& filename,
-                                    Eigen::MatrixXd& coordinates,
-                                    Eigen::MatrixXi& classes);
 
-    static double CalculateAccuracy(const Eigen::MatrixXd& output, 
-                                          Eigen::MatrixXi  targets);
-};
+	namespace Helpers
+	{
+		void ReadSpiralIntoEigen(const std::string& filename,
+								 Eigen::MatrixXd& coordinates,
+								 Eigen::MatrixXi& classes);
+
+		double CalculateAccuracy(const Eigen::MatrixXd& output,
+								 Eigen::MatrixXi& targets);
+	};
+
+} // namespace NEURAL_NETWORK
 
 #endif // __HELPERS_H__

@@ -3,23 +3,34 @@
 
 #include <Eigen/Dense>
 
-class Loss
+namespace NEURAL_NETWORK
 {
-public:
-    Loss() = default;
-    virtual ~Loss() = default;
 
-    void calculateLoss(const Eigen::MatrixXd& predictions, 
-                       const Eigen::MatrixXi& targets);
+	class Loss
+	{
+	public:
+		Loss() = default;
+		virtual ~Loss() = default;
 
-    double GetLoss() const;
+		Loss(const Loss&) = delete;
+		Loss& operator=(const Loss&) = delete;
 
-protected:
-    virtual Eigen::MatrixXd forward(const Eigen::MatrixXd& predictions, 
-                                    const Eigen::MatrixXi& targets) = 0;
+		void calculateLoss(const Eigen::MatrixXd& predictions,
+						   const Eigen::MatrixXi& targets);
 
-private:
-    double loss_ = 0.0;
-};
+		double GetLoss() const;
+
+	protected:
+		virtual Eigen::MatrixXd forward(const Eigen::MatrixXd& predictions,
+										const Eigen::MatrixXi& targets) = 0;
+
+		virtual Eigen::MatrixXd backward(const Eigen::MatrixXd& d_values,
+										 const Eigen::MatrixXi& targets) = 0;
+
+	private:
+		double loss_ = 0.0;
+	};
+
+} // namespace NEURAL_NETWORK
 
 #endif // __LOSS_H__

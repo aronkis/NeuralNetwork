@@ -3,20 +3,38 @@
 
 #include <Eigen/Dense>
 
-class LayerDense
+namespace NEURAL_NETWORK
 {
 
-public:
-    LayerDense(int n_inputs, int n_neurons);
-    ~LayerDense() = default;
+	class LayerDense
+	{
+	public:
+		LayerDense(int n_inputs, int n_neurons);
+		~LayerDense() = default;
 
-    void forward(const Eigen::MatrixXd inputs);
-    const Eigen::MatrixXd& GetOutput() const;
+		LayerDense(const LayerDense&) = delete;
+		LayerDense& operator=(const LayerDense&) = delete;
 
-private:
-    Eigen::MatrixXd weights_;
-    Eigen::RowVectorXd biases_;
-    Eigen::MatrixXd output_;
-};
+		void forward(const Eigen::MatrixXd& inputs);
+		void backward(const Eigen::MatrixXd& d_values);
+
+		const Eigen::MatrixXd& GetOutput() const;
+		const Eigen::MatrixXd& GetDInput() const;
+		const Eigen::MatrixXd& GetDWeights() const;
+		const Eigen::RowVectorXd& GetDBiases() const;
+
+	private:
+		Eigen::MatrixXd inputs_;
+		Eigen::MatrixXd weights_;
+		Eigen::RowVectorXd biases_;
+
+		Eigen::MatrixXd output_;
+
+		Eigen::MatrixXd d_inputs_;
+		Eigen::MatrixXd d_weights_;
+		Eigen::RowVectorXd d_biases_;
+	};
+
+} // namespace NEURAL_NETWORK
 
 #endif // __LAYERDENSE_H__

@@ -3,17 +3,32 @@
 
 #include <Eigen/Dense>
 
-class ActivationReLU
+namespace NEURAL_NETWORK
 {
-public:
-    ActivationReLU() = default;
-    ~ActivationReLU() = default;
 
-    void forward(const Eigen::MatrixXd inputs);
-    const Eigen::MatrixXd& GetOutput() const;
+	class ActivationReLU
+	{
+	public:
+		ActivationReLU() = default;
+		~ActivationReLU() = default;
 
-private:
-    Eigen::MatrixXd output_;
-};
+		ActivationReLU(const ActivationReLU&) = delete;
+		ActivationReLU& operator=(const ActivationReLU&) = delete;
 
-#endif //__ACTIVATION_RELU_H__
+		void forward(const Eigen::MatrixXd& inputs);
+		void backward(const Eigen::MatrixXd& d_values); 
+
+		const Eigen::MatrixXd& GetOutput() const;
+		const Eigen::MatrixXd& GetDInput() const;
+
+	private:
+		Eigen::MatrixXd inputs_;
+
+		Eigen::MatrixXd output_;
+
+		Eigen::MatrixXd d_inputs_;
+	};
+
+} // namespace NEURAL_NETWORK
+
+#endif //__ACTIVATION_RELU_H__a
