@@ -8,6 +8,10 @@
 #include "ActivationSoftmax.h"
 #include "LossCategoricalCrossentropy.h"
 #include "ActivationSoftmaxLossCategoricalCrossentropy.h"
+#include "StochasticGradientDescent.h"
+#include "AdaGrad.h"
+#include "RMSProp.h"
+#include "Adam.h"
 
 int main() {
 
@@ -27,39 +31,45 @@ int main() {
 		std::cout << "Could not read any data or file not found." << std::endl;
 	}
 
-	NEURAL_NETWORK::LayerDense l1(2, 3);
-	l1.forward(X);
+	NEURAL_NETWORK::LayerDense l1(2, 64);
 	
 	NEURAL_NETWORK::ActivationReLU activation_relu;
-	activation_relu.forward(l1.GetOutput());
 	
-	NEURAL_NETWORK::LayerDense l2(3, 3);
-	l2.forward(activation_relu.GetOutput());
+	NEURAL_NETWORK::LayerDense l2(64, 3);
 
 	NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossentropy loss_softmax;
-	loss_softmax.forward(l2.GetOutput(), y);
-	std::cout << "Loss: " << loss_softmax.GetOutput().topRows(5) << std::endl;
-	std::cout << "Loss: " << loss_softmax.GetLoss() << std::endl;
 
-	double accuracy = NEURAL_NETWORK::Helpers::CalculateAccuracy(loss_softmax.GetOutput(), y);
-	std::cout << "Accuracy: " << accuracy << std::endl;
+	// NEURAL_NETWORK::StochasticGradientDescent optimizer(1.0, 1e-4, 0.81);
+	// NEURAL_NETWORK::AdaGrad optimizer(0.7, 0.5e-4, 1e-9);
+	// NEURAL_NETWORK::RMSProp optimizer(0.001, 0.5e-4, 1e-7, 0.7);
+	NEURAL_NETWORK::Adam optimizer(0.05, 5e-7, 0.9, 0.999, 1e-7);
+	
+	double accuracy = 0.0;
 
-	loss_softmax.backward(loss_softmax.GetOutput(), y);
-	l2.backward(loss_softmax.GetDInputs());
-	activation_relu.backward(l2.GetDInput());
-	l1.backward(activation_relu.GetDInput());
+	for (int epoch = 0; epoch < 10001; epoch++) 
+	{
+		l1.forward(X);
+		activation_relu.forward(l1.GetOutput());
+		l2.forward(activation_relu.GetOutput());
 
-	std::cout << "\nWeights of L1 after backward pass:\n" 
-			  << l1.GetDWeights() << std::endl;
+		loss_softmax.forward(l2.GetOutput(), y);
 
-	std::cout << "\nBiases of L1 after backward pass:\n"
-			  << l1.GetDBiases() << std::endl;
+		if (epoch % 1000 == 0) 
+		{
+			accuracy = NEURAL_NETWORK::Helpers::CalculateAccuracy(loss_softmax.GetOutput(), y);
+			std::cout << "Epoch: " << epoch << ", Accuracy: " << accuracy<< ", Loss: " << loss_softmax.GetLoss() << std::endl;
+		}
 
-	std::cout << "\nWeights of L2 after backward pass:\n" 
-			  << l2.GetDWeights() << std::endl;
+		loss_softmax.backward(loss_softmax.GetOutput(), y);
+		l2.backward(loss_softmax.GetDInputs());
+		activation_relu.backward(l2.GetDInput());
+		l1.backward(activation_relu.GetDInput());
 
-	std::cout << "\nBiases of L2 after backward pass:\n"
-			  << l2.GetDBiases() << std::endl;
+		optimizer.PreUpdateParameters();
+		optimizer.UpdateParameters(l1);
+		optimizer.UpdateParameters(l2);
+		optimizer.PostUpdateParameters();
+	}
 
 	return 0;
 }

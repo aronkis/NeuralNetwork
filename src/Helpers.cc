@@ -88,3 +88,13 @@ double NEURAL_NETWORK::Helpers::CalculateAccuracy(const Eigen::MatrixXd& output,
 	double accuracy = (predictions.array() == targets.array()).cast<double>().mean();
 	return accuracy;
 }
+
+Eigen::MatrixXd NEURAL_NETWORK::Helpers::MatrixSquare(const Eigen::MatrixXd& matrix) 
+{
+	return matrix.array().square().matrix();
+}
+
+Eigen::ArrayXXd NEURAL_NETWORK::Helpers::MatrixSquareRootToArray(const Eigen::MatrixXd& matrix) 
+{
+	return matrix.array().sqrt();
+}

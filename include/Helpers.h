@@ -13,6 +13,9 @@ namespace NEURAL_NETWORK
 
 		double CalculateAccuracy(const Eigen::MatrixXd& output,
 								 Eigen::MatrixXi& targets);
+
+		Eigen::MatrixXd MatrixSquare(const Eigen::MatrixXd& matrix);
+		Eigen::ArrayXXd MatrixSquareRootToArray(const Eigen::MatrixXd& matrix);
 	};
 
 } // namespace NEURAL_NETWORK

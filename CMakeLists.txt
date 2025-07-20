@@ -22,6 +22,7 @@ target_include_directories(neural_network PRIVATE
     include
     include/Activation
     include/Loss
+    include/Optimizer
 )
 target_link_libraries(neural_network PRIVATE Eigen3::Eigen)
 
