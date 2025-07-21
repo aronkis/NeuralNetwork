@@ -9,25 +9,23 @@ namespace NEURAL_NETWORK
 	{
 	public:
 		ActivationReLU() = default;
-		~ActivationReLU() = default;
+		virtual ~ActivationReLU() = default;
 
 		ActivationReLU(const ActivationReLU&) = delete;
 		ActivationReLU& operator=(const ActivationReLU&) = delete;
 
-		void forward(const Eigen::MatrixXd& inputs);
-		void backward(const Eigen::MatrixXd& d_values); 
+		virtual void forward(const Eigen::MatrixXd& inputs);
+		virtual void backward(const Eigen::MatrixXd& d_values); 
 
 		const Eigen::MatrixXd& GetOutput() const;
 		const Eigen::MatrixXd& GetDInput() const;
 
-	private:
+	protected:
 		Eigen::MatrixXd inputs_;
-
 		Eigen::MatrixXd output_;
-
-		Eigen::MatrixXd d_inputs_;
+		Eigen::MatrixXd dinput_;
 	};
 
 } // namespace NEURAL_NETWORK
 
-#endif //__ACTIVATION_RELU_H__a
+#endif // __ACTIVATION_RELU_H__

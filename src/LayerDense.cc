@@ -20,6 +20,12 @@ NEURAL_NETWORK::LayerDense::LayerDense(int n_inputs, int n_neurons)
     biases_ = Eigen::RowVectorXd::Zero(n_neurons);
 }
 
+NEURAL_NETWORK::LayerDense::LayerDense(const Eigen::MatrixXd& weights, const Eigen::RowVectorXd& biases)
+{
+    weights_ = weights;
+    biases_ = biases;
+}
+
 void NEURAL_NETWORK::LayerDense::forward(const Eigen::MatrixXd& inputs)
 {
 	inputs_ = inputs;

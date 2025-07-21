@@ -9,13 +9,14 @@ namespace NEURAL_NETWORK
 	{
 	public:
 		LayerDense(int n_inputs, int n_neurons);
-		~LayerDense() = default;
+		LayerDense(const Eigen::MatrixXd& weights, const Eigen::RowVectorXd& biases);
+		virtual ~LayerDense() = default;
 
 		LayerDense(const LayerDense&) = delete;
 		LayerDense& operator=(const LayerDense&) = delete;
 
-		void forward(const Eigen::MatrixXd& inputs);
-		void backward(const Eigen::MatrixXd& d_values);
+		virtual void forward(const Eigen::MatrixXd& inputs);
+		virtual void backward(const Eigen::MatrixXd& d_values);
 
 		const Eigen::MatrixXd& GetWeights() const;
 		const Eigen::RowVectorXd& GetBiases() const;
@@ -40,21 +41,20 @@ namespace NEURAL_NETWORK
 		void UpdateBiases(Eigen::RowVectorXd& bias_update);
 		void UpdateBiasesCache(Eigen::RowVectorXd& bias_update);
 
-	private:
+	protected:
 		Eigen::MatrixXd inputs_;
 		Eigen::MatrixXd weights_;
 		Eigen::RowVectorXd biases_;
-
 		Eigen::MatrixXd output_;
-
 		Eigen::MatrixXd d_inputs_;
 		Eigen::MatrixXd d_weights_;
 		Eigen::RowVectorXd d_biases_;
-
 		Eigen::MatrixXd weight_momentums_;
 		Eigen::RowVectorXd bias_momentums_;
 		Eigen::MatrixXd weight_caches_;
 		Eigen::RowVectorXd bias_caches_;
+
+	private:
 	};
 
 } // namespace NEURAL_NETWORK

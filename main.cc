@@ -13,6 +13,12 @@
 #include "RMSProp.h"
 #include "Adam.h"
 
+#ifdef METAL_ENABLED
+#include "MetalDevice.h"
+#include "MetalLayerDense.h"
+#include "MetalActivationReLU.h"
+#endif
+
 int main() {
 
 	std::string filename = "../data/points.txt"; 
@@ -31,11 +37,38 @@ int main() {
 		std::cout << "Could not read any data or file not found." << std::endl;
 	}
 
+#ifdef METAL_ENABLED
+	// Check if Metal is available and initialize
+	NEURAL_NETWORK::Metal::MetalDevice& metalDevice = NEURAL_NETWORK::Metal::MetalDevice::getInstance();
+	bool useGPU = metalDevice.isMetalAvailable();
+	
+	// For small networks like this, CPU is faster than GPU
+	// Only use GPU for larger networks (>1000 neurons or >10000 samples)
+	bool networkTooSmall = (X.rows() < 10000) && (64 < 1000);  // 300 samples, 64 neurons
+	if (networkTooSmall) {
+		useGPU = false;
+		std::cout << "Network too small for GPU acceleration, using CPU for better performance." << std::endl;
+	}
+	
+	if (useGPU) {
+		std::cout << "Metal GPU acceleration enabled!" << std::endl;
+	} else if (metalDevice.isMetalAvailable()) {
+		std::cout << "Metal available but using CPU for optimal performance." << std::endl;
+	} else {
+		std::cout << "Metal not available, using CPU." << std::endl;
+	}
+	
+	// Use Metal-accelerated layers if beneficial
+	NEURAL_NETWORK::Metal::MetalLayerDense l1(2, 64, useGPU);
+	NEURAL_NETWORK::Metal::MetalActivationReLU activation_relu(useGPU);
+	NEURAL_NETWORK::Metal::MetalLayerDense l2(64, 3, useGPU);
+#else
+	std::cout << "Metal support not compiled in, using CPU." << std::endl;
+	
 	NEURAL_NETWORK::LayerDense l1(2, 64);
-	
 	NEURAL_NETWORK::ActivationReLU activation_relu;
-	
 	NEURAL_NETWORK::LayerDense l2(64, 3);
+#endif
 
 	NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossentropy loss_softmax;
 

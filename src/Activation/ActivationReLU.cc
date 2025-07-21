@@ -8,8 +8,8 @@ void NEURAL_NETWORK::ActivationReLU::forward(const Eigen::MatrixXd& inputs)
 
 void NEURAL_NETWORK::ActivationReLU::backward(const Eigen::MatrixXd& d_values)
 {
-	d_inputs_ = d_values;
-	d_inputs_.array() *= (inputs_.array() > 0.0).cast<double>().array();
+	dinput_ = d_values;
+	dinput_.array() *= (inputs_.array() > 0.0).cast<double>().array();
 }
 
 const Eigen::MatrixXd& NEURAL_NETWORK::ActivationReLU::GetOutput() const
@@ -19,5 +19,5 @@ const Eigen::MatrixXd& NEURAL_NETWORK::ActivationReLU::GetOutput() const
 
 const Eigen::MatrixXd& NEURAL_NETWORK::ActivationReLU::GetDInput() const
 {
-	return d_inputs_;
+	return dinput_;
 }
