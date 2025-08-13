@@ -1,6 +1,6 @@
-#include "LossCategoricalCrossentropy.h"
+#include "LossCategoricalCrossEntropy.h"
 
-Eigen::MatrixXd NEURAL_NETWORK::LossCategoricalCrossentropy::forward(const Eigen::MatrixXd& predictions, 
+void NEURAL_NETWORK::LossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& predictions, 
 																	 const Eigen::MatrixXi& targets)
 {
 	int samples = predictions.rows();
@@ -20,10 +20,10 @@ Eigen::MatrixXd NEURAL_NETWORK::LossCategoricalCrossentropy::forward(const Eigen
 		correct_confidences = (y_pred_clipped.array() * (targets.cast<double>()).array()).rowwise().sum();
 	}
 
-	return -correct_confidences.array().log();
+	output_ = -correct_confidences.array().log();
 }
 
-Eigen::MatrixXd NEURAL_NETWORK::LossCategoricalCrossentropy::backward(const Eigen::MatrixXd& d_values, 
+void NEURAL_NETWORK::LossCategoricalCrossEntropy::backward(const Eigen::MatrixXd& d_values, 
 																	  const Eigen::MatrixXi& targets)
 {
 	int samples = d_values.rows();
@@ -47,7 +47,7 @@ Eigen::MatrixXd NEURAL_NETWORK::LossCategoricalCrossentropy::backward(const Eige
 		y_true = targets.cast<double>();
 	} 
 
-	Eigen::MatrixXd d_inputs_ = -y_true.array() / d_values.array();
+	d_inputs_ = -y_true.array() / d_values.array();
 
-	return d_inputs_ /= samples;
+	d_inputs_ /= samples;
 }

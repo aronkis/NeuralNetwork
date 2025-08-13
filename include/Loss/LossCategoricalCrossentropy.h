@@ -5,20 +5,20 @@
 
 namespace NEURAL_NETWORK
 {
-	class LossCategoricalCrossentropy : public Loss
+	class LossCategoricalCrossEntropy : public Loss
 	{
 	public:
-		LossCategoricalCrossentropy() = default;
-		~LossCategoricalCrossentropy() = default;
+		LossCategoricalCrossEntropy() = default;
+		~LossCategoricalCrossEntropy() = default;
 
-		LossCategoricalCrossentropy(const LossCategoricalCrossentropy&) = delete;
-		LossCategoricalCrossentropy& operator=(const LossCategoricalCrossentropy&) = delete;
+		LossCategoricalCrossEntropy(const LossCategoricalCrossEntropy&) = delete;
+		LossCategoricalCrossEntropy& operator=(const LossCategoricalCrossEntropy&) = delete;
 
-		Eigen::MatrixXd forward(const Eigen::MatrixXd& predictions,
-								const Eigen::MatrixXi& targets) override;
+		void forward(const Eigen::MatrixXd& predictions,
+					 const Eigen::MatrixXi& targets) override;
 
-		Eigen::MatrixXd backward(const Eigen::MatrixXd& d_values,
-										const Eigen::MatrixXi& targets) override;
+		void backward(const Eigen::MatrixXd& d_values,
+					  const Eigen::MatrixXi& targets) override;
 	};
 
 } // namespace NEURAL_NETWORK

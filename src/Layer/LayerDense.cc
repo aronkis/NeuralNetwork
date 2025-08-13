@@ -1,13 +1,18 @@
 #include <random>
 #include "LayerDense.h"
 
-// Uncomment the following lines to use constant weights for testing
-
-NEURAL_NETWORK::LayerDense::LayerDense(int n_inputs, int n_neurons)
+NEURAL_NETWORK::LayerDense::LayerDense(int n_inputs, int n_neurons,
+									   double weight_regularizer_l1, double weight_regularizer_l2,
+									   double bias_regularizer_l1, double bias_regularizer_l2)
 {
     std::mt19937 gen(0);
     std::normal_distribution<> d(-1, 1);
     weights_ = Eigen::MatrixXd(n_inputs, n_neurons);
+
+	weight_regularizer_l1_ = weight_regularizer_l1;
+    weight_regularizer_l2_ = weight_regularizer_l2;
+    bias_regularizer_l1_ = bias_regularizer_l1;
+    bias_regularizer_l2_ = bias_regularizer_l2;
 
     for (int i = 0; i < n_inputs; i++) 
     {
@@ -30,6 +35,27 @@ void NEURAL_NETWORK::LayerDense::backward(const Eigen::MatrixXd& d_values)
 {
 	d_weights_ = inputs_.transpose() * d_values;
 	d_biases_ = d_values.colwise().sum();
+	
+	if (weight_regularizer_l1_ > 0)
+	{
+		d_weights_.array() += weight_regularizer_l1_ * weights_.array().sign();
+	}
+
+	if (weight_regularizer_l2_ > 0)
+	{
+		d_weights_.array() += 2 * weight_regularizer_l2_ * weights_.array();
+	}
+
+	if (bias_regularizer_l1_ > 0)
+	{
+		d_biases_.array() += bias_regularizer_l1_ * biases_.array().sign();
+	}
+
+	if (bias_regularizer_l2_ > 0)
+	{
+		d_biases_.array() += 2 * bias_regularizer_l2_ * biases_.array();
+	}
+
 	d_inputs_ = d_values * weights_.transpose();
 }
 
@@ -81,6 +107,26 @@ const Eigen::MatrixXd& NEURAL_NETWORK::LayerDense::GetWeightCaches() const
 const Eigen::RowVectorXd& NEURAL_NETWORK::LayerDense::GetBiasCaches() const
 {
 	return bias_caches_;
+}
+
+double NEURAL_NETWORK::LayerDense::GetWeightRegularizerL1() const
+{
+	return weight_regularizer_l1_;
+}
+
+double NEURAL_NETWORK::LayerDense::GetWeightRegularizerL2() const
+{
+	return weight_regularizer_l2_;
+}
+
+double NEURAL_NETWORK::LayerDense::GetBiasRegularizerL1() const
+{
+	return bias_regularizer_l1_;
+}
+
+double NEURAL_NETWORK::LayerDense::GetBiasRegularizerL2() const
+{
+	return bias_regularizer_l2_;
 }
 
 void NEURAL_NETWORK::LayerDense::SetWeightMomentums(const Eigen::MatrixXd& weight_momentums)

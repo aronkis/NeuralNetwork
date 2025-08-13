@@ -1,15 +1,16 @@
-#include "ActivationSoftmaxLossCategoricalCrossentropy.h"
+#include "ActivationSoftmaxLossCategoricalCrossEntropy.h"
+#include "LossCategoricalCrossEntropy.h"
 
-void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossentropy::forward(const Eigen::MatrixXd& inputs, 
+void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& inputs, 
 																		   const Eigen::MatrixXi& targets) 
 {
 	softmax_.forward(inputs);
 	output_ = softmax_.GetOutput();
-	loss_.calculateLoss(softmax_.GetOutput(), targets);
+	loss_.CalculateLoss(softmax_.GetOutput(), targets);
 	loss_value_ = loss_.GetLoss();
 }
 
-void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossentropy::backward(const Eigen::MatrixXd& d_values, 
+void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::backward(const Eigen::MatrixXd& d_values, 
 																			const Eigen::MatrixXi& targets) 
 {
 	int samples = d_values.rows();
@@ -39,18 +40,22 @@ void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossentropy::backward(cons
 	d_inputs_ /= samples;
 }
 
-double NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossentropy::GetLoss() const 
+double NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::GetLoss() const 
 {
 	return loss_value_;
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossentropy::GetOutput() const 
+const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::GetOutput() const 
 {
 	return output_;
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossentropy::GetDInputs() const 
+const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::GetDInput() const 
 {
 	return d_inputs_;
 }
 
+NEURAL_NETWORK::LossCategoricalCrossEntropy& NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::GetLossFunction()
+{
+	return loss_;
+}

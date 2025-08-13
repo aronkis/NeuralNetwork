@@ -20,6 +20,7 @@ file(GLOB_RECURSE HEADERS "include/*.h")
 add_executable(neural_network main.cc ${SOURCES})
 target_include_directories(neural_network PRIVATE 
     include
+    include/Layer
     include/Activation
     include/Loss
     include/Optimizer

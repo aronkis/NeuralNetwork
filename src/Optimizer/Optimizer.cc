@@ -1,5 +1,10 @@
 #include "Optimizer.h"
 
+double NEURAL_NETWORK::Optimizer::GetLearningRate() const
+{
+	return current_learning_rate_;
+}
+
 NEURAL_NETWORK::Optimizer::Optimizer(double learning_rate, double decay)
 {
 	learning_rate_ = learning_rate;

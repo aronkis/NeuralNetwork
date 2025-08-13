@@ -14,6 +14,8 @@ namespace NEURAL_NETWORK
 		Optimizer(const Optimizer&) = delete;
 		Optimizer& operator=(const Optimizer&) = delete;
 
+		double GetLearningRate() const;
+
 		void PreUpdateParameters();
 		virtual void UpdateParameters(NEURAL_NETWORK::LayerDense& layer) = 0;
 		void PostUpdateParameters();

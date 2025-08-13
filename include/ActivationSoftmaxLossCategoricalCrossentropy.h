@@ -1,19 +1,19 @@
 #ifndef __ACTIVATION_SOFTMAX_LOSS_CATEGORICAL_CROSSENTROPY_H__
 #define __ACTIVATION_SOFTMAX_LOSS_CATEGORICAL_CROSSENTROPY_H__
 
-#include "Activation/ActivationSoftmax.h"
-#include "Loss/LossCategoricalCrossentropy.h"
+#include "ActivationSoftmax.h"
+#include "LossCategoricalCrossEntropy.h"
 
 namespace NEURAL_NETWORK
 {
-    class ActivationSoftmaxLossCategoricalCrossentropy
+    class ActivationSoftmaxLossCategoricalCrossEntropy
     {
     public:
-        ActivationSoftmaxLossCategoricalCrossentropy() = default;
-        ~ActivationSoftmaxLossCategoricalCrossentropy() = default;
+        ActivationSoftmaxLossCategoricalCrossEntropy() = default;
+        ~ActivationSoftmaxLossCategoricalCrossEntropy() = default;
 
-        ActivationSoftmaxLossCategoricalCrossentropy(const ActivationSoftmaxLossCategoricalCrossentropy&) = delete;
-	    ActivationSoftmaxLossCategoricalCrossentropy& operator=(const ActivationSoftmaxLossCategoricalCrossentropy&) = delete;
+        ActivationSoftmaxLossCategoricalCrossEntropy(const ActivationSoftmaxLossCategoricalCrossEntropy&) = delete;
+	    ActivationSoftmaxLossCategoricalCrossEntropy& operator=(const ActivationSoftmaxLossCategoricalCrossEntropy&) = delete;
 
         void forward(const Eigen::MatrixXd& inputs,
                      const Eigen::MatrixXi& targets);
@@ -23,11 +23,13 @@ namespace NEURAL_NETWORK
 
         double GetLoss() const;
         const Eigen::MatrixXd& GetOutput() const;
-        const Eigen::MatrixXd& GetDInputs() const;
+        const Eigen::MatrixXd& GetDInput() const;
+
+        LossCategoricalCrossEntropy& GetLossFunction();
 
     private:
         ActivationSoftmax softmax_;
-        LossCategoricalCrossentropy loss_;
+        LossCategoricalCrossEntropy loss_;
 
         double loss_value_ = 0.0;
         Eigen::MatrixXd output_;

@@ -8,7 +8,9 @@ namespace NEURAL_NETWORK
 	class LayerDense
 	{
 	public:
-		LayerDense(int n_inputs, int n_neurons);
+		LayerDense(int n_inputs, int n_neurons, 
+				   double weight_regularizer_l1 = 0, double weight_regularizer_l2 = 0, 
+				   double bias_regularizer_l1 = 0, double bias_regularizer_l2 = 0);
 		~LayerDense() = default;
 
 		LayerDense(const LayerDense&) = delete;
@@ -29,6 +31,11 @@ namespace NEURAL_NETWORK
 		const Eigen::RowVectorXd& GetBiasMomentums() const;
 		const Eigen::MatrixXd& GetWeightCaches() const;
 		const Eigen::RowVectorXd& GetBiasCaches() const;
+
+		double GetWeightRegularizerL1() const;
+		double GetWeightRegularizerL2() const;
+		double GetBiasRegularizerL1() const;
+		double GetBiasRegularizerL2() const;
 
 		void SetWeightMomentums(const Eigen::MatrixXd& weight_momentums);
 		void SetBiasMomentums(const Eigen::RowVectorXd& bias_momentums);
@@ -55,6 +62,11 @@ namespace NEURAL_NETWORK
 		Eigen::RowVectorXd bias_momentums_;
 		Eigen::MatrixXd weight_caches_;
 		Eigen::RowVectorXd bias_caches_;
+
+		double weight_regularizer_l1_;
+		double weight_regularizer_l2_;
+		double bias_regularizer_l1_;
+		double bias_regularizer_l2_;
 	};
 
 } // namespace NEURAL_NETWORK
