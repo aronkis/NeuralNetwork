@@ -21,13 +21,3 @@ void NEURAL_NETWORK::ActivationSoftmax::backward(const Eigen::MatrixXd& d_values
 		d_inputs_.row(i) = (jacobian_matrix * d_values.row(i).transpose()).transpose();
 	}
 }
-
-const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmax::GetOutput() const
-{
-	return output_;
-}
-
-const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmax::GetDInput() const
-{
-	return d_inputs_;
-}

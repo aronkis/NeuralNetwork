@@ -1,12 +1,59 @@
 #include <random>
 #include "LayerDense.h"
 
+/*
+
+Xavier/Glorot (good for tanh/sigmoid)
+- Uniform: W ~ U(-a, a),           a = sqrt(6 / (fan_in + fan_out))
+- Normal:  W ~ N(0, std^2),       std = sqrt(2 / (fan_in + fan_out))
+
+void xavier_uniform(Eigen::MatrixXd& W, int fan_in, int fan_out) {
+    double a = std::sqrt(6.0 / (fan_in + fan_out));
+    W.setRandom();            // uniform in [-1, 1]
+    W *= a;                   // now uniform in [-a, a]
+}
+
+void xavier_normal(Eigen::MatrixXd& W, int fan_in, int fan_out, unsigned seed=0) {
+    double std = std::sqrt(2.0 / (fan_in + fan_out));
+    std::mt19937 gen(seed);
+    std::normal_distribution<> dist(0.0, std);
+    W = Eigen::MatrixXd::NullaryExpr(fan_in, fan_out, [&]{ return dist(gen); });
+}
+
+He/Kaiming (good for ReLU/LeakyReLU)
+- Uniform: W ~ U(-a, a),           a = sqrt(6 / fan_in)
+- Normal:  W ~ N(0, std^2),       std = sqrt(2 / fan_in)
+
+void he_uniform(Eigen::MatrixXd& W, int fan_in, int fan_out) {
+    double a = std::sqrt(6.0 / fan_in);
+    W.setRandom();            // uniform in [-1, 1]
+    W *= a;                   // now uniform in [-a, a]
+}
+
+void he_normal(Eigen::MatrixXd& W, int fan_in, int fan_out, unsigned seed=0) {
+    double std = std::sqrt(2.0 / fan_in);
+    std::mt19937 gen(seed);
+    std::normal_distribution<> dist(0.0, std);
+    W = Eigen::MatrixXd::NullaryExpr(fan_in, fan_out, [&]{ return dist(gen); });
+}
+
+Eigen snippets (reference only):
+// Xavier uniform
+// double a = std::sqrt(6.0 / (fan_in + fan_out));
+// W.setRandom(); // [-1, 1]
+// W *= a;        // [-a, a]
+
+// He normal
+// double std = std::sqrt(2.0 / fan_in);
+// std::mt19937 gen(seed); std::normal_distribution<> d(0.0, std);
+// W = Eigen::MatrixXd::NullaryExpr(fan_in, fan_out, [&]{ return d(gen); });
+*/
 NEURAL_NETWORK::LayerDense::LayerDense(int n_inputs, int n_neurons,
 									   double weight_regularizer_l1, double weight_regularizer_l2,
 									   double bias_regularizer_l1, double bias_regularizer_l2)
 {
-    std::mt19937 gen(0);
-    std::normal_distribution<> d(-1, 1);
+	std::mt19937 gen(0);
+	std::normal_distribution<> d(0.0, 1.0);
     weights_ = Eigen::MatrixXd(n_inputs, n_neurons);
 
 	weight_regularizer_l1_ = weight_regularizer_l1;

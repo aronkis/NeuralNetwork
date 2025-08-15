@@ -2,10 +2,11 @@
 #define __ACTIVATION_SOFTMAX_H__
 
 #include <Eigen/Dense>
+#include "Activation.h"
 
 namespace NEURAL_NETWORK
 {
-	class ActivationSoftmax
+	class ActivationSoftmax : public Activation
 	{
 	public:
 		ActivationSoftmax() = default;
@@ -14,20 +15,12 @@ namespace NEURAL_NETWORK
 		ActivationSoftmax(const ActivationSoftmax&) = delete;
 		ActivationSoftmax& operator=(const ActivationSoftmax&) = delete;
 
-		void forward(const Eigen::MatrixXd& inputs);
-		void backward(const Eigen::MatrixXd& d_values);
-
-		const Eigen::MatrixXd& GetOutput() const;
-		const Eigen::MatrixXd& GetDInput() const;
+		void forward(const Eigen::MatrixXd& inputs) override;
+		void backward(const Eigen::MatrixXd& dvalues) override;
 
 	private:
-		Eigen::MatrixXd inputs_;
-
-		Eigen::MatrixXd output_;
-
-		Eigen::MatrixXd d_inputs_;
 	};
 
 } // namespace NEURAL_NETWORK
 
-#endif // __ACTIVATION_SOFTMAX_H__
+#endif //__ACTIVATION_SOFTMAX_H__

@@ -70,6 +70,64 @@ void NEURAL_NETWORK::Helpers::ReadSpiralIntoEigen(const std::string& filename,
 	}
 }
 
+void NEURAL_NETWORK::Helpers::Read1DIntoEigen(const std::string& filename,
+												  Eigen::MatrixXd& input,
+												  Eigen::MatrixXd& output) 
+{
+	std::ifstream input_file(filename);
+
+	if (!input_file.is_open()) 
+	{
+		std::cerr << "Error: Could not open file " << filename << std::endl;
+		input.resize(0, 0); 
+		output.resize(0, 0);
+		return;
+	}
+
+	std::vector<double> input_values;
+	std::vector<double> output_values;
+
+	std::string line;
+
+	while (std::getline(input_file, line)) 
+	{
+		std::stringstream ss(line);
+		double in_val, out_val;
+
+		if (ss >> in_val >> out_val) 
+		{
+			input_values.push_back(in_val);
+			output_values.push_back(out_val);
+		} 
+		else 
+		{
+			std::cerr << "Warning: Skipping malformed line: '" << line
+					  << "' (expected 2 doubles)" << std::endl;
+		}
+	}
+
+	input_file.close();
+	
+	long num_rows = input_values.size();
+
+	if (num_rows > 0) {
+		input.resize(num_rows, 1);  
+		output.resize(num_rows, 1); 
+		
+		for (long i = 0; i < num_rows; i++) 
+		{
+			input(i, 0) = input_values[i];  
+			output(i, 0) = output_values[i]; 
+		}
+	} 
+	else 
+	{
+		std::cout << "No valid data lines found in the file." << std::endl;
+		input.resize(0, 0);
+		output.resize(0, 0);
+	}
+}
+
 double NEURAL_NETWORK::Helpers::CalculateAccuracy(const Eigen::MatrixXd& output, 
 												  Eigen::MatrixXi& targets) 
 {
@@ -87,6 +145,22 @@ double NEURAL_NETWORK::Helpers::CalculateAccuracy(const Eigen::MatrixXd& output,
 
 	double accuracy = (predictions.array() == targets.array()).cast<double>().mean();
 	return accuracy;
+}
+
+double NEURAL_NETWORK::Helpers::CalculateRegressionAccuracy(const Eigen::MatrixXd& output, 
+															const Eigen::MatrixXd& targets, 
+															double epsilon) 
+{
+	Eigen::ArrayXXd within = ((output.array() - targets.array()).abs() < epsilon).cast<double>();
+	return within.mean();
+}
+
+double NEURAL_NETWORK::Helpers::CalculateEpsilon(const Eigen::MatrixXd& target) 
+{
+    double mean = target.mean();
+    double variance = (target.array() - mean).square().mean();
+    double std_dev = std::sqrt(variance);
+    return std_dev / 250.0;
 }
 
 Eigen::MatrixXd NEURAL_NETWORK::Helpers::MatrixSquare(const Eigen::MatrixXd& matrix) 

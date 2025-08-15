@@ -2,23 +2,25 @@
 #define __ACTIVATION_SIGMOID_H__
 
 #include <Eigen/Dense>
+#include "Activation.h"
 
 namespace NEURAL_NETWORK
 {
-	class ActivationSigmoid
+	class ActivationSigmoid : public Activation
 	{
 	public:
-		void forward(const Eigen::MatrixXd& inputs);
-		void backward(const Eigen::MatrixXd& dvalues);
+		ActivationSigmoid() = default;
+		~ActivationSigmoid() = default;
 
-		const Eigen::MatrixXd& GetOutput() const;
-		const Eigen::MatrixXd& GetDInput() const;
+		ActivationSigmoid(const ActivationSigmoid&) = delete;
+		ActivationSigmoid& operator=(const ActivationSigmoid&) = delete;
+
+		void forward(const Eigen::MatrixXd& inputs) override;
+		void backward(const Eigen::MatrixXd& dvalues) override;
 
 	private:
-		Eigen::MatrixXd inputs_;
-		Eigen::MatrixXd output_;
-		Eigen::MatrixXd d_inputs_;
 	};
-}
 
-#endif // __ACTIVATION_SIGMOID_H__
+} // namespace NEURAL_NETWORK
+
+#endif //__ACTIVATION_SIGMOID_H__
