@@ -21,4 +21,4 @@ namespace NEURAL_NETWORK
 	};
 } // namespace NEURAL_NETWORK
 
-#endif
+#endif // __ADAM_H__

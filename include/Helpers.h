@@ -9,20 +9,11 @@ namespace NEURAL_NETWORK
 	{
 		void ReadSpiralIntoEigen(const std::string& filename,
 								 Eigen::MatrixXd& coordinates,
-								 Eigen::MatrixXi& classes);
+								 Eigen::MatrixXd& classes);
 						
 		void Read1DIntoEigen(const std::string& filename,
 							 Eigen::MatrixXd& input,
 							 Eigen::MatrixXd& output);
-
-		double CalculateAccuracy(const Eigen::MatrixXd& output,
-								 Eigen::MatrixXi& targets);
-
-		double CalculateRegressionAccuracy(const Eigen::MatrixXd& output,
-										   const Eigen::MatrixXd& targets,
-										   double epsilon);
-
-		double CalculateEpsilon(const Eigen::MatrixXd& target);
 
 		Eigen::MatrixXd MatrixSquare(const Eigen::MatrixXd& matrix);
 		Eigen::ArrayXXd MatrixSquareRootToArray(const Eigen::MatrixXd& matrix);

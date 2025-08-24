@@ -20,4 +20,4 @@ namespace NEURAL_NETWORK
 	};
 } // namespace NEURAL_NETWORK
 
-#endif
+#endif // __RMS_PROP_H__

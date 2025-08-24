@@ -1,8 +1,8 @@
 #ifndef __LOSS_H__
 #define __LOSS_H__
 
-#include <Eigen/Dense>
 #include "LayerDense.h"
+#include <Eigen/Dense>
 
 namespace NEURAL_NETWORK
 {
@@ -16,27 +16,33 @@ namespace NEURAL_NETWORK
 		Loss& operator=(const Loss&) = delete;
 
 		void CalculateLoss(const Eigen::MatrixXd& predictions,
-						   const Eigen::MatrixXi& targets);
+						   const Eigen::MatrixXi& targets,
+						   bool include_regularization = false);
 
-		double RegularizationLoss(LayerDense& layer) const;
+		void RememberTrainableLayers(const std::vector<LayerDense*>& layers);
 
+		double RegularizationLoss() const;
+
+		double GetRegularizationLoss() const;
 		double GetLoss() const;
-
+		
         const Eigen::MatrixXd& GetOutput() const;
         const Eigen::MatrixXd& GetDInput() const;
 
-	protected:
-		virtual void forward(const Eigen::MatrixXd& predictions,
+		virtual void forward(const Eigen::MatrixXd& predictions, 
 							 const Eigen::MatrixXi& targets) = 0;
-
 		virtual void backward(const Eigen::MatrixXd& d_values,
 							  const Eigen::MatrixXi& targets) = 0;
-
-		double loss_ = 0.0;
 		
-		Eigen::MatrixXd output_;
+		protected:
+			double loss_ = 0.0;
+			double regularization_loss_ = 0.0;
 
-        Eigen::MatrixXd d_inputs_;
+			std::vector<LayerDense*> trainable_layers_;
+
+			Eigen::MatrixXd output_;
+
+			Eigen::MatrixXd d_inputs_;
 	};
 
 } // namespace NEURAL_NETWORK

@@ -15,7 +15,7 @@ void NEURAL_NETWORK::LossCategoricalCrossEntropy::forward(const Eigen::MatrixXd&
 			correct_confidences(i) = y_pred_clipped(i, targets(i, 0));
 		}
 	} 
-	else if(targets.cols() == 2)
+	else if(targets.cols() > 1)
 	{
 		correct_confidences = (y_pred_clipped.array() * (targets.cast<double>()).array()).rowwise().sum();
 	}
@@ -42,7 +42,7 @@ void NEURAL_NETWORK::LossCategoricalCrossEntropy::backward(const Eigen::MatrixXd
 			y_true.row(i) = identity.row(target_class);
 		}
 	}
-	else if (targets.cols() == 2) 
+	else if (targets.cols() > 1) 
 	{
 		y_true = targets.cast<double>();
 	} 

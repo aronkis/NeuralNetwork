@@ -11,9 +11,6 @@ namespace NEURAL_NETWORK
 		LossBinaryCrossEntropy() = default;
 		~LossBinaryCrossEntropy() = default;
 
-		LossBinaryCrossEntropy(const LossBinaryCrossEntropy&) = delete;
-		LossBinaryCrossEntropy& operator=(const LossBinaryCrossEntropy&) = delete;
-
 		void forward(const Eigen::MatrixXd& predictions,
 					 const Eigen::MatrixXi& targets) override;
 

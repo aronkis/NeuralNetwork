@@ -1,48 +1,68 @@
 #include "ActivationSoftmaxLossCategoricalCrossEntropy.h"
 #include "LossCategoricalCrossEntropy.h"
 
-void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& inputs, 
-																		   const Eigen::MatrixXi& targets) 
+void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& inputs, bool training)
 {
-	softmax_.forward(inputs);
+	softmax_.forward(inputs, training);
 	output_ = softmax_.GetOutput();
-	loss_.CalculateLoss(softmax_.GetOutput(), targets);
-	loss_value_ = loss_.GetLoss();
 }
 
-void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::backward(const Eigen::MatrixXd& d_values, 
-																			const Eigen::MatrixXi& targets) 
+void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::backward(const Eigen::MatrixXd& dvalues)
 {
-	int samples = d_values.rows();
-	
-	Eigen::VectorXi y_true;
-	
-	if (targets.cols() == 2) 
+	if (targets_.rows() > 0) 
 	{
-		y_true = Eigen::VectorXi(samples);
+		int samples = dvalues.rows();
+		
+		Eigen::VectorXi y_true(samples);
+		if (targets_.cols() > 1) 
+		{
+			for (int i = 0; i < samples; i++) 
+			{
+				Eigen::Index idx;
+				targets_.row(i).maxCoeff(&idx);
+				y_true(i) = static_cast<int>(idx);
+			}
+		} 
+		else
+		{
+			y_true = targets_.col(0);
+		}
+		
+		d_inputs_ = dvalues;
+		
 		for (int i = 0; i < samples; i++) 
 		{
-			targets.row(i).maxCoeff(&y_true(i));
+			d_inputs_(i, y_true(i)) -= 1.0;
 		}
+		
+		d_inputs_ /= samples;
 	} 
-	else
+	else 
 	{
-		y_true = targets.col(0);
+		d_inputs_ = dvalues;
 	}
-	
-	d_inputs_ = d_values;
-	
-	for (int i = 0; i < samples; i++) 
-	{
-		d_inputs_(i, y_true(i)) -= 1.0;
-	}
-	
-	d_inputs_ /= samples;
 }
 
-double NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::GetLoss() const 
+void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::SetDInput(const Eigen::MatrixXd& dinput)
 {
-	return loss_value_;
+	d_inputs_ = dinput;
+}
+
+Eigen::MatrixXd NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::predictions() const
+{
+	Eigen::MatrixXd preds(output_.rows(), 1);
+	for (Eigen::Index i = 0; i < output_.rows(); ++i)
+	{
+		Eigen::Index idx;
+		output_.row(i).maxCoeff(&idx);
+		preds(i, 0) = static_cast<double>(idx);
+	}
+	return preds;
+}
+
+void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::storeTargets(const Eigen::MatrixXi& targets) 
+{
+	targets_ = targets;
 }
 
 const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::GetOutput() const 
@@ -55,7 +75,4 @@ const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntr
 	return d_inputs_;
 }
 
-NEURAL_NETWORK::LossCategoricalCrossEntropy& NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::GetLossFunction()
-{
-	return loss_;
-}
+// Loss function accessor removed as unused

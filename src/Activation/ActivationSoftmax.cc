@@ -1,11 +1,15 @@
 #include "ActivationSoftmax.h"
 
-void NEURAL_NETWORK::ActivationSoftmax::forward(const Eigen::MatrixXd& inputs)
+void NEURAL_NETWORK::ActivationSoftmax::forward(const Eigen::MatrixXd& inputs, bool training)
 {
+	(void)training; // unused parameter
 	inputs_ = inputs;
 
-	Eigen::MatrixXd exp_values = (inputs.colwise() - (inputs.rowwise().maxCoeff())).array().exp();
-
+	// subtract row-wise max for numerical stability
+	Eigen::MatrixXd stabilized = inputs.colwise() - inputs.rowwise().maxCoeff();
+	Eigen::MatrixXd exp_values = stabilized.array().exp().matrix();
+	// Normalize each row
+	output_.resizeLike(exp_values);
 	output_ = exp_values.array().colwise() / exp_values.rowwise().sum().array();
 }
 
@@ -20,4 +24,31 @@ void NEURAL_NETWORK::ActivationSoftmax::backward(const Eigen::MatrixXd& d_values
 
 		d_inputs_.row(i) = (jacobian_matrix * d_values.row(i).transpose()).transpose();
 	}
+}
+
+const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmax::GetOutput() const
+{
+	return output_;
+}
+
+const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmax::GetDInput() const
+{
+	return d_inputs_;
+}
+
+void NEURAL_NETWORK::ActivationSoftmax::SetDInput(const Eigen::MatrixXd& dinput)
+{
+	d_inputs_ = dinput;
+}
+
+Eigen::MatrixXd NEURAL_NETWORK::ActivationSoftmax::predictions() const
+{
+	Eigen::MatrixXd preds(output_.rows(), 1);
+	for (Eigen::Index i = 0; i < output_.rows(); ++i)
+	{
+		Eigen::Index idx;
+		output_.row(i).maxCoeff(&idx);
+		preds(i, 0) = static_cast<double>(idx);
+	}
+	return preds;
 }

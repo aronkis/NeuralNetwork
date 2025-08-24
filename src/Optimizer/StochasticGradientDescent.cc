@@ -1,7 +1,5 @@
 #include "StochasticGradientDescent.h"
 
-#include <iostream>
-
 NEURAL_NETWORK::StochasticGradientDescent::StochasticGradientDescent(double learning_rate, double decay, double momentum) : Optimizer(learning_rate, decay)
 {
 	momentum_ = momentum;

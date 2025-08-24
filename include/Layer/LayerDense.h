@@ -2,10 +2,11 @@
 #define __LAYERDENSE_H__
 
 #include <Eigen/Dense>
+#include "LayerBase.h"
 
 namespace NEURAL_NETWORK
 {
-	class LayerDense
+	class LayerDense : public LayerBase
 	{
 	public:
 		LayerDense(int n_inputs, int n_neurons, 
@@ -13,17 +14,14 @@ namespace NEURAL_NETWORK
 				   double bias_regularizer_l1 = 0, double bias_regularizer_l2 = 0);
 		~LayerDense() = default;
 
-		LayerDense(const LayerDense&) = delete;
-		LayerDense& operator=(const LayerDense&) = delete;
-
-		void forward(const Eigen::MatrixXd& inputs);
-		void backward(const Eigen::MatrixXd& d_values);
+		void forward(const Eigen::MatrixXd& inputs, bool training) override;
+		void backward(const Eigen::MatrixXd& d_values) override;
+		const Eigen::MatrixXd& GetOutput() const override;
+		const Eigen::MatrixXd& GetDInput() const override;
+		Eigen::MatrixXd predictions() const override;
 
 		const Eigen::MatrixXd& GetWeights() const;
 		const Eigen::RowVectorXd& GetBiases() const;
-		const Eigen::MatrixXd& GetOutput() const;
-		
-		const Eigen::MatrixXd& GetDInput() const;
 		const Eigen::MatrixXd& GetDWeights() const;
 		const Eigen::RowVectorXd& GetDBiases() const;
 
@@ -36,6 +34,8 @@ namespace NEURAL_NETWORK
 		double GetWeightRegularizerL2() const;
 		double GetBiasRegularizerL1() const;
 		double GetBiasRegularizerL2() const;
+
+		void SetDInput(const Eigen::MatrixXd& dinput) override { d_inputs_ = dinput; }
 
 		void SetWeightMomentums(const Eigen::MatrixXd& weight_momentums);
 		void SetBiasMomentums(const Eigen::RowVectorXd& bias_momentums);

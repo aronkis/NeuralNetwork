@@ -11,9 +11,6 @@ namespace NEURAL_NETWORK
 		LossCategoricalCrossEntropy() = default;
 		~LossCategoricalCrossEntropy() = default;
 
-		LossCategoricalCrossEntropy(const LossCategoricalCrossEntropy&) = delete;
-		LossCategoricalCrossEntropy& operator=(const LossCategoricalCrossEntropy&) = delete;
-
 		void forward(const Eigen::MatrixXd& predictions,
 					 const Eigen::MatrixXi& targets) override;
 

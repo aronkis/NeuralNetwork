@@ -50,7 +50,6 @@ void NEURAL_NETWORK::Adam::UpdateParameters(NEURAL_NETWORK::LayerDense& layer)
 
 	weight_update = -current_learning_rate_ * weight_momentum_corrected.array() / (NEURAL_NETWORK::Helpers::MatrixSquareRootToArray(weight_cache_corrected) + epsilon_);
 	bias_update = -current_learning_rate_ * bias_momentum_corrected.array() / (NEURAL_NETWORK::Helpers::MatrixSquareRootToArray(bias_cache_corrected) + epsilon_);
-
 	layer.UpdateWeights(weight_update);
 	layer.UpdateBiases(bias_update);
 }

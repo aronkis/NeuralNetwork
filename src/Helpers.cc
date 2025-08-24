@@ -8,7 +8,7 @@
 
 void NEURAL_NETWORK::Helpers::ReadSpiralIntoEigen(const std::string& filename,
 												  Eigen::MatrixXd& coordinates,
-												  Eigen::MatrixXi& classes) 
+												  Eigen::MatrixXd& classes) 
 {
 	std::ifstream input_file(filename);
 
@@ -126,41 +126,6 @@ void NEURAL_NETWORK::Helpers::Read1DIntoEigen(const std::string& filename,
 		input.resize(0, 0);
 		output.resize(0, 0);
 	}
-}
-
-double NEURAL_NETWORK::Helpers::CalculateAccuracy(const Eigen::MatrixXd& output, 
-												  Eigen::MatrixXi& targets) 
-{
-	Eigen::VectorXi predictions(output.rows());
-	
-	for (int i = 0; i < output.rows(); i++) 
-	{
-		output.row(i).maxCoeff(&predictions(i));
-	}
-	
-	if (targets.cols() == 2)
-	{
-		targets = targets.colwise().maxCoeff();
-	}
-
-	double accuracy = (predictions.array() == targets.array()).cast<double>().mean();
-	return accuracy;
-}
-
-double NEURAL_NETWORK::Helpers::CalculateRegressionAccuracy(const Eigen::MatrixXd& output, 
-															const Eigen::MatrixXd& targets, 
-															double epsilon) 
-{
-	Eigen::ArrayXXd within = ((output.array() - targets.array()).abs() < epsilon).cast<double>();
-	return within.mean();
-}
-
-double NEURAL_NETWORK::Helpers::CalculateEpsilon(const Eigen::MatrixXd& target) 
-{
-    double mean = target.mean();
-    double variance = (target.array() - mean).square().mean();
-    double std_dev = std::sqrt(variance);
-    return std_dev / 250.0;
 }
 
 Eigen::MatrixXd NEURAL_NETWORK::Helpers::MatrixSquare(const Eigen::MatrixXd& matrix) 

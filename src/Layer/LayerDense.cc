@@ -1,4 +1,5 @@
 #include <random>
+#include <cmath>
 #include "LayerDense.h"
 
 /*
@@ -53,34 +54,31 @@ NEURAL_NETWORK::LayerDense::LayerDense(int n_inputs, int n_neurons,
 									   double bias_regularizer_l1, double bias_regularizer_l2)
 {
 	std::mt19937 gen(0);
-	std::normal_distribution<> d(0.0, 1.0);
-    weights_ = Eigen::MatrixXd(n_inputs, n_neurons);
+	// He normal initialization (good default for ReLU-like activations)
+	const double he_std = std::sqrt(2.0 / static_cast<double>(n_inputs));
+	std::normal_distribution<> he_dist(0.0, he_std);
+	weights_ = Eigen::MatrixXd::NullaryExpr(n_inputs, n_neurons, [&]() { return he_dist(gen); });
 
 	weight_regularizer_l1_ = weight_regularizer_l1;
-    weight_regularizer_l2_ = weight_regularizer_l2;
-    bias_regularizer_l1_ = bias_regularizer_l1;
-    bias_regularizer_l2_ = bias_regularizer_l2;
+	weight_regularizer_l2_ = weight_regularizer_l2;
+	bias_regularizer_l1_ = bias_regularizer_l1;
+	bias_regularizer_l2_ = bias_regularizer_l2;
 
-    for (int i = 0; i < n_inputs; i++) 
-    {
-        for (int j = 0; j < n_neurons; j++) 
-        {
-            weights_(i, j) = 0.01 * d(gen);
-        }
-    }
-
-    biases_ = Eigen::RowVectorXd::Zero(n_neurons);
+	biases_ = Eigen::RowVectorXd::Zero(n_neurons);
 }
 
-void NEURAL_NETWORK::LayerDense::forward(const Eigen::MatrixXd& inputs)
+void NEURAL_NETWORK::LayerDense::forward(const Eigen::MatrixXd& inputs, bool training)
 {
 	inputs_ = inputs;
-	output_ = (inputs * weights_).rowwise() + biases_;
+	output_.resize(inputs.rows(), weights_.cols());
+	output_.noalias() = inputs * weights_;
+	output_.rowwise() += biases_;
 }
 
 void NEURAL_NETWORK::LayerDense::backward(const Eigen::MatrixXd& d_values)
 {
-	d_weights_ = inputs_.transpose() * d_values;
+	d_weights_.resize(weights_.rows(), weights_.cols());
+	d_weights_.noalias() = inputs_.transpose() * d_values;
 	d_biases_ = d_values.colwise().sum();
 	
 	if (weight_regularizer_l1_ > 0)
@@ -103,7 +101,8 @@ void NEURAL_NETWORK::LayerDense::backward(const Eigen::MatrixXd& d_values)
 		d_biases_.array() += 2 * bias_regularizer_l2_ * biases_.array();
 	}
 
-	d_inputs_ = d_values * weights_.transpose();
+	d_inputs_.resize(d_values.rows(), weights_.rows());
+	d_inputs_.noalias() = d_values * weights_.transpose();
 }
 
 const Eigen::MatrixXd& NEURAL_NETWORK::LayerDense::GetWeights() const
@@ -124,6 +123,11 @@ const Eigen::MatrixXd& NEURAL_NETWORK::LayerDense::GetOutput() const
 const Eigen::MatrixXd& NEURAL_NETWORK::LayerDense::GetDInput() const
 {
 	return d_inputs_;
+}
+
+Eigen::MatrixXd NEURAL_NETWORK::LayerDense::predictions() const
+{
+	return output_; // For dense layer, predictions are the output values
 }
 
 const Eigen::MatrixXd& NEURAL_NETWORK::LayerDense::GetDWeights() const

@@ -11,10 +11,6 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Ensure optimized builds by default and enable vectorization-friendly flags
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
-endif()
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-O3 -march=native)
 endif()
@@ -39,6 +35,7 @@ file(GLOB_RECURSE SOURCES "src/*.cc")
 add_executable(neural_network main.cc ${SOURCES})
 target_include_directories(neural_network PRIVATE 
     include
+    include/Accuracy
     include/Activation
     include/Layer
     include/Loss
@@ -48,6 +45,18 @@ target_link_libraries(neural_network PRIVATE Eigen3::Eigen matplotlib_cpp)
 target_compile_definitions(neural_network PRIVATE WITHOUT_NUMPY)
 target_compile_options(neural_network PRIVATE -Wno-deprecated-declarations)
 
-# if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-#   target_compile_options(neural_network PRIVATE -ffast-math)
-# endif()
+set(NN_EPOCHS 10000 CACHE STRING "Number of training epochs")
+set(NN_PRINT_EVERY 1000 CACHE STRING "Print interval")
+target_compile_definitions(neural_network PRIVATE NN_EPOCHS=${NN_EPOCHS} NN_PRINT_EVERY=${NN_PRINT_EVERY})
+
+option(NN_ENABLE_FAST_MATH "Enable -ffast-math (may change numerics)" OFF)
+if(NN_ENABLE_FAST_MATH)
+    message(STATUS "FastMath enabled.")
+    target_compile_options(neural_network PRIVATE -ffast-math)
+endif()
+
+option(NN_DISABLE_EIGEN_PARALLELISM "Define EIGEN_DONT_PARALLELIZE to opt out of Eigen's internal parallelism" OFF)
+if(NN_DISABLE_EIGEN_PARALLELISM)
+    message(STATUS "Disabling Eigen internal parallelism (EIGEN_DONT_PARALLELIZE)")
+    target_compile_definitions(neural_network PRIVATE EIGEN_DONT_PARALLELIZE)
+endif()

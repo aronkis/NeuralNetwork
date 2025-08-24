@@ -2,21 +2,28 @@
 #define __ACTIVATION_RELU_H__
 
 #include <Eigen/Dense>
-#include "Activation.h"
+#include "LayerBase.h"
 
 namespace NEURAL_NETWORK
 {
-	class ActivationReLU : public Activation
+	class ActivationReLU : public LayerBase
 	{
 	public:
 		ActivationReLU() = default;
 		~ActivationReLU() = default;
 
-		ActivationReLU(const ActivationReLU&) = delete;
-		ActivationReLU& operator=(const ActivationReLU&) = delete;
-
-		void forward(const Eigen::MatrixXd& inputs) override;
+		void forward(const Eigen::MatrixXd& inputs, bool training) override;
 		void backward(const Eigen::MatrixXd& dvalues) override;
+		const Eigen::MatrixXd& GetOutput() const override;
+		const Eigen::MatrixXd& GetDInput() const override;
+		void SetDInput(const Eigen::MatrixXd& dinput) override;
+		Eigen::MatrixXd predictions() const override;
+
+	private:
+		Eigen::MatrixXd inputs_;
+		Eigen::MatrixXd output_;
+		Eigen::MatrixXd d_inputs_;
+
 	};
 
 } // namespace NEURAL_NETWORK

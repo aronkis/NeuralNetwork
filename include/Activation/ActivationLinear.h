@@ -2,24 +2,27 @@
 #define __ACTIVATION_LINEAR_H__
 
 #include <Eigen/Dense>
-#include "Activation.h"
+#include "LayerBase.h"
 
 namespace NEURAL_NETWORK
 {
-	class ActivationLinear : public Activation
+	class ActivationLinear : public LayerBase
 	{
 	public:
 		ActivationLinear() = default;
 		~ActivationLinear() = default;
 
-		ActivationLinear(const ActivationLinear&) = delete;
-		ActivationLinear& operator=(const ActivationLinear&) = delete;
-
-		void forward(const Eigen::MatrixXd& inputs) override;
+		void forward(const Eigen::MatrixXd& inputs, bool training) override;
 		void backward(const Eigen::MatrixXd& dvalues) override;
-
+		const Eigen::MatrixXd& GetOutput() const override;
+		const Eigen::MatrixXd& GetDInput() const override;
+		void SetDInput(const Eigen::MatrixXd& dinput) override;
+		Eigen::MatrixXd predictions() const override;
+		
 	private:
-		// Removed redundant variables and functions as they are now in the base class.
+		Eigen::MatrixXd inputs_;
+		Eigen::MatrixXd output_;
+		Eigen::MatrixXd d_inputs_;
 	};
 
 } // namespace NEURAL_NETWORK
