@@ -1,7 +1,7 @@
 #include "Model.h"
 #include <iostream>
 #include "LossMeanSquaredError.h"
-#include "LossCategoricalCrossEntropy.h"
+#include "LossCategoricalCrossentropy.h"
 
 #include "matplotlibcpp.h"
 namespace plt = matplotlibcpp;

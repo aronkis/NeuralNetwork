@@ -1,5 +1,5 @@
-#include "ActivationSoftmaxLossCategoricalCrossEntropy.h"
-#include "LossCategoricalCrossEntropy.h"
+#include "ActivationSoftmaxLossCategoricalCrossentropy.h"
+#include "LossCategoricalCrossentropy.h"
 
 void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& inputs, bool training)
 {

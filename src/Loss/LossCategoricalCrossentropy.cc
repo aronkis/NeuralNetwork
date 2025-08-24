@@ -1,4 +1,4 @@
-#include "LossCategoricalCrossEntropy.h"
+#include "LossCategoricalCrossentropy.h"
 
 void NEURAL_NETWORK::LossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& predictions, 
 																	 const Eigen::MatrixXi& targets)

@@ -2,7 +2,7 @@
 #include "Model.h"
 #include "ActivationReLU.h"
 #include "ActivationSoftmax.h"
-#include "LossCategoricalCrossEntropy.h"
+#include "LossCategoricalCrossentropy.h"
 #include "LossMeanSquaredError.h"
 #include "Adam.h"
 #include "Helpers.h"
@@ -12,7 +12,7 @@
 #include "AccuracyRegression.h"
 #include "ActivationSigmoid.h"
 #include "LossBinaryCrossEntropy.h"
-#include "ActivationSoftmaxLossCategoricalCrossEntropy.h"
+#include "ActivationSoftmaxLossCategoricalCrossentropy.h"
 
 #ifndef NN_EPOCHS
 #define NN_EPOCHS 10000
@@ -21,8 +21,8 @@
 #define NN_PRINT_EVERY 1000
 #endif
 
-#define CLASSIFICATION
-// #define BINARY_CLASSIFICATION
+// #define CLASSIFICATION
+#define BINARY_CLASSIFICATION
 // #define REGRESSION
 
 #ifdef REGRESSION

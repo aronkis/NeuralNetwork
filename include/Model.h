@@ -4,7 +4,7 @@
 #include "LayerDense.h"
 #include "LayerBase.h"
 #include "LayerInput.h"
-#include "ActivationSoftmaxLossCategoricalCrossEntropy.h"
+#include "ActivationSoftmaxLossCategoricalCrossentropy.h"
 #include "Loss.h"
 #include "Optimizer.h"
 #include "Accuracy.h"
