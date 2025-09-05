@@ -1,7 +1,8 @@
 #include "ActivationSoftmaxLossCategoricalCrossentropy.h"
 #include "LossCategoricalCrossentropy.h"
 
-void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& inputs, bool training)
+void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& inputs, 
+																		   bool training)
 {
 	softmax_.forward(inputs, training);
 	output_ = softmax_.GetOutput();
@@ -74,5 +75,3 @@ const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntr
 {
 	return d_inputs_;
 }
-
-// Loss function accessor removed as unused

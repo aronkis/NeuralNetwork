@@ -2,6 +2,7 @@
 #define __LAYERDENSE_H__
 
 #include <Eigen/Dense>
+#include <utility>
 #include "LayerBase.h"
 
 namespace NEURAL_NETWORK
@@ -35,7 +36,9 @@ namespace NEURAL_NETWORK
 		double GetBiasRegularizerL1() const;
 		double GetBiasRegularizerL2() const;
 
-		void SetDInput(const Eigen::MatrixXd& dinput) override { d_inputs_ = dinput; }
+		std::pair<const Eigen::MatrixXd&, const Eigen::RowVectorXd&> GetParameters() const;
+
+		void SetDInput(const Eigen::MatrixXd& dinput) override;
 
 		void SetWeightMomentums(const Eigen::MatrixXd& weight_momentums);
 		void SetBiasMomentums(const Eigen::RowVectorXd& bias_momentums);
@@ -46,6 +49,8 @@ namespace NEURAL_NETWORK
 		void UpdateWeightsCache(Eigen::MatrixXd& weight_update);
 		void UpdateBiases(Eigen::RowVectorXd& bias_update);
 		void UpdateBiasesCache(Eigen::RowVectorXd& bias_update);
+
+		void SetParameters(const Eigen::MatrixXd& weights, const Eigen::RowVectorXd& biases);
 
 	private:
 		Eigen::MatrixXd inputs_;
@@ -68,7 +73,6 @@ namespace NEURAL_NETWORK
 		double bias_regularizer_l1_;
 		double bias_regularizer_l2_;
 	};
-
 } // namespace NEURAL_NETWORK
 
 #endif // __LAYERDENSE_H__

@@ -6,7 +6,6 @@
 
 namespace NEURAL_NETWORK 
 {
-
     class LayerInput : public LayerBase
     {
     public:
@@ -15,9 +14,10 @@ namespace NEURAL_NETWORK
 
         void forward(const Eigen::MatrixXd& inputs, bool training) override;
         void backward(const Eigen::MatrixXd& dvalues) override;
+        Eigen::MatrixXd predictions() const override;
+
         const Eigen::MatrixXd& GetOutput() const override;
         const Eigen::MatrixXd& GetDInput() const override;
-        Eigen::MatrixXd predictions() const override;
         
         void SetDInput(const Eigen::MatrixXd& dinput) override {}
 

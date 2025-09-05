@@ -12,7 +12,9 @@ namespace NEURAL_NETWORK
 		~AccuracyRegression() = default;
 
 		void init(const Eigen::MatrixXd& target, bool reinit = false) override;
-		Eigen::ArrayXd compare(const Eigen::MatrixXd& predictions, Eigen::MatrixXd& targets) const override;
+		Eigen::ArrayXd compare(const Eigen::MatrixXd& predictions, const Eigen::MatrixXd& targets) const override;
+	
+		double GetEpsilon() const;
 	
 	private:
 		double epsilon_ = -1.0;

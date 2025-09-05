@@ -1,8 +1,8 @@
 #include "ActivationLinear.h"
 
-void NEURAL_NETWORK::ActivationLinear::forward(const Eigen::MatrixXd& inputs, bool training)
+void NEURAL_NETWORK::ActivationLinear::forward(const Eigen::MatrixXd& inputs, 
+											   bool training)
 {
-	(void)training; // unused parameter
 	inputs_ = inputs;
 	output_ = inputs;
 }

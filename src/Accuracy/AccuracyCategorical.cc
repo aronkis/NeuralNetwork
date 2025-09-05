@@ -1,8 +1,10 @@
 #include "AccuracyCategorical.h"
 
-Eigen::ArrayXd NEURAL_NETWORK::AccuracyCategorical::compare(const Eigen::MatrixXd& predictions, Eigen::MatrixXd& targets) const
+Eigen::ArrayXd NEURAL_NETWORK::AccuracyCategorical::compare(const Eigen::MatrixXd& predictions, 
+															const Eigen::MatrixXd& targets) const
 {
 	Eigen::MatrixXi targets_int;
+
 	if (targets.cols() > 1)
 	{
 		targets_int.resize(targets.rows(), 1);
@@ -19,6 +21,7 @@ Eigen::ArrayXd NEURAL_NETWORK::AccuracyCategorical::compare(const Eigen::MatrixX
 	}
 
 	int num_classes = 0;
+
 	if (targets.cols() > 1)
 	{
 		num_classes = static_cast<int>(targets.cols());
@@ -31,6 +34,7 @@ Eigen::ArrayXd NEURAL_NETWORK::AccuracyCategorical::compare(const Eigen::MatrixX
 	}
 
 	Eigen::VectorXi pred_classes(predictions.rows());
+	
 	if (predictions.cols() > 1)
 	{
 		for (Eigen::Index i = 0; i < predictions.rows(); ++i)

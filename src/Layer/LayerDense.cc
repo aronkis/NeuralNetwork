@@ -2,59 +2,14 @@
 #include <cmath>
 #include "LayerDense.h"
 
-/*
-
-Xavier/Glorot (good for tanh/sigmoid)
-- Uniform: W ~ U(-a, a),           a = sqrt(6 / (fan_in + fan_out))
-- Normal:  W ~ N(0, std^2),       std = sqrt(2 / (fan_in + fan_out))
-
-void xavier_uniform(Eigen::MatrixXd& W, int fan_in, int fan_out) {
-    double a = std::sqrt(6.0 / (fan_in + fan_out));
-    W.setRandom();            // uniform in [-1, 1]
-    W *= a;                   // now uniform in [-a, a]
-}
-
-void xavier_normal(Eigen::MatrixXd& W, int fan_in, int fan_out, unsigned seed=0) {
-    double std = std::sqrt(2.0 / (fan_in + fan_out));
-    std::mt19937 gen(seed);
-    std::normal_distribution<> dist(0.0, std);
-    W = Eigen::MatrixXd::NullaryExpr(fan_in, fan_out, [&]{ return dist(gen); });
-}
-
-He/Kaiming (good for ReLU/LeakyReLU)
-- Uniform: W ~ U(-a, a),           a = sqrt(6 / fan_in)
-- Normal:  W ~ N(0, std^2),       std = sqrt(2 / fan_in)
-
-void he_uniform(Eigen::MatrixXd& W, int fan_in, int fan_out) {
-    double a = std::sqrt(6.0 / fan_in);
-    W.setRandom();            // uniform in [-1, 1]
-    W *= a;                   // now uniform in [-a, a]
-}
-
-void he_normal(Eigen::MatrixXd& W, int fan_in, int fan_out, unsigned seed=0) {
-    double std = std::sqrt(2.0 / fan_in);
-    std::mt19937 gen(seed);
-    std::normal_distribution<> dist(0.0, std);
-    W = Eigen::MatrixXd::NullaryExpr(fan_in, fan_out, [&]{ return dist(gen); });
-}
-
-Eigen snippets (reference only):
-// Xavier uniform
-// double a = std::sqrt(6.0 / (fan_in + fan_out));
-// W.setRandom(); // [-1, 1]
-// W *= a;        // [-a, a]
-
-// He normal
-// double std = std::sqrt(2.0 / fan_in);
-// std::mt19937 gen(seed); std::normal_distribution<> d(0.0, std);
-// W = Eigen::MatrixXd::NullaryExpr(fan_in, fan_out, [&]{ return d(gen); });
-*/
 NEURAL_NETWORK::LayerDense::LayerDense(int n_inputs, int n_neurons,
-									   double weight_regularizer_l1, double weight_regularizer_l2,
-									   double bias_regularizer_l1, double bias_regularizer_l2)
+									   double weight_regularizer_l1, 
+									   double weight_regularizer_l2,
+									   double bias_regularizer_l1, 
+									   double bias_regularizer_l2)
 {
 	std::mt19937 gen(0);
-	// He normal initialization (good default for ReLU-like activations)
+	// He normal initialization
 	const double he_std = std::sqrt(2.0 / static_cast<double>(n_inputs));
 	std::normal_distribution<> he_dist(0.0, he_std);
 	weights_ = Eigen::MatrixXd::NullaryExpr(n_inputs, n_neurons, [&]() { return he_dist(gen); });
@@ -67,7 +22,8 @@ NEURAL_NETWORK::LayerDense::LayerDense(int n_inputs, int n_neurons,
 	biases_ = Eigen::RowVectorXd::Zero(n_neurons);
 }
 
-void NEURAL_NETWORK::LayerDense::forward(const Eigen::MatrixXd& inputs, bool training)
+void NEURAL_NETWORK::LayerDense::forward(const Eigen::MatrixXd& inputs, 
+										 bool training)
 {
 	inputs_ = inputs;
 	output_.resize(inputs.rows(), weights_.cols());
@@ -127,7 +83,7 @@ const Eigen::MatrixXd& NEURAL_NETWORK::LayerDense::GetDInput() const
 
 Eigen::MatrixXd NEURAL_NETWORK::LayerDense::predictions() const
 {
-	return output_; // For dense layer, predictions are the output values
+	return output_;
 }
 
 const Eigen::MatrixXd& NEURAL_NETWORK::LayerDense::GetDWeights() const
@@ -180,6 +136,17 @@ double NEURAL_NETWORK::LayerDense::GetBiasRegularizerL2() const
 	return bias_regularizer_l2_;
 }
 
+std::pair<const Eigen::MatrixXd&, const Eigen::RowVectorXd&> NEURAL_NETWORK::LayerDense::GetParameters() const
+{
+    return { weights_, biases_ };
+}
+
+void NEURAL_NETWORK::LayerDense::SetDInput(const Eigen::MatrixXd& dinput)  
+{ 
+	d_inputs_ = dinput; 
+}
+
+
 void NEURAL_NETWORK::LayerDense::SetWeightMomentums(const Eigen::MatrixXd& weight_momentums)
 {
 	weight_momentums_ = weight_momentums;
@@ -218,4 +185,11 @@ void NEURAL_NETWORK::LayerDense::UpdateBiases(Eigen::RowVectorXd& bias_update)
 void NEURAL_NETWORK::LayerDense::UpdateBiasesCache(Eigen::RowVectorXd& bias_update)
 {
     bias_caches_ += bias_update;
+}
+
+void NEURAL_NETWORK::LayerDense::SetParameters(const Eigen::MatrixXd& weights, 
+											   const Eigen::RowVectorXd& biases)
+{
+	weights_ = weights;
+	biases_ = biases;
 }

@@ -1,6 +1,7 @@
 #include "AccuracyRegression.h"
 
-void NEURAL_NETWORK::AccuracyRegression::init(const Eigen::MatrixXd& target, bool reinit)
+void NEURAL_NETWORK::AccuracyRegression::init(const Eigen::MatrixXd& target,
+											  bool reinit)
 {
 	if (epsilon_ < 0.0 || reinit)
 	{
@@ -9,8 +10,15 @@ void NEURAL_NETWORK::AccuracyRegression::init(const Eigen::MatrixXd& target, boo
 	}
 }
 
-Eigen::ArrayXd NEURAL_NETWORK::AccuracyRegression::compare(const Eigen::MatrixXd& predictions, Eigen::MatrixXd& targets) const
+Eigen::ArrayXd NEURAL_NETWORK::AccuracyRegression::compare(const Eigen::MatrixXd& predictions, 
+														   const Eigen::MatrixXd& targets) const
 {
 	Eigen::VectorXd per_row_max = (predictions - targets).cwiseAbs().rowwise().maxCoeff();
 	return (per_row_max.array() < epsilon_).cast<double>();
 }
+
+double NEURAL_NETWORK::AccuracyRegression::GetEpsilon() const 
+{ 
+	return epsilon_; 
+}
+

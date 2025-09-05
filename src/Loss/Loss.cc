@@ -1,14 +1,18 @@
 #include "Loss.h"
 
 void NEURAL_NETWORK::Loss::CalculateLoss(const Eigen::MatrixXd& predictions, 
-										 const Eigen::MatrixXi& targets,
+										 const Eigen::MatrixXd& targets,
 										 bool include_regularization)
 {
 	forward(predictions, targets);
 	loss_ = output_.array().mean();
+
+	accumulated_loss_ += output_.sum();
+	accumulated_count_ += output_.rows();
+
 	if (include_regularization)
 	{
-		regularization_loss_ = RegularizationLoss();
+		RegularizationLoss();
 	}
 	else
 	{
@@ -16,47 +20,76 @@ void NEURAL_NETWORK::Loss::CalculateLoss(const Eigen::MatrixXd& predictions,
 	}
 }
 
-void NEURAL_NETWORK::Loss::RememberTrainableLayers(const std::vector<LayerDense*>& layers)
+void NEURAL_NETWORK::Loss::CalculateAccumulatedLoss(bool include_regularization)
+{
+	accumulated_loss_ /= accumulated_count_;
+
+	if (include_regularization)
+	{
+		RegularizationLoss();
+	}
+	else
+	{
+		regularization_loss_ = 0.0;
+	}
+}
+
+void NEURAL_NETWORK::Loss::NewPass()
+{
+	accumulated_loss_ = 0.0;
+	accumulated_count_ = 0;
+}
+
+void NEURAL_NETWORK::Loss::RememberTrainableLayers(const std::vector<std::weak_ptr<LayerDense>>& layers)
 {
 	trainable_layers_ = layers;
 }
 
-double NEURAL_NETWORK::Loss::RegularizationLoss() const
+void NEURAL_NETWORK::Loss::RegularizationLoss()
 {
-	double regularization_loss = 0.0;
-
-	for (auto& layer: trainable_layers_)
+	regularization_loss_ = 0.0;
+	for (auto& weak_layer: trainable_layers_)
 	{
-
-		if (layer->GetWeightRegularizerL1() > 0)
+		if (auto layer = weak_layer.lock())
 		{
-			regularization_loss += layer->GetWeightRegularizerL1() * layer->GetWeights().array().abs().sum();
-		}
+			if (layer->GetWeightRegularizerL1() > 0)
+			{
+				regularization_loss_ += layer->GetWeightRegularizerL1() * 
+										layer->GetWeights().array().abs().sum();
+			}
 
-		if (layer->GetWeightRegularizerL2() > 0)
-		{
-			regularization_loss += layer->GetWeightRegularizerL2() * layer->GetWeights().array().square().sum();
-		}
+			if (layer->GetWeightRegularizerL2() > 0)
+			{
+				regularization_loss_ += layer->GetWeightRegularizerL2() * 
+										layer->GetWeights().array().square().sum();
+			}
 
-		if (layer->GetBiasRegularizerL1() > 0)
-		{
-			regularization_loss += layer->GetBiasRegularizerL1() * layer->GetBiases().array().abs().sum();
-		}
+			if (layer->GetBiasRegularizerL1() > 0)
+			{
+				regularization_loss_ += layer->GetBiasRegularizerL1() * 
+										layer->GetBiases().array().abs().sum();
+			}
 
-		if (layer->GetBiasRegularizerL2() > 0)
-		{
-			regularization_loss += layer->GetBiasRegularizerL2() * layer->GetBiases().array().square().sum();
+			if (layer->GetBiasRegularizerL2() > 0)
+			{
+				regularization_loss_ += layer->GetBiasRegularizerL2() * 
+										layer->GetBiases().array().square().sum();
+			}
 		}
 	}
-	return regularization_loss;
 }
 
-double NEURAL_NETWORK::Loss::GetLoss() const
+const double NEURAL_NETWORK::Loss::GetLoss() const
 {
 	return loss_;
 }   
 
-double NEURAL_NETWORK::Loss::GetRegularizationLoss() const
+const double NEURAL_NETWORK::Loss::GetAccumulatedLoss() const
+{
+	return accumulated_loss_;
+}
+
+const double NEURAL_NETWORK::Loss::GetRegularizationLoss() const
 {
 	return regularization_loss_;
 }

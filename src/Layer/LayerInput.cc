@@ -1,14 +1,13 @@
 #include "LayerInput.h"
 
-void NEURAL_NETWORK::LayerInput::forward(const Eigen::MatrixXd& inputs, bool training) 
+void NEURAL_NETWORK::LayerInput::forward(const Eigen::MatrixXd& inputs, 
+										 bool training) 
 {
-    (void)training; // unused parameter
     output_ = inputs;
 }
 
 void NEURAL_NETWORK::LayerInput::backward(const Eigen::MatrixXd& dvalues) 
 {
-    (void)dvalues; // unused parameter
 }
 
 const Eigen::MatrixXd& NEURAL_NETWORK::LayerInput::GetOutput() const 

@@ -1,6 +1,8 @@
 #include "StochasticGradientDescent.h"
 
-NEURAL_NETWORK::StochasticGradientDescent::StochasticGradientDescent(double learning_rate, double decay, double momentum) : Optimizer(learning_rate, decay)
+NEURAL_NETWORK::StochasticGradientDescent::StochasticGradientDescent(double learning_rate, 
+																	 double decay, 
+																	 double momentum) : Optimizer(learning_rate, decay)
 {
 	momentum_ = momentum;
 }
@@ -14,12 +16,16 @@ void NEURAL_NETWORK::StochasticGradientDescent::UpdateParameters(NEURAL_NETWORK:
 	{
 		if (layer.GetWeightMomentums().size() == 0)
 		{
-			layer.SetWeightMomentums(Eigen::MatrixXd::Zero(layer.GetWeights().rows(), layer.GetWeights().cols()));
-			layer.SetBiasMomentums(Eigen::RowVectorXd::Zero(layer.GetBiases().rows(), layer.GetBiases().cols()));
+			layer.SetWeightMomentums(Eigen::MatrixXd::Zero(layer.GetWeights().rows(), 
+														   layer.GetWeights().cols()));
+			layer.SetBiasMomentums(Eigen::RowVectorXd::Zero(layer.GetBiases().rows(), 
+															layer.GetBiases().cols()));
 		}
 
-		weight_update = momentum_ * layer.GetWeightMomentums() - current_learning_rate_ * layer.GetDWeights();
-		bias_update = momentum_ * layer.GetBiasMomentums() - current_learning_rate_ * layer.GetDBiases();
+		weight_update = momentum_ * layer.GetWeightMomentums() - 
+						current_learning_rate_ * layer.GetDWeights();
+		bias_update = momentum_ * layer.GetBiasMomentums() - 
+					  current_learning_rate_ * layer.GetDBiases();
 
 		layer.SetWeightMomentums(weight_update);
 		layer.SetBiasMomentums(bias_update);
@@ -32,4 +38,9 @@ void NEURAL_NETWORK::StochasticGradientDescent::UpdateParameters(NEURAL_NETWORK:
 
 	layer.UpdateWeights(weight_update);
 	layer.UpdateBiases(bias_update);
+}
+
+double NEURAL_NETWORK::StochasticGradientDescent::GetMomentum() const
+{ 
+	return momentum_; 
 }

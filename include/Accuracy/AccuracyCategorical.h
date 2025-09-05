@@ -12,7 +12,7 @@ namespace NEURAL_NETWORK
 		~AccuracyCategorical() = default;
 
 		void init(const Eigen::MatrixXd& labels, bool reinit = false) override {}
-		Eigen::ArrayXd compare(const Eigen::MatrixXd& predictions, Eigen::MatrixXd& targets) const override;
+		Eigen::ArrayXd compare(const Eigen::MatrixXd& predictions, const Eigen::MatrixXd& targets) const override;
 	};
 } // namespace NEURAL_NETWORK
 

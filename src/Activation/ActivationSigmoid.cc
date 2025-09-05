@@ -1,8 +1,8 @@
 #include "ActivationSigmoid.h"
 
-void NEURAL_NETWORK::ActivationSigmoid::forward(const Eigen::MatrixXd& inputs, bool training)
+void NEURAL_NETWORK::ActivationSigmoid::forward(const Eigen::MatrixXd& inputs, 
+												bool training)
 {
-	(void)training; // unused parameter
 	inputs_ = inputs;
 	output_ = 1.0 / (1.0 + (-inputs).array().exp());
 }

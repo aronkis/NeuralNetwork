@@ -1,8 +1,8 @@
 #include "ActivationReLU.h"
 
-void NEURAL_NETWORK::ActivationReLU::forward(const Eigen::MatrixXd& inputs, bool training)
+void NEURAL_NETWORK::ActivationReLU::forward(const Eigen::MatrixXd& inputs, 
+											 bool training)
 {
-	(void)training; // unused parameter
 	inputs_ = inputs;
 	output_ = inputs.cwiseMax(0.0);
 }

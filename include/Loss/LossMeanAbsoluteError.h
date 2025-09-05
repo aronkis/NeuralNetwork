@@ -11,19 +11,12 @@ namespace NEURAL_NETWORK
 		LossMeanAbsoluteError() = default;
 		~LossMeanAbsoluteError() = default;
 
-		void forwardDouble(const Eigen::MatrixXd& predictions,
-						   const Eigen::MatrixXd& targets);
-		
-		void backwardDouble(const Eigen::MatrixXd& d_values,
-							const Eigen::MatrixXd& targets);
-
 		void forward(const Eigen::MatrixXd& predictions,
-					 const Eigen::MatrixXi& targets) override;
+					 const Eigen::MatrixXd& targets) override;
 
 		void backward(const Eigen::MatrixXd& d_values,
-					  const Eigen::MatrixXi& targets) override;
+					  const Eigen::MatrixXd& targets) override;
 	};
-
 } // namespace NEURAL_NETWORK
 
 #endif // __LOSS_MEAN_ABSOLUTE_ERROR_H__

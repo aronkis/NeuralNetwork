@@ -20,6 +20,9 @@ namespace NEURAL_NETWORK
 		virtual void UpdateParameters(NEURAL_NETWORK::LayerDense& layer) = 0;
 		void PostUpdateParameters();
 
+		double GetDecay() const;
+		int GetIterations() const;
+
 	protected:
 		double learning_rate_;
 		double current_learning_rate_;

@@ -14,11 +14,22 @@ namespace NEURAL_NETWORK
 		Accuracy(const Accuracy&) = delete;
 		Accuracy& operator=(const Accuracy&) = delete;
 
-		double Calculate(const Eigen::MatrixXd& predictions, Eigen::MatrixXd& labels);
+		void Calculate(const Eigen::MatrixXd& predictions, const Eigen::MatrixXd& labels);
+		void CalculateAccumulated();
+		void NewPass();
+
+		double GetAccuracy() const;
+		double GetAccumulatedAccuracy() const;
+
 		virtual void init(const Eigen::MatrixXd& target, bool reinit = false) = 0;
 
 	protected:
-		virtual Eigen::ArrayXd compare(const Eigen::MatrixXd& predictions, Eigen::MatrixXd& targets) const = 0;
+		virtual Eigen::ArrayXd compare(const Eigen::MatrixXd& predictions, const Eigen::MatrixXd& targets) const = 0;
+	
+	private:
+		double accuracy_ = 0.0;
+		double accumulated_accuracy_ = 0.0;
+		int accumulated_count_ = 0;
 	};
 } // namespace NEURAL_NETWORK
 

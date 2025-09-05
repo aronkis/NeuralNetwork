@@ -10,20 +10,28 @@ namespace NEURAL_NETWORK
 	{
 	public:
 		LayerDropout(double rate);
-		
+		~LayerDropout() = default;
+
 		void forward(const Eigen::MatrixXd& inputs, bool training) override;
 		void backward(const Eigen::MatrixXd& dvalues) override;
+		Eigen::MatrixXd predictions() const override;
+
 		const Eigen::MatrixXd& GetOutput() const override;
 		const Eigen::MatrixXd& GetDInput() const override;
-		void SetDInput(const Eigen::MatrixXd& dinput) override { d_inputs_ = dinput; }
-		Eigen::MatrixXd predictions() const override;
+		double GetRate() const;
+		
+		void SetDInput(const Eigen::MatrixXd& dinput) override;
 	
 	private:
-		double rate_;
 		Eigen::MatrixXd inputs_;
-		Eigen::MatrixXd mask_;
+		
 		Eigen::MatrixXd output_;
+		
 		Eigen::MatrixXd d_inputs_;
+
+		Eigen::MatrixXd mask_;
+		
+		double rate_;
 	};
 } // namespace NEURAL_NETWORK
 

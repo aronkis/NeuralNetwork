@@ -17,13 +17,13 @@ namespace NEURAL_NETWORK
 
         void forward(const Eigen::MatrixXd& inputs, bool training) override;
         void backward(const Eigen::MatrixXd& dvalues) override;
-        const Eigen::MatrixXd& GetOutput() const override;
-        const Eigen::MatrixXd& GetDInput() const override;
-        void SetDInput(const Eigen::MatrixXd& dinput) override;
         Eigen::MatrixXd predictions() const override;
-
         void storeTargets(const Eigen::MatrixXi& targets);
 
+        const Eigen::MatrixXd& GetOutput() const override;
+        const Eigen::MatrixXd& GetDInput() const override;
+        
+		void SetDInput(const Eigen::MatrixXd& dinput) override;
     private:
         ActivationSoftmax softmax_;
 
@@ -31,7 +31,6 @@ namespace NEURAL_NETWORK
         Eigen::MatrixXd d_inputs_;
         Eigen::MatrixXi targets_;
     };
-
 } // namespace NEURAL_NETWORK
 
 #endif // __ACTIVATION_SOFTMAX_LOSS_CATEGORICAL_CROSSENTROPY_H__

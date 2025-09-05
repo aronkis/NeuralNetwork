@@ -1,7 +1,7 @@
 #ifndef __LOSS_BINARY_CROSS_ENTROPY_H__
 #define __LOSS_BINARY_CROSS_ENTROPY_H__
 
-#include "Loss/Loss.h"
+#include "Loss.h"
 
 namespace NEURAL_NETWORK
 {
@@ -12,12 +12,11 @@ namespace NEURAL_NETWORK
 		~LossBinaryCrossEntropy() = default;
 
 		void forward(const Eigen::MatrixXd& predictions,
-					 const Eigen::MatrixXi& targets) override;
+					 const Eigen::MatrixXd& targets) override;
 
 		void backward(const Eigen::MatrixXd& d_values,
-					  const Eigen::MatrixXi& targets) override;
+					  const Eigen::MatrixXd& targets) override;
 	};
-
 } // namespace NEURAL_NETWORK
 
 #endif // __LOSS_BINARY_CROSS_ENTROPY_H__

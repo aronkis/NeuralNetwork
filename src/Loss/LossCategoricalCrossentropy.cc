@@ -1,7 +1,7 @@
 #include "LossCategoricalCrossentropy.h"
 
 void NEURAL_NETWORK::LossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& predictions, 
-																	 const Eigen::MatrixXi& targets)
+														  const Eigen::MatrixXd& targets)
 {
 	int samples = predictions.rows();
 
@@ -12,19 +12,20 @@ void NEURAL_NETWORK::LossCategoricalCrossEntropy::forward(const Eigen::MatrixXd&
 	{
 		for (int i = 0; i < samples; i++) 
 		{
-			correct_confidences(i) = y_pred_clipped(i, targets(i, 0));
+			const Eigen::Index col = static_cast<Eigen::Index>(targets(i, 0));
+			correct_confidences(i) = y_pred_clipped(i, col);
 		}
 	} 
 	else if(targets.cols() > 1)
 	{
-		correct_confidences = (y_pred_clipped.array() * (targets.cast<double>()).array()).rowwise().sum();
+		correct_confidences = (y_pred_clipped.array() * targets.array()).rowwise().sum();
 	}
 
 	output_ = -correct_confidences.array().log();
 }
 
 void NEURAL_NETWORK::LossCategoricalCrossEntropy::backward(const Eigen::MatrixXd& d_values, 
-																	  const Eigen::MatrixXi& targets)
+														   const Eigen::MatrixXd& targets)
 {
 	int samples = d_values.rows();
 	int labels = d_values.cols();
@@ -38,13 +39,13 @@ void NEURAL_NETWORK::LossCategoricalCrossEntropy::backward(const Eigen::MatrixXd
 		y_true = Eigen::MatrixXd::Zero(samples, labels);
 		for (int i = 0; i < samples; i++) 
 		{
-			int target_class = targets(i, 0);
+			const Eigen::Index target_class = static_cast<Eigen::Index>(targets(i, 0));
 			y_true.row(i) = identity.row(target_class);
 		}
 	}
 	else if (targets.cols() > 1) 
 	{
-		y_true = targets.cast<double>();
+		y_true = targets;
 	} 
 
 	d_inputs_ = -y_true.array() / d_values.array();
