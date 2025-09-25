@@ -8,6 +8,11 @@ NEURAL_NETWORK::AdaGrad::AdaGrad(double learning_rate,
 	epsilon_ = epsilon;
 }
 
+double NEURAL_NETWORK::AdaGrad::GetEpsilon() const
+{
+	return epsilon_;
+}
+
 void NEURAL_NETWORK::AdaGrad::UpdateParameters(NEURAL_NETWORK::LayerDense& layer)
 {
 	Eigen::MatrixXd weight_update;

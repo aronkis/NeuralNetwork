@@ -10,6 +10,16 @@ NEURAL_NETWORK::RMSProp::RMSProp(double learning_rate,
 	rho_ = rho;
 }
 
+double NEURAL_NETWORK::RMSProp::GetRho() const
+{
+	return rho_;
+}
+
+double NEURAL_NETWORK::RMSProp::GetEpsilon() const
+{
+	return epsilon_;
+}
+
 void NEURAL_NETWORK::RMSProp::UpdateParameters(NEURAL_NETWORK::LayerDense& layer)
 {
 	Eigen::MatrixXd weight_update;

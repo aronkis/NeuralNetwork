@@ -6,7 +6,7 @@ void NEURAL_NETWORK::AccuracyRegression::init(const Eigen::MatrixXd& target,
 	if (epsilon_ < 0.0 || reinit)
 	{
     	double std_dev = std::sqrt((target.array() - target.mean()).square().mean());
-		epsilon_ = std_dev / 250.0;
+		epsilon_ = std_dev / 100.0;
 	}
 }
 

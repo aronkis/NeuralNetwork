@@ -129,6 +129,90 @@ void NEURAL_NETWORK::Helpers::Read1DIntoEigen(const std::string& filename,
 	}
 }
 
+void NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(const std::string& filename,
+                                  				   Eigen::MatrixXd& input,
+                                  				   Eigen::MatrixXd& output,
+                                  				   char delimiter)
+{
+    std::ifstream input_file(filename);
+
+    if (!input_file.is_open()) 
+    {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        input.resize(0, 0); 
+        output.resize(0, 0);
+        return;
+    }
+
+    std::vector<double> input1_values;
+    std::vector<double> input2_values;
+    std::vector<double> output1_values;
+    std::vector<double> output2_values;
+
+    std::string line;
+    int line_num = 0;
+
+    while (std::getline(input_file, line)) 
+    {
+        line_num++;
+        std::stringstream ss(line);
+        std::string token;
+        std::vector<double> values;
+
+        while (std::getline(ss, token, delimiter)) 
+        {
+            try 
+            {
+                values.push_back(std::stod(token));
+            } 
+            catch (const std::invalid_argument&) 
+            {
+                std::cerr << "Warning: Invalid number in line " << line_num 
+                          << ": '" << token << "'" << std::endl;
+                values.clear();
+                break;
+            }
+        }
+
+        if (values.size() == 4) 
+        {
+            input1_values.push_back(values[0]);
+            input2_values.push_back(values[1]);
+            output1_values.push_back(values[2]);
+            output2_values.push_back(values[3]);
+        } 
+        else if (!values.empty()) 
+        {
+            std::cerr << "Warning: Skipping malformed line " << line_num 
+                      << ": '" << line << "' (expected 4 columns)" << std::endl;
+        }
+    }
+
+    input_file.close();
+    
+    long num_rows = input1_values.size();
+
+    if (num_rows > 0) 
+    {
+        input.resize(num_rows, 2);  
+        output.resize(num_rows, 2); 
+        
+        for (long i = 0; i < num_rows; i++) 
+        {
+            input(i, 0) = input1_values[i];  
+            input(i, 1) = input2_values[i];  
+            output(i, 0) = output1_values[i]; 
+            output(i, 1) = output2_values[i]; 
+        }
+    } 
+    else 
+    {
+        std::cout << "No valid data lines found in the file." << std::endl;
+        input.resize(0, 0);
+        output.resize(0, 0);
+    }
+}
+
 void NEURAL_NETWORK::Helpers::DownloadData(const std::string url,
 					   					   const std::string output_dir,
 					   					   const std::string filename)
@@ -347,8 +431,8 @@ Eigen::MatrixXd LoadImage(const std::string& filename,
             image(y, x) = data[index];
         }
     }
-    
-    stbi_image_free(data);
+
+	stbi_image_free(data);
     return image;
 }
 
@@ -482,11 +566,11 @@ void NEURAL_NETWORK::Helpers::ShuffleData(Eigen::MatrixXd& X,
 
 void NEURAL_NETWORK::Helpers::ScaleData(Eigen::MatrixXd& X) 
 {
-	double min_val = X.minCoeff();
-	double max_val = X.maxCoeff();
-	if (max_val > min_val) 
+	double mean = X.mean();
+	double std_dev = std::sqrt((X.array() - mean).square().mean());
+	if (std_dev > 0) 
 	{
-		X = (X.array() - min_val) / (max_val - min_val) * 2.0 - 1.0;
+		X = (X.array() - mean) / std_dev;
 	}
 }
 

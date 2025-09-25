@@ -3,6 +3,12 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <vector>
+#include <string>
+#include <sstream>
+
+#include "matplotlibcpp.h"
+namespace plt = matplotlibcpp;
 
 struct ModelConfig 
 {
@@ -207,8 +213,7 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 								  const Eigen::MatrixXd& y,
 				   				  int batch_size, int epochs, int print_every, 
 				   				  const Eigen::MatrixXd& X_val, 
-								  const Eigen::MatrixXd& y_val,
-                   				  bool plot_validation_data)
+								  const Eigen::MatrixXd& y_val)
 {
 	if (!optimizer_)
 	{
@@ -503,6 +508,11 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             config.layer_types.push_back("ActivationSoftmaxLossCategoricalCrossEntropy");
             config.layer_params.push_back({});
         } 
+		else if (dynamic_cast<ActivationLinear*>(layer.get())) 
+		{
+            config.layer_types.push_back("ActivationLinear");
+            config.layer_params.push_back({});
+        } 
 		else 
 		{
             std::cerr << "Unknown layer type in SaveModel\n";
@@ -552,6 +562,25 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             sgd->GetLearningRate(),
             sgd->GetDecay(),
             sgd->GetMomentum()
+        };
+    } 
+	else if (auto* adagrad = dynamic_cast<AdaGrad*>(optimizer_.get())) 
+	{
+        config.optimizer_type = "AdaGrad";
+        config.optimizer_params = {
+            adagrad->GetLearningRate(),
+            adagrad->GetDecay(),
+            adagrad->GetEpsilon()
+        };
+    } 
+	else if (auto* rmsprop = dynamic_cast<RMSProp*>(optimizer_.get())) 
+	{
+        config.optimizer_type = "RMSProp";
+        config.optimizer_params = {
+            rmsprop->GetLearningRate(),
+            rmsprop->GetDecay(),
+            rmsprop->GetRho(),
+            rmsprop->GetEpsilon()
         };
     } 
 	else 
@@ -611,6 +640,7 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
 											sizeof(config.softmax_classifier_));
 
     ofs.close();
+	std::cout << "Model saved to " << path << std::endl;
 }
 
 void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
@@ -709,6 +739,10 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 		else if (type == "ActivationSoftmaxLossCategoricalCrossEntropy") 
 		{
             Add(std::make_shared<ActivationSoftmaxLossCategoricalCrossEntropy>());
+        } 
+		else if (type == "ActivationLinear") 
+		{
+            Add(std::make_shared<ActivationLinear>());
         }
     }
 
@@ -744,6 +778,21 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         double decay = config.optimizer_params[1];
         double momentum = config.optimizer_params[2];
         optimizer_ = std::make_unique<StochasticGradientDescent>(lr, decay, momentum);
+    } 
+	else if (config.optimizer_type == "AdaGrad") 
+	{
+        double lr = config.optimizer_params[0];
+        double decay = config.optimizer_params[1];
+        double eps = config.optimizer_params[2];
+        optimizer_ = std::make_unique<AdaGrad>(lr, decay, eps);
+    } 
+	else if (config.optimizer_type == "RMSProp") 
+	{
+        double lr = config.optimizer_params[0];
+        double decay = config.optimizer_params[1];
+        double rho = config.optimizer_params[2];
+        double eps = config.optimizer_params[3];
+        optimizer_ = std::make_unique<RMSProp>(lr, decay, eps, rho);
     }
 
     if (config.accuracy_type == "AccuracyCategorical") 

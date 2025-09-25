@@ -15,6 +15,8 @@ namespace NEURAL_NETWORK
 
 		void UpdateParameters(NEURAL_NETWORK::LayerDense& layer) override;
 
+		double GetEpsilon() const;
+
 	private:
 		double epsilon_;
 	};

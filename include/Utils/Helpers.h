@@ -16,6 +16,11 @@ namespace NEURAL_NETWORK
 							 Eigen::MatrixXd& input,
 							 Eigen::MatrixXd& output);
 
+		void ReadFromCSVIntoEigen(const std::string & filename,
+								  Eigen::MatrixXd& input,
+								  Eigen::MatrixXd& output,
+								  char delimiter = ',');
+
 		void DownloadData(const std::string url,
 						  const std::string output_dir,
 						  const std::string filename);

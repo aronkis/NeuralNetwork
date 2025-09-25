@@ -25,8 +25,7 @@ namespace NEURAL_NETWORK
 				   const Eigen::MatrixXd& y,
 				   int batch_size, int epochs, int print_every, 
 				   const Eigen::MatrixXd& X_val, 
-				   const Eigen::MatrixXd& y_val,
-                   bool plot_validation_data);
+				   const Eigen::MatrixXd& y_val);
 		void Evaluate(const Eigen::MatrixXd& X, 
 					  const Eigen::MatrixXd& y, 
 					  int batch_size);
