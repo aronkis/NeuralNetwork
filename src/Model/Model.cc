@@ -7,9 +7,6 @@
 #include <string>
 #include <sstream>
 
-#include "matplotlibcpp.h"
-namespace plt = matplotlibcpp;
-
 struct ModelConfig 
 {
     std::vector<std::string> layer_types;
@@ -55,7 +52,7 @@ void NEURAL_NETWORK::Model::Finalize()
 	
 	trainable_layers_.clear();
 
-	for (int i = 0; i < layer_count; ++i)
+	for (int i = 0; i < layer_count; i++)
 	{
 		if (i == 0)
 		{
@@ -404,7 +401,7 @@ std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> NEURAL_NETWORK::Mode
 
 void NEURAL_NETWORK::Model::SetParameters(const std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>>& params)
 {
-	for (size_t i = 0; i < trainable_layers_.size(); ++i)
+	for (size_t i = 0; i < trainable_layers_.size(); i++)
 	{
 		trainable_layers_[i]->SetParameters(params[i].first, params[i].second);
 	}
@@ -519,22 +516,22 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
         }
     }
 
-    if (auto* binary = dynamic_cast<LossBinaryCrossEntropy*>(loss_.get())) 
+    if (dynamic_cast<LossBinaryCrossEntropy*>(loss_.get())) 
 	{
         config.loss_type = "LossBinaryCrossEntropy";
         config.loss_params = {};
     } 
-	else if (auto* categorical = dynamic_cast<LossCategoricalCrossEntropy*>(loss_.get())) 
+	else if (dynamic_cast<LossCategoricalCrossEntropy*>(loss_.get())) 
 	{
         config.loss_type = "LossCategoricalCrossEntropy";
         config.loss_params = {};
     } 
-	else if (auto* mse = dynamic_cast<LossMeanSquaredError*>(loss_.get())) 
+	else if (dynamic_cast<LossMeanSquaredError*>(loss_.get())) 
 	{
         config.loss_type = "LossMeanSquaredError";
         config.loss_params = {};
     } 
-	else if (auto* mae = dynamic_cast<LossMeanAbsoluteError*>(loss_.get())) 
+	else if (dynamic_cast<LossMeanAbsoluteError*>(loss_.get())) 
 	{
         config.loss_type = "LossMeanAbsoluteError";
         config.loss_params = {};
@@ -588,7 +585,7 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
         config.optimizer_type = "";
     }
 
-    if (auto* cat = dynamic_cast<AccuracyCategorical*>(accuracy_.get())) 
+    if (dynamic_cast<AccuracyCategorical*>(accuracy_.get())) 
 	{
         config.accuracy_type = "AccuracyCategorical";
         config.accuracy_params = {};
@@ -613,7 +610,7 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
     size_t numLayers = config.layer_types.size();
     NEURAL_NETWORK::Serialization::WriteRaw(ofs, &numLayers, sizeof(numLayers));
     
-	for (size_t i = 0; i < numLayers; ++i) 
+	for (size_t i = 0; i < numLayers; i++) 
 	{
         NEURAL_NETWORK::Serialization::WriteString(ofs, config.layer_types[i]);
         NEURAL_NETWORK::Serialization::WriteVectorDouble(ofs, config.layer_params[i]);
@@ -660,7 +657,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 	config.layer_types.resize(numLayers);
     config.layer_params.resize(numLayers);
 
-    for (size_t i = 0; i < numLayers; ++i) 
+    for (size_t i = 0; i < numLayers; i++) 
 	{
         config.layer_types[i] = NEURAL_NETWORK::Serialization::ReadString(ifs);
         config.layer_params[i] = NEURAL_NETWORK::Serialization::ReadVectorDouble(ifs);
@@ -698,7 +695,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
     optimizer_.reset();
     accuracy_.reset();
 
-    for (size_t i = 0; i < config.layer_types.size(); ++i) 
+    for (size_t i = 0; i < config.layer_types.size(); i++) 
 	{
         const auto& type = config.layer_types[i];
         const auto& params = config.layer_params[i];

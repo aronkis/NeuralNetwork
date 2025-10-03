@@ -8,7 +8,7 @@ Eigen::ArrayXd NEURAL_NETWORK::AccuracyCategorical::compare(const Eigen::MatrixX
 	if (targets.cols() > 1)
 	{
 		targets_int.resize(targets.rows(), 1);
-		for (Eigen::Index i = 0; i < targets.rows(); ++i)
+		for (Eigen::Index i = 0; i < targets.rows(); i++)
 		{
 			Eigen::Index idx;
 			targets.row(i).maxCoeff(&idx);
@@ -37,7 +37,7 @@ Eigen::ArrayXd NEURAL_NETWORK::AccuracyCategorical::compare(const Eigen::MatrixX
 	
 	if (predictions.cols() > 1)
 	{
-		for (Eigen::Index i = 0; i < predictions.rows(); ++i)
+		for (Eigen::Index i = 0; i < predictions.rows(); i++)
 		{
 			Eigen::Index idx;
 			predictions.row(i).maxCoeff(&idx);

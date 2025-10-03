@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 if(POLICY CMP0169)
     cmake_policy(SET CMP0169 OLD)
 endif()
@@ -13,17 +17,32 @@ project(NeuralNetwork
     LANGUAGES CXX
     DESCRIPTION "Neural Network from Scratch in C++")
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+option(NN_DISABLE_EIGEN_PARALLELISM "Disable Eigen parallelism" OFF)
+option(NN_ENABLE_FAST_MATH "Enable fast math optimizations" OFF)
+
+set(NN_EPOCHS 10 CACHE STRING "Number of training epochs")
+set(NN_PRINT_EVERY 1 CACHE STRING "Print interval")
+set(BATCH_SIZE 1 CACHE STRING "Batch size")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-O3 -march=native)
 endif()
 
-find_package(Eigen3 3.3 REQUIRED)
+include(FetchContent)
+
+FetchContent_Declare(
+    Eigen3
+    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+    GIT_TAG 3.4.0
+    GIT_SHALLOW TRUE
+)
+set(EIGEN_BUILD_DOC OFF CACHE BOOL "Don't build Eigen docs")
+set(BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
+set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
+FetchContent_MakeAvailable(Eigen3)
+
 find_package(CURL REQUIRED)
 
-include(FetchContent)
 FetchContent_Declare(
     matplotlib_cpp
     GIT_REPOSITORY https://github.com/lava/matplotlib-cpp.git
@@ -79,7 +98,17 @@ endif()
 
 file(GLOB_RECURSE SOURCES "src/*.cc")
 
+# Create the executable FIRST
 add_executable(neural_network main.cc ${SOURCES})
+
+# Now set compile definitions AFTER the target exists
+target_compile_definitions(neural_network PRIVATE 
+    NN_EPOCHS=${NN_EPOCHS} 
+    NN_PRINT_EVERY=${NN_PRINT_EVERY} 
+    BATCH_SIZE=${BATCH_SIZE}
+    WITHOUT_NUMPY
+)
+
 target_include_directories(neural_network PRIVATE 
     include
     include/Accuracy
@@ -91,24 +120,48 @@ target_include_directories(neural_network PRIVATE
     include/Utils
     ${minizip-ng_SOURCE_DIR}
     ${cereal_SOURCE_DIR}/include
-    ${stb_SOURCE_DIR}  # Add stb include directory
+    ${stb_SOURCE_DIR}
+    ${Python3_INCLUDE_DIRS}
 )
-target_link_libraries(neural_network PRIVATE Eigen3::Eigen matplotlib_cpp cpr::cpr minizip)
-target_compile_definitions(neural_network PRIVATE WITHOUT_NUMPY)
-target_compile_options(neural_network PRIVATE -Wno-deprecated-declarations)
 
-set(NN_EPOCHS 10 CACHE STRING "Number of training epochs")
-set(NN_PRINT_EVERY 1 CACHE STRING "Print interval")
-set(BATCH_SIZE 1 CACHE STRING "Batch size")
-target_compile_definitions(neural_network PRIVATE NN_EPOCHS=${NN_EPOCHS} NN_PRINT_EVERY=${NN_PRINT_EVERY} BATCH_SIZE=${BATCH_SIZE})
+target_link_libraries(neural_network PRIVATE 
+    Eigen3::Eigen 
+    matplotlib_cpp 
+    cpr::cpr 
+    minizip 
+    Python3::Python
+)
 
-option(NN_ENABLE_FAST_MATH "Enable -ffast-math (may change numerics)" OFF)
-if(NN_ENABLE_FAST_MATH)
-    message(STATUS "FastMath enabled.")
-    target_compile_options(neural_network PRIVATE -ffast-math)
+# Platform-specific warning flags
+if(MSVC)
+    target_compile_options(neural_network PRIVATE 
+        /W4
+        /WX-     # Don't treat warnings as errors
+        /wd4996  # Disable deprecated declarations warning on MSVC
+        /wd4127  # Disable "conditional expression is constant" warning (common in Eigen)
+        /wd4244  # Disable conversion warnings (type conversions with possible data loss)
+        /wd4267  # Disable size_t conversion warnings
+        /wd4100  # Disable unreferenced parameter warnings
+        /wd4456  # Disable declaration hides previous local declaration
+    )
+    if(NN_ENABLE_FAST_MATH)
+        target_compile_options(neural_network PRIVATE /fp:fast)
+    endif()
+else()
+    target_compile_options(neural_network PRIVATE 
+        -Wall 
+        -Wextra 
+        -pedantic
+        -Wno-deprecated-declarations  # Disable deprecated declarations on GCC/Clang
+        -Wno-ignored-qualifiers    # Suppress const on primitive return types
+        -Wno-unused-parameter      # Suppress unused parameter warnings
+        -Wno-unused-variable       # Suppress unused variable warnings
+    )
+    if(NN_ENABLE_FAST_MATH)
+        target_compile_options(neural_network PRIVATE -ffast-math)
+    endif()
 endif()
 
-option(NN_DISABLE_EIGEN_PARALLELISM "Define EIGEN_DONT_PARALLELIZE to opt out of Eigen's internal parallelism" OFF)
 if(NN_DISABLE_EIGEN_PARALLELISM)
     message(STATUS "Disabling Eigen internal parallelism (EIGEN_DONT_PARALLELIZE)")
     target_compile_definitions(neural_network PRIVATE EIGEN_DONT_PARALLELIZE)

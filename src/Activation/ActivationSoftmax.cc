@@ -44,7 +44,7 @@ void NEURAL_NETWORK::ActivationSoftmax::SetDInput(const Eigen::MatrixXd& dinput)
 Eigen::MatrixXd NEURAL_NETWORK::ActivationSoftmax::predictions() const
 {
 	Eigen::MatrixXd preds(output_.rows(), 1);
-	for (Eigen::Index i = 0; i < output_.rows(); ++i)
+	for (Eigen::Index i = 0; i < output_.rows(); i++)
 	{
 		Eigen::Index idx;
 		output_.row(i).maxCoeff(&idx);

@@ -447,7 +447,7 @@ void NEURAL_NETWORK::Helpers::LoadData(const std::string& path,
 	for (const auto& label : labels)
     {
         std::filesystem::path folder = std::filesystem::path(path) / label;
-        total_images += GetFolderContent(folder).size();
+        total_images += GetFolderContent(folder.string()).size();
     }
 
 	if (total_images == 0) 
@@ -460,7 +460,7 @@ void NEURAL_NETWORK::Helpers::LoadData(const std::string& path,
     int width = 0, height = 0, channels = 0;
     Eigen::MatrixXd first_img;
 	std::filesystem::path folder = std::filesystem::path(path) / labels[0];
-	std::filesystem::path imgPath = folder / GetFolderContent(folder)[0];
+	std::filesystem::path imgPath = folder / GetFolderContent(folder.string())[0];
 	first_img = LoadImage(imgPath.string(), width, height, channels);
 
 	if (first_img.size() == 0) 
@@ -480,7 +480,7 @@ void NEURAL_NETWORK::Helpers::LoadData(const std::string& path,
 	for (const auto& label : labels)
 	{
     	std::filesystem::path folder = std::filesystem::path(path) / label;
-		std::vector<std::string> images = GetFolderContent(folder);
+		std::vector<std::string> images = GetFolderContent(folder.string());
 		for (const auto& image : images)
 		{
 			std::filesystem::path imgPath = folder / image;

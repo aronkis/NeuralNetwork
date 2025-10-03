@@ -52,7 +52,7 @@ void NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::SetDInput(con
 Eigen::MatrixXd NEURAL_NETWORK::ActivationSoftmaxLossCategoricalCrossEntropy::predictions() const
 {
 	Eigen::MatrixXd preds(output_.rows(), 1);
-	for (Eigen::Index i = 0; i < output_.rows(); ++i)
+	for (Eigen::Index i = 0; i < output_.rows(); i++)
 	{
 		Eigen::Index idx;
 		output_.row(i).maxCoeff(&idx);

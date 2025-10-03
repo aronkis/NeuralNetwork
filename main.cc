@@ -49,8 +49,6 @@ int main()
 		symbol_to_label[sym] = next_label++;
 	}
 
-	const int n_classes = next_label;
-
 	Eigen::MatrixXd y_test(y_test_coords.rows(), 1);
 	for (int i = 0; i < y_test_coords.rows(); i++)
 	{
@@ -115,10 +113,10 @@ int main()
 	std::cout << "BATCH_SIZE: " << BATCH_SIZE << std::endl;
 	std::cout << "NN_PRINT_EVERY: " << NN_PRINT_EVERY << std::endl;
 	Eigen::MatrixXd X_train, y_train_coords;
-	NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen("../data/Pluto/256_train.csv", X_train, y_train_coords, ',');
+	NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen("../data/Pluto/rx_tx_train.csv", X_train, y_train_coords, ',');
 
 	Eigen::MatrixXd X_test, y_test_coords;
-	NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen("../data/Pluto/256_test.csv", X_test, y_test_coords, ',');
+	NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen("../data/Pluto/rx_tx_test.csv", X_test, y_test_coords, ',');
 
 	Eigen::MatrixXd X_test_unscaled = X_test;
 	NEURAL_NETWORK::Helpers::ScaleData(X_train);
@@ -176,7 +174,7 @@ int main()
 
 	model.Train(X_train, y_train, BATCH_SIZE, NN_EPOCHS, NN_PRINT_EVERY, X_test, y_test);
 	
-	model.SaveModel("../data/pluto_model_256_save.bin");
+	model.SaveModel("../data/pluto_model_save.bin");
 
 	std::cout << "\nEvaluating final model on test data:\n";
 	model.Evaluate(X_test, y_test, BATCH_SIZE);
