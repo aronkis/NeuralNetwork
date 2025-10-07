@@ -5,36 +5,37 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(POLICY CMP0169)
-    cmake_policy(SET CMP0169 OLD)
+	cmake_policy(SET CMP0169 OLD)
 endif()
 
 if(POLICY CMP0167)
-    cmake_policy(SET CMP0167 OLD)
+	cmake_policy(SET CMP0167 OLD)
 endif()
 
 project(NeuralNetwork 
-    VERSION 1.0
-    LANGUAGES CXX
-    DESCRIPTION "Neural Network from Scratch in C++")
+	VERSION 1.0
+	LANGUAGES CXX
+	DESCRIPTION "Neural Network from Scratch in C++")
 
 option(NN_DISABLE_EIGEN_PARALLELISM "Disable Eigen parallelism" OFF)
 option(NN_ENABLE_FAST_MATH "Enable fast math optimizations" OFF)
+option(NN_BUILD_TESTS "Build unit tests" OFF)
 
 set(NN_EPOCHS 10 CACHE STRING "Number of training epochs")
 set(NN_PRINT_EVERY 1 CACHE STRING "Print interval")
 set(BATCH_SIZE 1 CACHE STRING "Batch size")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-O3 -march=native)
+	add_compile_options(-O3 -march=native)
 endif()
 
 include(FetchContent)
 
 FetchContent_Declare(
-    Eigen3
-    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-    GIT_TAG 3.4.0
-    GIT_SHALLOW TRUE
+	Eigen3
+	GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+	GIT_TAG 3.4.0
+	GIT_SHALLOW TRUE
 )
 set(EIGEN_BUILD_DOC OFF CACHE BOOL "Don't build Eigen docs")
 set(BUILD_TESTING OFF CACHE BOOL "Don't build Eigen tests")
@@ -44,9 +45,9 @@ FetchContent_MakeAvailable(Eigen3)
 find_package(CURL REQUIRED)
 
 FetchContent_Declare(
-    matplotlib_cpp
-    GIT_REPOSITORY https://github.com/lava/matplotlib-cpp.git
-    GIT_TAG master
+	matplotlib_cpp
+	GIT_REPOSITORY https://github.com/lava/matplotlib-cpp.git
+	GIT_TAG master
 )
 FetchContent_Populate(matplotlib_cpp)
 
@@ -56,17 +57,17 @@ target_include_directories(matplotlib_cpp SYSTEM INTERFACE ${matplotlib_cpp_SOUR
 target_link_libraries(matplotlib_cpp INTERFACE Python3::Python)
 
 FetchContent_Declare(
-    cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
-    GIT_TAG da40186618909b1a7363d4e4495aa899c6e0eb75
+	cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
+	GIT_TAG da40186618909b1a7363d4e4495aa899c6e0eb75
 )
 set(CPR_USE_SYSTEM_CURL ON CACHE BOOL "" FORCE)
 set(CPR_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(cpr)
 
 FetchContent_Declare(
-    minizip-ng
-    GIT_REPOSITORY https://github.com/zlib-ng/minizip-ng.git
-    GIT_TAG 4.0.10
+	minizip-ng
+	GIT_REPOSITORY https://github.com/zlib-ng/minizip-ng.git
+	GIT_TAG 4.0.10
 )
 
 set(MZ_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -76,24 +77,24 @@ FetchContent_MakeAvailable(minizip-ng)
 
 FetchContent_GetProperties(minizip-ng)
 if(NOT minizip-ng_POPULATED)
-    FetchContent_Populate(minizip-ng)
+	FetchContent_Populate(minizip-ng)
 endif()
 
 FetchContent_Declare(
-    stb
-    GIT_REPOSITORY https://github.com/nothings/stb.git
-    GIT_TAG master
+	stb
+	GIT_REPOSITORY https://github.com/nothings/stb.git
+	GIT_TAG master
 )
 FetchContent_MakeAvailable(stb)
 
 FetchContent_Declare(
-    cereal
-    GIT_REPOSITORY https://github.com/USCiLab/cereal.git
-    GIT_TAG v1.3.2
+	cereal
+	GIT_REPOSITORY https://github.com/USCiLab/cereal.git
+	GIT_TAG v1.3.2
 )
 FetchContent_GetProperties(cereal)
 if(NOT cereal_POPULATED)
-    FetchContent_Populate(cereal)
+	FetchContent_Populate(cereal)
 endif()
 
 file(GLOB_RECURSE SOURCES "src/*.cc")
@@ -103,66 +104,69 @@ add_executable(neural_network main.cc ${SOURCES})
 
 # Now set compile definitions AFTER the target exists
 target_compile_definitions(neural_network PRIVATE 
-    NN_EPOCHS=${NN_EPOCHS} 
-    NN_PRINT_EVERY=${NN_PRINT_EVERY} 
-    BATCH_SIZE=${BATCH_SIZE}
-    WITHOUT_NUMPY
+	NN_EPOCHS=${NN_EPOCHS} 
+	NN_PRINT_EVERY=${NN_PRINT_EVERY} 
+	BATCH_SIZE=${BATCH_SIZE}
+	WITHOUT_NUMPY
 )
 
 target_include_directories(neural_network PRIVATE 
-    include
-    include/Accuracy
-    include/Activation
-    include/Layer
-    include/Loss
-    include/Model
-    include/Optimizer
-    include/Utils
-    ${minizip-ng_SOURCE_DIR}
-    ${cereal_SOURCE_DIR}/include
-    ${stb_SOURCE_DIR}
-    ${Python3_INCLUDE_DIRS}
+	include
+	include/Accuracy
+	include/Activation
+	include/Layer
+	include/Loss
+	include/Model
+	include/Optimizer
+	include/Utils
+	${minizip-ng_SOURCE_DIR}
+	${cereal_SOURCE_DIR}/include
+	${stb_SOURCE_DIR}
+	${Python3_INCLUDE_DIRS}
 )
 
 target_link_libraries(neural_network PRIVATE 
-    Eigen3::Eigen 
-    matplotlib_cpp 
-    cpr::cpr 
-    minizip 
-    Python3::Python
+	Eigen3::Eigen 
+	matplotlib_cpp 
+	cpr::cpr 
+	minizip 
+	Python3::Python
 )
 
-# Platform-specific warning flags
 if(MSVC)
-    target_compile_options(neural_network PRIVATE 
-        /W4
-        /WX-     # Don't treat warnings as errors
-        /wd4996  # Disable deprecated declarations warning on MSVC
-        /wd4127  # Disable "conditional expression is constant" warning (common in Eigen)
-        /wd4244  # Disable conversion warnings (type conversions with possible data loss)
-        /wd4267  # Disable size_t conversion warnings
-        /wd4100  # Disable unreferenced parameter warnings
-        /wd4456  # Disable declaration hides previous local declaration
-    )
-    if(NN_ENABLE_FAST_MATH)
-        target_compile_options(neural_network PRIVATE /fp:fast)
-    endif()
+	target_compile_options(neural_network PRIVATE 
+		/W4
+		/WX-     # Don't treat warnings as errors
+		/wd4996  # Disable deprecated declarations warning on MSVC
+		/wd4127  # Disable "conditional expression is constant" warning (common in Eigen)
+		/wd4244  # Disable conversion warnings (type conversions with possible data loss)
+		/wd4267  # Disable size_t conversion warnings
+		/wd4100  # Disable unreferenced parameter warnings
+		/wd4456  # Disable declaration hides previous local declaration
+	)
+	if(NN_ENABLE_FAST_MATH)
+		target_compile_options(neural_network PRIVATE /fp:fast)
+	endif()
 else()
-    target_compile_options(neural_network PRIVATE 
-        -Wall 
-        -Wextra 
-        -pedantic
-        -Wno-deprecated-declarations  # Disable deprecated declarations on GCC/Clang
-        -Wno-ignored-qualifiers    # Suppress const on primitive return types
-        -Wno-unused-parameter      # Suppress unused parameter warnings
-        -Wno-unused-variable       # Suppress unused variable warnings
-    )
-    if(NN_ENABLE_FAST_MATH)
-        target_compile_options(neural_network PRIVATE -ffast-math)
-    endif()
+	target_compile_options(neural_network PRIVATE 
+		-Wall 
+		-Wextra 
+		-pedantic
+		-Wno-deprecated-declarations  # Disable deprecated declarations on GCC/Clang
+		-Wno-ignored-qualifiers       # Suppress const on primitive return types
+		-Wno-unused-parameter         # Suppress unused parameter warnings
+		-Wno-unused-variable          # Suppress unused variable warnings
+	)
+	if(NN_ENABLE_FAST_MATH)
+		target_compile_options(neural_network PRIVATE -ffast-math)
+	endif()
 endif()
 
 if(NN_DISABLE_EIGEN_PARALLELISM)
-    message(STATUS "Disabling Eigen internal parallelism (EIGEN_DONT_PARALLELIZE)")
-    target_compile_definitions(neural_network PRIVATE EIGEN_DONT_PARALLELIZE)
+	message(STATUS "Disabling Eigen internal parallelism (EIGEN_DONT_PARALLELIZE)")
+	target_compile_definitions(neural_network PRIVATE EIGEN_DONT_PARALLELIZE)
+endif()
+
+if(NN_BUILD_TESTS)
+	add_subdirectory(test)
 endif()

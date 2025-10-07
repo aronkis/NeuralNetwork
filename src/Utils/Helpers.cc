@@ -423,9 +423,9 @@ Eigen::MatrixXd LoadImage(const std::string& filename,
     }
 
 	Eigen::MatrixXd image(height, width);
-    for (int y = 0; y < height; ++y) 
+    for (int y = 0; y < height; y++) 
 	{
-        for (int x = 0; x < width; ++x) 
+        for (int x = 0; x < width; x++) 
 		{
             int index = (y * width + x) * channels;
             image(y, x) = data[index];
@@ -529,7 +529,7 @@ void NEURAL_NETWORK::Helpers::CreateDataSets(const std::string& dataset_url,
 	std::vector<int> y_test_vect;
 
 	std::cout << "Loading training data..." << std::endl;
-    NEURAL_NETWORK::Helpers::LoadData(output_dir + "extracted/Train", 
+    NEURAL_NETWORK::Helpers::LoadData(output_dir + "extracted/train", 
 									  X, 
 									  y);
 									  

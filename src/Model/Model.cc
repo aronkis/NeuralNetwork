@@ -220,6 +220,17 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 		return;
 	}
 
+	if (X.rows() == 0 || X.cols() == 0 || y.rows() == 0 || y.cols() == 0)
+	{
+		std::cout << "Model::Train notice: received empty training data; skipping optimization." << std::endl;
+		if (X_val.size() > 0 && y_val.size() > 0)
+		{
+			int effective_batch = std::max(batch_size, 1);
+			Evaluate(X_val, y_val, effective_batch);
+		}
+		return;
+	}
+
 	accuracy_->init(y);
 
 	int train_steps = 1;
@@ -645,7 +656,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
     std::ifstream ifs(path, std::ios::binary);
     if (!ifs)
 	{
-		std::cerr << "Failed to open file for reading\n";
+		std::cerr << "Failed to open file for reading.\n";
 		return;
 	}
 
@@ -685,15 +696,22 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 										   &config.softmax_classifier_, 
 										   sizeof(config.softmax_classifier_));
 
-    ifs.close();
+	ifs.close();
+	
+	layers_.clear();
+	trainable_layers_.clear();
+	loss_.reset();
+	optimizer_.reset();
+	accuracy_.reset();
+	softmax_classifier_ = false;
 
-    softmax_classifier_ = config.softmax_classifier_;
+	if (config.layer_types.empty())
+	{
+		std::cerr << "Model::LoadModel warning: no layers found in saved model; keeping model empty." << std::endl;
+		return;
+	}
 
-    layers_.clear();
-    trainable_layers_.clear();
-    loss_.reset();
-    optimizer_.reset();
-    accuracy_.reset();
+	softmax_classifier_ = config.softmax_classifier_;
 
     for (size_t i = 0; i < config.layer_types.size(); i++) 
 	{
@@ -706,6 +724,11 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         } 
 		else if (type == "LayerDense") 
 		{
+            if (params.size() < 6)
+			{
+				std::cerr << "Model::LoadModel warning: LayerDense entry missing parameters; aborting load." << std::endl;
+				return;
+			}
             int n_inputs = static_cast<int>(params[0]);
             int n_neurons = static_cast<int>(params[1]);
             double wl1 = params[2];
@@ -718,6 +741,11 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         } 
 		else if (type == "LayerDropout") 
 		{
+            if (params.size() < 1)
+			{
+				std::cerr << "Model::LoadModel warning: LayerDropout entry missing rate parameter; aborting load." << std::endl;
+				return;
+			}
             double rate = params[0];
             Add(std::make_shared<LayerDropout>(rate));
         } 
@@ -760,8 +788,13 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         loss_ = std::make_unique<LossMeanAbsoluteError>();
     }
 
-    if (config.optimizer_type == "Adam") 
+	if (config.optimizer_type == "Adam") 
 	{
+		if (config.optimizer_params.size() < 5)
+		{
+			std::cerr << "Model::LoadModel warning: Adam optimizer entry missing parameters; aborting load." << std::endl;
+			return;
+		}
         double lr = config.optimizer_params[0];
         double decay = config.optimizer_params[1];
         double b1 = config.optimizer_params[2];
@@ -771,6 +804,11 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
     } 
 	else if (config.optimizer_type == "StochasticGradientDescent") 
 	{
+		if (config.optimizer_params.size() < 3)
+		{
+			std::cerr << "Model::LoadModel warning: SGD optimizer entry missing parameters; aborting load." << std::endl;
+			return;
+		}
         double lr = config.optimizer_params[0];
         double decay = config.optimizer_params[1];
         double momentum = config.optimizer_params[2];
@@ -778,6 +816,11 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
     } 
 	else if (config.optimizer_type == "AdaGrad") 
 	{
+		if (config.optimizer_params.size() < 3)
+		{
+			std::cerr << "Model::LoadModel warning: AdaGrad optimizer entry missing parameters; aborting load." << std::endl;
+			return;
+		}
         double lr = config.optimizer_params[0];
         double decay = config.optimizer_params[1];
         double eps = config.optimizer_params[2];
@@ -785,6 +828,11 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
     } 
 	else if (config.optimizer_type == "RMSProp") 
 	{
+		if (config.optimizer_params.size() < 4)
+		{
+			std::cerr << "Model::LoadModel warning: RMSProp optimizer entry missing parameters; aborting load." << std::endl;
+			return;
+		}
         double lr = config.optimizer_params[0];
         double decay = config.optimizer_params[1];
         double rho = config.optimizer_params[2];
@@ -804,8 +852,21 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         }
     }
 
-    Finalize();
-    SetParameters(config.parameters);
+	if (layers_.empty())
+	{
+		std::cerr << "Model::LoadModel warning: no valid layers constructed; keeping model empty." << std::endl;
+		return;
+	}
+
+	Finalize();
+
+	if (config.parameters.size() != trainable_layers_.size())
+	{
+		std::cerr << "Model::LoadModel warning: parameter count mismatch; model left uninitialized." << std::endl;
+		return;
+	}
+
+	SetParameters(config.parameters);
 }
 
 void NEURAL_NETWORK::Model::forward(const Eigen::MatrixXd& inputs, bool training)
@@ -861,7 +922,7 @@ void NEURAL_NETWORK::Model::backward(const Eigen::MatrixXd& output,
 		start_iter++;
 	}
 	
-	for (auto layer = start_iter; layer != layers_.rend(); ++layer)
+	for (auto layer = start_iter; layer != layers_.rend(); layer++)
 	{
 		auto next = (*layer)->getNext();
 		if (next)

@@ -182,12 +182,23 @@ int main()
 #endif
 
 #ifdef MODEL
+#include <iostream>
+#include <map>
 int main(int argc, char **argv)
 {
-	std::map<int, std::string> fashion_mnist_labels = {{0, "T-shirt/top"}, {1, "Trouser"}, {2, "Pullover"}, {3, "Dress"}, {4, "Coat"}, {5, "Sandal"}, {6, "Shirt"}, {7, "Sneaker"}, {8, "Bag"}, {9, "Ankle boot"}};
+	std::map<int, std::string> fashion_mnist_labels = {{0, "T-shirt/top"},
+													   {1, "Trouser"}, 
+													   {2, "Pullover"}, 
+													   {3, "Dress"}, 
+													   {4, "Coat"},
+													   {5, "Sandal"}, 
+													   {6, "Shirt"}, 
+													   {7, "Sneaker"}, 
+													   {8, "Bag"}, 
+													   {9, "Ankle boot"}};
 	Eigen::MatrixXd image, y;
 	NEURAL_NETWORK::Model model;
-	model.LoadModel("../data/fashion_mnist_model_save_2.bin");
+	model.LoadModel("data/fashion_mnist_model_save_2.bin");
 	if (argc == 3)
 	{
 		NEURAL_NETWORK::Helpers::LoadData(argv[1], image, y);
@@ -203,7 +214,7 @@ int main(int argc, char **argv)
 		{
 			if (path.empty())
 				continue;
-			std::string full_path = "../data/extracted/test/" + path;
+			std::string full_path = "data/extracted/test/" + path;
 			NEURAL_NETWORK::Helpers::ReadSingleImage(full_path.c_str(), image);
 			Eigen::MatrixXd predictions = model.Predict(image, 1);
 			std::cout << fashion_mnist_labels[static_cast<int>(predictions(0, 0))] << std::endl;

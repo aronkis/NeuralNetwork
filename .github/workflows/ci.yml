@@ -9,49 +9,55 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
         submodules: recursive
-    
+
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
           cmake build-essential pkg-config \
           libeigen3-dev python3-dev python3 python3-pip python3-matplotlib \
-          libcurl4-openssl-dev
-    
+          libcurl4-openssl-dev libgtest-dev
+
     - name: Setup ccache
       if: runner.os != 'Windows'
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         key: ${{ runner.os }}-ccache
         variant: sccache
-    
+
     - name: Configure CMake
       run: |
         cmake -S . -B build \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER_LAUNCHER=sccache \
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+          -DNN_BUILD_TESTS=ON \
           -DNN_DISABLE_EIGEN_PARALLELISM=OFF \
           -DNN_ENABLE_FAST_MATH=OFF \
           -DNN_EPOCHS=5 \
           -DNN_PRINT_EVERY=100 \
           -DBATCH_SIZE=128
-    
+
     - name: Build
       run: cmake --build build --config Release -- -j$(nproc)
-    
+
     - name: Smoke run (headless)
       env:
         MPLBACKEND: Agg
       working-directory: build
       run: |
         ./neural_network
+
+    - name: Run tests
+      working-directory: build
+      run: |
+        ./test/neural_network_tests
   
   build-macos:
     runs-on: macos-latest
@@ -64,7 +70,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        brew install cmake curl python@3.11
+        brew install cmake curl python@3.11 googletest
         python3 -m pip install --upgrade pip --break-system-packages
         python3 -m pip install matplotlib numpy --break-system-packages
     
@@ -81,21 +87,27 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER_LAUNCHER=sccache \
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+          -DNN_BUILD_TESTS=ON \
           -DNN_DISABLE_EIGEN_PARALLELISM=OFF \
           -DNN_ENABLE_FAST_MATH=OFF \
           -DNN_EPOCHS=5 \
           -DNN_PRINT_EVERY=100 \
           -DBATCH_SIZE=128
-    
+
     - name: Build
       run: cmake --build build --config Release -- -j$(sysctl -n hw.ncpu)
-    
+
     - name: Smoke run (headless)
       env:
         MPLBACKEND: Agg
       working-directory: build
       run: |
         ./neural_network
+
+    - name: Run tests
+      working-directory: build
+      run: |
+        ./test/neural_network_tests
 
   build-windows:
     runs-on: windows-latest
@@ -121,7 +133,7 @@ jobs:
       run: |
         git clone --depth 1 https://github.com/microsoft/vcpkg.git
         .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
-        .\vcpkg\vcpkg install curl:x64-windows --clean-after-build
+        .\vcpkg\vcpkg install curl:x64-windows gtest:x64-windows --clean-after-build
     
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v1.1
@@ -143,6 +155,7 @@ jobs:
           -DCMAKE_TOOLCHAIN_FILE="$vcpkgPath" `
           -DCMAKE_C_COMPILER_LAUNCHER=sccache `
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
+          -DNN_BUILD_TESTS=ON `
           -DNN_DISABLE_EIGEN_PARALLELISM=OFF `
           -DNN_ENABLE_FAST_MATH=OFF `
           -DNN_EPOCHS=5 `
@@ -158,3 +171,8 @@ jobs:
       working-directory: build
       run: |
         .\Release\neural_network.exe
+
+    - name: Run tests
+      working-directory: build
+      run: |
+        .\test\Release\neural_network_tests.exe
