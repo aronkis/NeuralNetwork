@@ -309,7 +309,14 @@ void NEURAL_NETWORK::Helpers::UnzipFile(const std::string& directory,
 			  << " to " << targetPath.string() << std::endl;
 
 	int err = reader.GoToFirstEntry();
-	if (reader.CheckOk(err) && reader.CheckEndOfFile(err)) 
+
+	if (reader.CheckEndOfFile(err))
+	{
+		reader.CheckZipError(err, "ZIP archive contains no entries.");
+		return;
+	}
+
+	if (!reader.CheckOk(err)) 
 	{
         reader.CheckZipError(err, "Failed to go to first entry");
         return;
@@ -325,7 +332,7 @@ void NEURAL_NETWORK::Helpers::UnzipFile(const std::string& directory,
 		err = reader.GoToNextEntry();
 	}
 
-    if (!reader.CheckEndOfFile(err)) 
+    if (!reader.CheckEndOfFile(err))
 	{
         reader.CheckZipError(err, "Failed to iterate through all entries");
     }
