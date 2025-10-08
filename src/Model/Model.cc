@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <filesystem>
 
 struct ModelConfig 
 {
@@ -467,7 +468,7 @@ void NEURAL_NETWORK::Model::LoadParameters(const std::string& path)
 
 void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
 {
-    ModelConfig config;
+	ModelConfig config;
     config.softmax_classifier_ = softmax_classifier_;
     config.parameters = GetParameters();
 
@@ -611,10 +612,27 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
         config.accuracy_type = "";
     }
 
-    std::ofstream ofs(path, std::ios::binary);
-    if (!ofs)
+	std::filesystem::path target_path = std::filesystem::path(path).lexically_normal();
+	target_path.make_preferred();
+
+	const std::filesystem::path parent = target_path.parent_path();
+	if (!parent.empty())
 	{
-		std::cerr << "Failed to open file for writing\n";
+		std::error_code ec;
+		std::filesystem::create_directories(parent, ec);
+		if (ec)
+		{
+			std::cerr << "Model::SaveModel error: failed to create directories for "
+					  << parent << ": " << ec.message() << '\n';
+			return;
+		}
+	}
+
+	std::ofstream ofs(target_path, std::ios::binary);
+	if (!ofs)
+	{
+		std::cerr << "Model::SaveModel error: failed to open file for writing at "
+				  << target_path << '\n';
 		return;
 	}
 
@@ -647,8 +665,8 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
 											&config.softmax_classifier_, 
 											sizeof(config.softmax_classifier_));
 
-    ofs.close();
-	std::cout << "Model saved to " << path << std::endl;
+	ofs.close();
+	std::cout << "Model saved to " << target_path << std::endl;
 }
 
 void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
