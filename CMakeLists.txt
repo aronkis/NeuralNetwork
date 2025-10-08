@@ -20,6 +20,7 @@ project(NeuralNetwork
 option(NN_DISABLE_EIGEN_PARALLELISM "Disable Eigen parallelism" OFF)
 option(NN_ENABLE_FAST_MATH "Enable fast math optimizations" OFF)
 option(NN_BUILD_TESTS "Build unit tests" OFF)
+option(NN_USE_BLAS "Use BLAS for matrix operations" ON)
 
 set(NN_EPOCHS 10 CACHE STRING "Number of training epochs")
 set(NN_PRINT_EVERY 1 CACHE STRING "Print interval")
@@ -43,6 +44,17 @@ set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "Don't build Eigen pkg-config")
 FetchContent_MakeAvailable(Eigen3)
 
 find_package(CURL REQUIRED)
+
+if(NN_USE_BLAS)
+	find_package(BLAS QUIET)
+
+	if(BLAS_FOUND)
+		message(STATUS "Found system BLAS: ${BLAS_LIBRARIES}")
+		set(BLAS_TARGET_NAME "BLAS::BLAS")
+	else()
+		message(STATUS "System BLAS not found, please install it to your system.")
+	endif()
+endif()
 
 FetchContent_Declare(
 	matplotlib_cpp
@@ -103,12 +115,18 @@ file(GLOB_RECURSE SOURCES "src/*.cc")
 add_executable(neural_network main.cc ${SOURCES})
 
 # Now set compile definitions AFTER the target exists
-target_compile_definitions(neural_network PRIVATE 
-	NN_EPOCHS=${NN_EPOCHS} 
-	NN_PRINT_EVERY=${NN_PRINT_EVERY} 
+target_compile_definitions(neural_network PRIVATE
+	NN_EPOCHS=${NN_EPOCHS}
+	NN_PRINT_EVERY=${NN_PRINT_EVERY}
 	BATCH_SIZE=${BATCH_SIZE}
 	WITHOUT_NUMPY
 )
+
+# Add BLAS compile definitions if enabled
+if(NN_USE_BLAS)
+	target_compile_definitions(neural_network PRIVATE EIGEN_USE_BLAS)
+	message(STATUS "EIGEN_USE_BLAS enabled")
+endif()
 
 target_include_directories(neural_network PRIVATE 
 	include
@@ -125,13 +143,21 @@ target_include_directories(neural_network PRIVATE
 	${Python3_INCLUDE_DIRS}
 )
 
-target_link_libraries(neural_network PRIVATE 
-	Eigen3::Eigen 
-	matplotlib_cpp 
-	cpr::cpr 
-	minizip 
+target_link_libraries(neural_network PRIVATE
+	Eigen3::Eigen
+	matplotlib_cpp
+	cpr::cpr
+	minizip
 	Python3::Python
 )
+
+if(NN_USE_BLAS)
+	if(BLAS_FOUND)
+		target_link_libraries(neural_network PRIVATE ${BLAS_LIBRARIES})
+	else()
+		target_link_libraries(neural_network PRIVATE ${BLAS_TARGET_NAME})
+	endif()
+endif()
 
 if(MSVC)
 	target_compile_options(neural_network PRIVATE 

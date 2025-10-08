@@ -2,7 +2,6 @@
 #define __LAYERDENSE_H__
 
 #include <Eigen/Dense>
-#include <utility>
 #include "LayerBase.h"
 
 namespace NEURAL_NETWORK
