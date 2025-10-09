@@ -25,6 +25,7 @@ set(TEST_SOURCES
 	TestAccuracy.cc
 	TestModel.cc
 	TestHelpers.cc
+	TestConvolution.cc
 )
 
 add_executable(neural_network_tests ${TEST_SOURCES} ${NEURAL_NETWORK_SOURCES})
