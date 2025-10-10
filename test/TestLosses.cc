@@ -340,7 +340,7 @@ TEST_F(CategoricalCrossEntropyTest, RegularizationLossComputed)
 	layer->SetParameters(weights, biases);
 
 	NEURAL_NETWORK::LossCategoricalCrossEntropy loss;
-	std::vector<std::weak_ptr<NEURAL_NETWORK::LayerDense>> layers = {layer};
+	std::vector<std::weak_ptr<NEURAL_NETWORK::LayerBase>> layers = {layer};
 	loss.RememberTrainableLayers(layers);
 
 	loss.CalculateLoss(predictions, true_labels);

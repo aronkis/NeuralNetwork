@@ -22,9 +22,9 @@ option(NN_ENABLE_FAST_MATH "Enable fast math optimizations" OFF)
 option(NN_BUILD_TESTS "Build unit tests" OFF)
 option(NN_USE_BLAS "Use BLAS for matrix operations" ON)
 
-set(NN_EPOCHS 10 CACHE STRING "Number of training epochs")
-set(NN_PRINT_EVERY 1 CACHE STRING "Print interval")
-set(BATCH_SIZE 1 CACHE STRING "Batch size")
+set(NN_EPOCHS 20 CACHE STRING "Number of training epochs")
+set(NN_PRINT_EVERY 10 CACHE STRING "Print interval")
+set(BATCH_SIZE 64 CACHE STRING "Batch size")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 	add_compile_options(-O3 -march=native)

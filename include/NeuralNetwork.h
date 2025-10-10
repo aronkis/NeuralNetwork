@@ -6,6 +6,7 @@
 #include "LayerInput.h"
 #include "LayerDense.h"
 #include "LayerDropout.h"
+#include "Convolution.h"
 
 // Activations
 #include "ActivationLinear.h"

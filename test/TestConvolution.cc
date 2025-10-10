@@ -29,8 +29,8 @@ TEST_F(ConvolutionTest, ConstructorInitialization)
 {
 	NEURAL_NETWORK::Convolution conv(2, 3, 3, 4, 4, 1, false, 1, 1);
 
-	const auto &weights = conv.GetWeights();
-	const auto &biases = conv.GetBiases();
+	const auto &weights = conv.GetWeightsTensor();
+	const auto &biases = conv.GetBiasesVector();
 
 	EXPECT_EQ(weights.dimension(0), 3);
 	EXPECT_EQ(weights.dimension(1), 3);
@@ -200,7 +200,7 @@ TEST_F(ConvolutionTest, BackwardPassGradientShapes)
 
 	conv.backward(d_values);
 
-	const auto &d_weights = conv.GetWeights();
+	const auto &d_weights = conv.GetWeightsTensor();
 	const auto &d_input = conv.GetDInput();
 
 	EXPECT_EQ(d_input.rows(), test_input_3x3.rows());

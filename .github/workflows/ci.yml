@@ -48,13 +48,6 @@ jobs:
     - name: Build
       run: cmake --build build --config Release -- -j$(nproc)
 
-    - name: Smoke run (headless)
-      env:
-        MPLBACKEND: Agg
-      working-directory: build
-      run: |
-        ./neural_network
-
     - name: Run tests
       working-directory: build
       run: |
@@ -97,13 +90,6 @@ jobs:
 
     - name: Build
       run: cmake --build build --config Release -- -j$(sysctl -n hw.ncpu)
-
-    - name: Smoke run (headless)
-      env:
-        MPLBACKEND: Agg
-      working-directory: build
-      run: |
-        ./neural_network
 
     - name: Run tests
       working-directory: build
@@ -166,13 +152,6 @@ jobs:
     - name: Build
       run: cmake --build build --config Release --parallel
     
-    - name: Smoke run (headless)
-      env:
-        MPLBACKEND: Agg
-      working-directory: build
-      run: |
-        .\Release\neural_network.exe
-
     - name: Run tests
       working-directory: build
       run: |

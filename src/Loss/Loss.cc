@@ -40,7 +40,7 @@ void NEURAL_NETWORK::Loss::NewPass()
 	accumulated_count_ = 0;
 }
 
-void NEURAL_NETWORK::Loss::RememberTrainableLayers(const std::vector<std::weak_ptr<LayerDense>>& layers)
+void NEURAL_NETWORK::Loss::RememberTrainableLayers(const std::vector<std::weak_ptr<LayerBase>>& layers)
 {
 	trainable_layers_ = layers;
 }

@@ -45,7 +45,7 @@ namespace NEURAL_NETWORK
 
 		std::shared_ptr<LayerInput> input_layer_;
 		std::vector<std::shared_ptr<LayerBase>> layers_;
-    	std::vector<std::shared_ptr<LayerDense>> trainable_layers_;
+    	std::vector<std::shared_ptr<LayerBase>> trainable_layers_;
         std::unique_ptr<ActivationSoftmaxLossCategoricalCrossEntropy> softmax_loss_;
         std::unique_ptr<Loss> loss_;
         std::unique_ptr<Accuracy> accuracy_;

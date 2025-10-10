@@ -2,7 +2,7 @@
 #include <set>
 
 #ifndef NN_EPOCHS
-#define NN_EPOCHS 100
+#define NN_EPOCHS 5
 #endif
 
 #ifndef NN_PRINT_EVERY
@@ -10,13 +10,117 @@
 #endif
 
 #ifndef BATCH_SIZE
-#define BATCH_SIZE 256
+#define BATCH_SIZE 128
 #endif
 
 // #define PLUTO
-#define PLUTO_MODEL
+// #define PLUTO_MODEL
 // #define FASHION_MNIST
 // #define MODEL
+#define CNN
+// #define CNN_MODEL
+
+#ifdef CNN
+
+#include <iostream>
+#include "Convolution.h"
+
+int main()
+{
+	std::cout << "NN_EPOCHS: " << NN_EPOCHS << std::endl;
+	std::cout << "BATCH_SIZE: " << BATCH_SIZE << std::endl;
+	std::cout << "NN_PRINT_EVERY: " << NN_PRINT_EVERY << std::endl;
+	std::string dataset_url = "https://nnfs.io/datasets/fashion_mnist_images.zip";
+	std::string output_dir = "data/";
+	
+	Eigen::MatrixXd X, X_test, y, y_test;
+	NEURAL_NETWORK::Helpers::CreateDataSets(dataset_url, output_dir, X, y, X_test, y_test);
+	
+	NEURAL_NETWORK::Model model;
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
+	// High-performance CNN architecture inspired by proven MNIST designs
+	// Layer 1: 32 filters, 5x5 kernel, padding, 28x28x1 -> 28x28x32
+	model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(32, 5, 5, 28, 28, 1, true, 1, 1, 0.0, 1e-4));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+
+	model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(64, 5, 5, 28, 28, 32, false, 2, 2, 0.0, 1e-4));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+
+	model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(128, 5, 5, 12, 12, 64, false, 2, 2, 0.0, 1e-4));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+
+	// Add dropout after convolutional layers
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.25));
+
+	// Dense layers with L2 regularization to prevent overfitting
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(2048, 256, 0.0, 1e-4, 0.0, 1e-4)); // 4*4*128 = 2048, L2 reg, reduced neurons
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.5)); // Higher dropout for dense layers
+
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(256, 10, 0.0, 1e-4, 0.0, 1e-4)); // L2 reg on output layer
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
+
+	model.Set(std::make_unique<NEURAL_NETWORK::LossCategoricalCrossEntropy>(),
+			  std::make_unique<NEURAL_NETWORK::AccuracyCategorical>(),
+			  std::make_unique<NEURAL_NETWORK::Adam>(0.00005, 1e-7)); // Reduced learning rate
+
+	model.Finalize();
+
+	model.Train(X, y, BATCH_SIZE, NN_EPOCHS, NN_PRINT_EVERY, X_test, y_test);
+	
+	model.SaveModel("data/fashion_mnist_CNN_model_save_2.bin");
+}
+
+#endif
+
+#ifdef CNN_MODEL
+
+#include <iostream>
+#include "Convolution.h"
+
+int main()
+{
+	std::cout << "BATCH_SIZE: " << BATCH_SIZE << std::endl;
+	std::string dataset_url = "https://nnfs.io/datasets/fashion_mnist_images.zip";
+	std::string output_dir = "data/";
+
+	Eigen::MatrixXd X, X_test, y, y_test;
+	NEURAL_NETWORK::Helpers::CreateDataSets(dataset_url, output_dir, X, y, X_test, y_test);
+
+	NEURAL_NETWORK::Model model;
+
+	std::cout << "Loading model..." << std::endl;
+	model.LoadModel("data/fashion_mnist_CNN_model_save_2.bin");
+	std::cout << "Model loaded successfully!" << std::endl;
+
+	std::cout << "Testing forward pass on small batch..." << std::endl;
+	// Test with just one sample first
+	Eigen::MatrixXd test_sample = X_test.topRows(1);
+	Eigen::MatrixXd test_pred = model.Predict(test_sample, 1);
+	std::cout << "Forward pass successful!" << std::endl;
+
+	std::cout << "Evaluating on test data..." << std::endl;
+	// Evaluate the loaded model on test data
+	model.Evaluate(X_test, y_test, BATCH_SIZE);
+
+	// Example: Make predictions on a subset of test data
+	int num_samples_to_predict = 10;
+	Eigen::MatrixXd sample_X = X_test.topRows(num_samples_to_predict);
+	Eigen::MatrixXd sample_y = y_test.topRows(num_samples_to_predict);
+
+	Eigen::MatrixXd predictions = model.Predict(sample_X, 1);
+
+	std::cout << "Predictions vs Actual for first " << num_samples_to_predict << " samples:" << std::endl;
+	for (int i = 0; i < num_samples_to_predict; i++) {
+		int predicted_class = static_cast<int>(predictions(i, 0));
+		int actual_class = static_cast<int>(sample_y(i, 0));
+		std::cout << "Sample " << i << ": Predicted = " << predicted_class
+				  << ", Actual = " << actual_class
+				  << (predicted_class == actual_class ? " ✓" : " ✗") << std::endl;
+	}
+}
+
+#endif
 
 #ifdef PLUTO_MODEL
 
@@ -244,7 +348,7 @@ int main()
 	
 	model.Set(std::make_unique<NEURAL_NETWORK::LossCategoricalCrossEntropy>(), 
 			  std::make_unique<NEURAL_NETWORK::AccuracyCategorical>(), 
-			  std::make_unique<NEURAL_NETWORK::Adam>(0.001, 1e-5));
+			  std::make_unique<NEURAL_NETWORK::Adam>(0.0001, 1e-7));
 
 	model.Finalize();
 

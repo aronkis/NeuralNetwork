@@ -35,7 +35,9 @@ namespace NEURAL_NETWORK
 		double GetBiasRegularizerL1() const;
 		double GetBiasRegularizerL2() const;
 
-		std::pair<const Eigen::MatrixXd&, const Eigen::RowVectorXd&> GetParameters() const;
+		std::pair<Eigen::MatrixXd, Eigen::RowVectorXd> GetParameters() const override;
+		void SetParameters(const Eigen::MatrixXd& weights, 
+						   const Eigen::RowVectorXd& biases) override;
 
 		void SetDInput(const Eigen::MatrixXd& dinput) override;
 
@@ -49,7 +51,6 @@ namespace NEURAL_NETWORK
 		void UpdateBiases(Eigen::RowVectorXd& bias_update);
 		void UpdateBiasesCache(Eigen::RowVectorXd& bias_update);
 
-		void SetParameters(const Eigen::MatrixXd& weights, const Eigen::RowVectorXd& biases);
 
 	private:
 		Eigen::MatrixXd inputs_;

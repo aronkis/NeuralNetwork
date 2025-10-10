@@ -119,14 +119,14 @@ TEST_F(LayerDenseTest, RegularizationParametersAreStoredCorrectly)
 	EXPECT_DOUBLE_EQ(reg_layer->GetBiasRegularizerL2(), b_l2);
 }
 
-TEST_F(LayerDenseTest, ParameterGettersReturnCorrectReferences) 
+TEST_F(LayerDenseTest, ParameterGettersReturnCorrectValues)
 {
-	auto [weights_ref, biases_ref] = layer->GetParameters();
+	auto [weights_copy, biases_copy] = layer->GetParameters();
 	const auto& weights_direct = layer->GetWeights();
 	const auto& biases_direct = layer->GetBiases();
 
-	EXPECT_EQ(&weights_ref, &weights_direct);
-	EXPECT_EQ(&biases_ref, &biases_direct);
+	EXPECT_TRUE(weights_copy.isApprox(weights_direct));
+	EXPECT_TRUE(biases_copy.isApprox(biases_direct));
 }
 
 TEST_F(LayerDenseTest, SetParametersChangesWeightsAndBiases) 

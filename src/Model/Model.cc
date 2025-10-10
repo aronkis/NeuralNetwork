@@ -82,12 +82,15 @@ void NEURAL_NETWORK::Model::Finalize()
 		{
 			trainable_layers_.emplace_back(layer);
 		}
+		else if (auto layer = std::dynamic_pointer_cast<Convolution>(layers_[i]))
+		{
+			trainable_layers_.emplace_back(layer);
+		}
 	}
 
 	if (loss_)
 	{
-		std::vector<std::weak_ptr<LayerDense>> weak_trainables;
-		weak_trainables.reserve(trainable_layers_.size());
+		std::vector<std::weak_ptr<LayerBase>> weak_trainables;
 
 		for (auto &trainable_layer_ : trainable_layers_)
 		{
@@ -309,7 +312,10 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 			{
 				if (layer_sp)
 				{
-					optimizer_->UpdateParameters(*layer_sp);
+					if (auto dense_layer = std::dynamic_pointer_cast<LayerDense>(layer_sp))
+					{
+						optimizer_->UpdateParameters(*dense_layer);
+					}
 				}
 			}
 
@@ -487,6 +493,26 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             };
             config.layer_params.push_back(params);
         } 
+		else if (auto* conv = dynamic_cast<Convolution*>(layer.get()))
+		{
+			config.layer_types.push_back("Convolution");
+			std::vector<double> params = {
+				static_cast<double>(conv->GetNumberOfFilters()),
+				static_cast<double>(conv->GetFilterHeight()),
+				static_cast<double>(conv->GetFilterWidth()),
+				static_cast<double>(conv->GetInputHeight()),
+				static_cast<double>(conv->GetInputWidth()),
+				static_cast<double>(conv->GetInputChannels()),
+				static_cast<double>(conv->GetPadding()),
+				static_cast<double>(conv->GetStrideHeight()),
+				static_cast<double>(conv->GetStrideWidth()),
+				conv->GetWeightRegularizerL1(),
+				conv->GetWeightRegularizerL2(),
+				conv->GetBiasRegularizerL1(),
+				conv->GetBiasRegularizerL2()
+			};
+			config.layer_params.push_back(params);
+		} 
 		else if (auto* dropout = dynamic_cast<LayerDropout*>(layer.get())) 
 		{
             config.layer_types.push_back("LayerDropout");
@@ -756,8 +782,8 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
             Add(std::make_shared<LayerDense>(n_inputs, n_neurons, 
 											 wl1, wl2, 
 											 bl1, bl2));
-        } 
-		else if (type == "LayerDropout") 
+        }
+		else if (type == "LayerDropout")
 		{
             if (params.size() < 1)
 			{
@@ -766,7 +792,34 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 			}
             double rate = params[0];
             Add(std::make_shared<LayerDropout>(rate));
-        } 
+        }
+		else if (type == "Convolution")
+		{
+			if (params.size() < 9)
+			{
+				std::cerr << "Model::LoadModel warning: Convolution entry missing parameters; aborting load." << std::endl;
+				return;
+			}
+			int number_of_filters = static_cast<int>(params[0]);
+			int filter_height = static_cast<int>(params[1]);
+			int filter_width = static_cast<int>(params[2]);
+			int input_height = static_cast<int>(params[3]);
+			int input_width = static_cast<int>(params[4]);
+			int input_channels = static_cast<int>(params[5]);
+			int padding = static_cast<int>(params[6]);
+			int stride_height = static_cast<int>(params[7]);
+			int stride_width = static_cast<int>(params[8]);
+
+			double weight_l1 = (params.size() > 9) ? params[9] : 0.0;
+			double weight_l2 = (params.size() > 10) ? params[10] : 0.0;
+			double bias_l1 = (params.size() > 11) ? params[11] : 0.0;
+			double bias_l2 = (params.size() > 12) ? params[12] : 0.0;
+
+			Add(std::make_shared<Convolution>(number_of_filters, filter_height, filter_width,
+											  input_height, input_width, input_channels,
+											  padding, stride_height, stride_width,
+											  weight_l1, weight_l2, bias_l1, bias_l2));
+		}
 		else if (type == "ActivationReLU") 
 		{
             Add(std::make_shared<ActivationReLU>());

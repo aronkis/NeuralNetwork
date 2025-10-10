@@ -136,9 +136,9 @@ double NEURAL_NETWORK::LayerDense::GetBiasRegularizerL2() const
 	return bias_regularizer_l2_;
 }
 
-std::pair<const Eigen::MatrixXd&, const Eigen::RowVectorXd&> NEURAL_NETWORK::LayerDense::GetParameters() const
+std::pair<Eigen::MatrixXd, Eigen::RowVectorXd> NEURAL_NETWORK::LayerDense::GetParameters() const
 {
-    return { weights_, biases_ };
+    return std::make_pair(weights_, biases_);
 }
 
 void NEURAL_NETWORK::LayerDense::SetDInput(const Eigen::MatrixXd& dinput)  

@@ -3,7 +3,7 @@
 
 #include <Eigen/Dense>
 #include <memory>
-#include "LayerDense.h"
+#include "LayerBase.h"
 
 namespace NEURAL_NETWORK
 {
@@ -22,7 +22,7 @@ namespace NEURAL_NETWORK
 		void CalculateAccumulatedLoss(bool include_regularization = false);
 		void RegularizationLoss();
 		void NewPass();
-		void RememberTrainableLayers(const std::vector<std::weak_ptr<LayerDense>>& layers);
+		void RememberTrainableLayers(const std::vector<std::weak_ptr<LayerBase>>& layers);
 
 		const double GetRegularizationLoss() const;
 		const double GetLoss() const;
@@ -43,7 +43,7 @@ namespace NEURAL_NETWORK
 		Eigen::MatrixXd d_inputs_;
 
 	private:
-		std::vector<std::weak_ptr<LayerDense>> trainable_layers_;
+		std::vector<std::weak_ptr<LayerBase>> trainable_layers_;
 		
 		double regularization_loss_ = 0.0;
 		double accumulated_loss_ = 0.0;

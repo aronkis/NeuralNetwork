@@ -250,7 +250,7 @@ void NEURAL_NETWORK::Helpers::DownloadData(const std::string url,
 
 	if (std::filesystem::exists(dir_path / "extracted/"))
 	{
-		std::cout << "Files already extracted to: " << dir_path / "extracted/\n" 
+		std::cout << "Files already extracted to: " << dir_path / "extracted/" << std::endl 
 				  << "Download cancelled." << std::endl;
 		return;
 	}
