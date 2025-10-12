@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "Convolution.h"
+#include "TensorUtils.h"
 
 NEURAL_NETWORK::Convolution::Convolution(int number_of_filters, int filter_height, int filter_width,
 										 int input_height, int input_width, int input_channels,
@@ -115,151 +116,15 @@ void NEURAL_NETWORK::Convolution::backward(const Eigen::MatrixXd &d_values)
 	d_input_ = InputTensorToMatrix(d_input_tensor_);
 }
 
-//maybe weights in the n-th filter? GetWeight(int n)
-const Eigen::Tensor<double, 4>& NEURAL_NETWORK::Convolution::GetWeightsTensor() const
-{
-	return weights_;
-}
-
-const Eigen::VectorXd& NEURAL_NETWORK::Convolution::GetBiasesVector() const
-{
-	return biases_;
-}
-
-const Eigen::MatrixXd& NEURAL_NETWORK::Convolution::GetOutput() const
-{
-	return output_;
-}
-
-const Eigen::MatrixXd& NEURAL_NETWORK::Convolution::GetDInput() const
-{
-	return d_input_;
-}
-
-Eigen::MatrixXd NEURAL_NETWORK::Convolution::predictions() const
-{
-	return output_;
-}
-
-
-void NEURAL_NETWORK::Convolution::SetDInput(const Eigen::MatrixXd& dinput)
-{
-	d_input_ = dinput;
-}
-
-// ADAM optimizer support functions
-void NEURAL_NETWORK::Convolution::SetWeightMomentums(const Eigen::Tensor<double, 4>& weight_momentums)
-{
-	weight_momentums_ = weight_momentums;
-}
-
-void NEURAL_NETWORK::Convolution::SetBiasMomentums(const Eigen::VectorXd& bias_momentums)
-{
-	bias_momentums_ = bias_momentums;
-}
-
-void NEURAL_NETWORK::Convolution::SetWeightCaches(const Eigen::Tensor<double, 4>& weight_caches)
-{
-	weight_caches_ = weight_caches;
-}
-
-void NEURAL_NETWORK::Convolution::SetBiasCaches(const Eigen::VectorXd& bias_caches)
-{
-	bias_caches_ = bias_caches;
-}
-
-void NEURAL_NETWORK::Convolution::UpdateWeights(Eigen::Tensor<double, 4>& weight_update)
-{
-	weight_momentums_ = weight_update;
-}
-
-void NEURAL_NETWORK::Convolution::UpdateWeightsCache(Eigen::Tensor<double, 4>& weight_update)
-{
-	weight_caches_ = weight_update;
-}
-
-void NEURAL_NETWORK::Convolution::UpdateBiases(Eigen::VectorXd& bias_update)
-{
-	bias_momentums_ = bias_update;
-}
-
-void NEURAL_NETWORK::Convolution::UpdateBiasesCache(Eigen::VectorXd& bias_update)
-{
-	bias_caches_ = bias_update;
-}
-
 void NEURAL_NETWORK::Convolution::InputMatrixToTensor(const Eigen::MatrixXd& matrix,
 												  int batch_size, int height, int width, int channels)
 {
-	if (inputs_.size() == 0 || inputs_.dimension(0) != batch_size) {
-		inputs_ = Eigen::Tensor<double, 4>(batch_size, height, width, channels);
-	}
-
-	auto expected_size = batch_size * height * width * channels;
-
-	if (matrix.rows() == batch_size &&
-		matrix.cols() == height * width * channels &&
-		matrix.size() == expected_size)
-	{
-		Eigen::Map<Eigen::MatrixXd> tensor_as_matrix(inputs_.data(), batch_size, height * width * channels);
-		tensor_as_matrix = matrix;
-	}
-	else
-	{
-		for (int b = 0; b < batch_size && b < matrix.rows(); b++)
-		{
-			for (int h = 0; h < height; h++)
-			{
-				for (int w = 0; w < width; w++)
-				{
-					for (int c = 0; c < channels; c++)
-					{
-						int matrix_idx = h * width * channels + w * channels + c;
-						if (matrix_idx < matrix.cols())
-						{
-							inputs_(b, h, w, c) = matrix(b, matrix_idx);
-						}
-					}
-				}
-			}
-		}
-	}
+	TensorUtils::MatrixToTensor4D(matrix, inputs_, batch_size, height, width, channels);
 }
 
 Eigen::MatrixXd NEURAL_NETWORK::Convolution::InputTensorToMatrix(const Eigen::Tensor<double, 4>& tensor)
 {
-	int batch_size = tensor.dimension(0);
-	int height = tensor.dimension(1);
-	int width = tensor.dimension(2);
-	int channels = tensor.dimension(3);
-	auto expected_size = batch_size * height * width * channels;
-
-	if (tensor.size() == expected_size)
-	{
-		return Eigen::Map<const Eigen::MatrixXd>(tensor.data(),
-												 batch_size,
-												 height * width * channels);
-	}
-	else
-	{
-		Eigen::MatrixXd matrix(batch_size, height * width * channels);
-
-		for (int b = 0; b < batch_size; b++)
-		{
-			for (int h = 0; h < height; h++)
-			{
-				for (int w = 0; w < width; w++)
-				{
-					for (int c = 0; c < channels; c++)
-					{
-						int matrix_idx = h * width * channels + w * channels + c;
-						matrix(b, matrix_idx) = tensor(b, h, w, c);
-					}
-				}
-			}
-		}
-		return matrix;
-	}
+	return TensorUtils::Tensor4DToMatrix(tensor);
 }
 
 Eigen::MatrixXd NEURAL_NETWORK::Convolution::WeightsToMatrix() const
@@ -348,53 +213,8 @@ Eigen::MatrixXd NEURAL_NETWORK::Convolution::im2col(const Eigen::Tensor<double, 
 													int filter_height, int filter_width,
 													int pad_h, int pad_w, int stride_h, int stride_w)
 {
-	int batch_size = input_tensor.dimension(0);
-	int input_height = input_tensor.dimension(1);
-	int input_width = input_tensor.dimension(2);
-	int input_channels = input_tensor.dimension(3);
-
-	int output_height = (input_height + 2 * pad_h - filter_height) / stride_h + 1;
-	int output_width = (input_width + 2 * pad_w - filter_width) / stride_w + 1;
-
-	int col_height = filter_height * filter_width * input_channels;
-	int col_width = output_height * output_width * batch_size;
-
-	Eigen::MatrixXd im2col_matrix(col_height, col_width);
-	int col_index = 0;
-
-	for (int b = 0; b < batch_size; b++)
-	{
-		for (int out_h = 0; out_h < output_height; out_h++)
-		{
-			for (int out_w = 0; out_w < output_width; out_w++)
-			{
-				int row_index = 0;
-				for (int c = 0; c < input_channels; c++)
-				{
-					for (int fh = 0; fh < filter_height; fh++)
-					{
-						for (int fw = 0; fw < filter_width; fw++)
-						{
-							int h = out_h * stride_h - pad_h + fh;
-							int w = out_w * stride_w - pad_w + fw;
-							double value = 0.0;
-
-							if (h >= 0 && h < input_height && w >= 0 && w < input_width)
-							{
-								value = input_tensor(b, h, w, c);
-							}
-
-							im2col_matrix(row_index, col_index) = value;
-							row_index++;
-						}
-					}
-				}
-				col_index++;
-			}
-		}
-	}
-
-	return im2col_matrix;
+	return TensorUtils::im2col(input_tensor, filter_height, filter_width,
+								pad_h, pad_w, stride_h, stride_w);
 }
 
 void NEURAL_NETWORK::Convolution::col2im(const Eigen::MatrixXd &col_matrix,
@@ -404,52 +224,9 @@ void NEURAL_NETWORK::Convolution::col2im(const Eigen::MatrixXd &col_matrix,
 										  int pad_h, int pad_w,
 										  int stride_h, int stride_w)
 {
-	if (d_input_tensor_.size() == 0 ||
-		d_input_tensor_.dimension(0) != batch_size ||
-		d_input_tensor_.dimension(1) != input_height ||
-		d_input_tensor_.dimension(2) != input_width ||
-		d_input_tensor_.dimension(3) != input_channels)
-	{
-		d_input_tensor_ = Eigen::Tensor<double, 4>(batch_size, input_height, input_width, input_channels);
-	}
-
-	d_input_tensor_.setZero();
-
-	int output_height = (input_height + 2 * pad_h - filter_height) / stride_h + 1;
-	int output_width = (input_width + 2 * pad_w - filter_width) / stride_w + 1;
-
-	int col_index = 0;
-
-	for (int b = 0; b < batch_size; b++)
-	{
-		for (int out_h = 0; out_h < output_height; out_h++)
-		{
-			for (int out_w = 0; out_w < output_width; out_w++)
-			{
-				int row_index = 0;
-				for (int c = 0; c < input_channels; c++)
-				{
-					for (int fh = 0; fh < filter_height; fh++)
-					{
-						for (int fw = 0; fw < filter_width; fw++)
-						{
-							int h = out_h * stride_h - pad_h + fh;
-							int w = out_w * stride_w - pad_w + fw;
-							double value = 0.0;
-
-							if (h >= 0 && h < input_height && w >= 0 && w < input_width)
-							{
-								d_input_tensor_(b, h, w, c) += col_matrix(row_index, col_index);
-							}
-
-							row_index++;
-						}
-					}
-				}
-				col_index++;
-			}
-		}
-	}
+	TensorUtils::col2im(col_matrix, d_input_tensor_, batch_size, input_height, 
+						input_width, input_channels, filter_height, filter_width, 
+						pad_h, pad_w, stride_h, stride_w);
 }
 
 // Getter methods for convolution parameters
@@ -572,4 +349,75 @@ void NEURAL_NETWORK::Convolution::SetParameters(const Eigen::MatrixXd& weights, 
 	}
 
 	biases_ = biases.transpose();
+}
+
+//maybe weights in the n-th filter? GetWeight(int n)
+const Eigen::Tensor<double, 4>& NEURAL_NETWORK::Convolution::GetWeightsTensor() const
+{
+	return weights_;
+}
+
+const Eigen::VectorXd& NEURAL_NETWORK::Convolution::GetBiasesVector() const
+{
+	return biases_;
+}
+
+const Eigen::MatrixXd& NEURAL_NETWORK::Convolution::GetOutput() const
+{
+	return output_;
+}
+
+const Eigen::MatrixXd& NEURAL_NETWORK::Convolution::GetDInput() const
+{
+	return d_input_;
+}
+
+Eigen::MatrixXd NEURAL_NETWORK::Convolution::predictions() const
+{
+	return output_;
+}
+
+void NEURAL_NETWORK::Convolution::SetDInput(const Eigen::MatrixXd& dinput)
+{
+	d_input_ = dinput;
+}
+
+void NEURAL_NETWORK::Convolution::SetWeightMomentums(const Eigen::Tensor<double, 4>& weight_momentums)
+{
+	weight_momentums_ = weight_momentums;
+}
+
+void NEURAL_NETWORK::Convolution::SetBiasMomentums(const Eigen::VectorXd& bias_momentums)
+{
+	bias_momentums_ = bias_momentums;
+}
+
+void NEURAL_NETWORK::Convolution::SetWeightCaches(const Eigen::Tensor<double, 4>& weight_caches)
+{
+	weight_caches_ = weight_caches;
+}
+
+void NEURAL_NETWORK::Convolution::SetBiasCaches(const Eigen::VectorXd& bias_caches)
+{
+	bias_caches_ = bias_caches;
+}
+
+void NEURAL_NETWORK::Convolution::UpdateWeights(Eigen::Tensor<double, 4>& weight_update)
+{
+	weight_momentums_ = weight_update;
+}
+
+void NEURAL_NETWORK::Convolution::UpdateWeightsCache(Eigen::Tensor<double, 4>& weight_update)
+{
+	weight_caches_ = weight_update;
+}
+
+void NEURAL_NETWORK::Convolution::UpdateBiases(Eigen::VectorXd& bias_update)
+{
+	bias_momentums_ = bias_update;
+}
+
+void NEURAL_NETWORK::Convolution::UpdateBiasesCache(Eigen::VectorXd& bias_update)
+{
+	bias_caches_ = bias_update;
 }

@@ -28,7 +28,6 @@ namespace NEURAL_NETWORK
 		const Eigen::Tensor<double, 4>& GetWeightsTensor() const;
 		const Eigen::VectorXd& GetBiasesVector() const;
 
-		// Getter methods for convolution parameters
 		int GetNumberOfFilters() const;
 		int GetFilterHeight() const;
 		int GetFilterWidth() const;
@@ -52,16 +51,15 @@ namespace NEURAL_NETWORK
 
 		void SetDInput(const Eigen::MatrixXd& dinput) override;
 
-	// ADAM optimizer support
-	void SetWeightMomentums(const Eigen::Tensor<double, 4>& weight_momentums);
-	void SetBiasMomentums(const Eigen::VectorXd& bias_momentums);
-	void SetWeightCaches(const Eigen::Tensor<double, 4>& weight_caches);
-	void SetBiasCaches(const Eigen::VectorXd& bias_caches);
+		void SetWeightMomentums(const Eigen::Tensor<double, 4>& weight_momentums);
+		void SetBiasMomentums(const Eigen::VectorXd& bias_momentums);
+		void SetWeightCaches(const Eigen::Tensor<double, 4>& weight_caches);
+		void SetBiasCaches(const Eigen::VectorXd& bias_caches);
 
-	void UpdateWeights(Eigen::Tensor<double, 4>& weight_update);
-	void UpdateWeightsCache(Eigen::Tensor<double, 4>& weight_update);
-	void UpdateBiases(Eigen::VectorXd& bias_update);
-	void UpdateBiasesCache(Eigen::VectorXd& bias_update);
+		void UpdateWeights(Eigen::Tensor<double, 4>& weight_update);
+		void UpdateWeightsCache(Eigen::Tensor<double, 4>& weight_update);
+		void UpdateBiases(Eigen::VectorXd& bias_update);
+		void UpdateBiasesCache(Eigen::VectorXd& bias_update);
 
 	private:
 		Eigen::Tensor<double, 4> inputs_;
@@ -76,7 +74,6 @@ namespace NEURAL_NETWORK
 		Eigen::Tensor<double, 4> d_weights_;
 		Eigen::VectorXd d_biases_;
 
-		// ADAM optimizer momentum and cache tensors
 		Eigen::Tensor<double, 4> weight_momentums_;
 		Eigen::VectorXd bias_momentums_;
 		Eigen::Tensor<double, 4> weight_caches_;

@@ -7,6 +7,7 @@
 #include "LayerDense.h"
 #include "LayerDropout.h"
 #include "Convolution.h"
+#include "MaxPooling.h"
 
 // Activations
 #include "ActivationLinear.h"

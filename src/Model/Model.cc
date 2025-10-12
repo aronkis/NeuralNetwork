@@ -248,11 +248,10 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 		}
 	}
 
-	for (int epoch = 1; epoch <= epochs; epoch++)
+	for (int epoch = 0; epoch < epochs; epoch++)
 	{
-		std::cout << "Epoch: " << epoch << std::endl;
-		loss_->NewPass();
-		accuracy_->NewPass();
+		std::cout << "\n========== Epoch " << (epoch + 1) << "/" << epochs << " ==========\n";
+		
 		for (int step = 0; step < train_steps; step++)
 		{
 			int start_idx = step * batch_size;
@@ -324,13 +323,14 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 				(!(step % print_every) || 
 				 (step == train_steps - 1)))
 			{
+				double progress = 100.0 * (step + 1) / train_steps;
+                double learning_rate = optimizer_->GetLearningRate();
+
 				std::cout << "Step: " << step 
-						  << ", Accuracy: " << accuracy 
+						  << " [" << std::fixed << std::setprecision(2) << progress << "%]"
+						  << ", Accuracy: " << accuracy
 						  << ", Loss: " << loss 
-						  << " (Data loss: " << loss_->GetLoss()
-						  << " | Regularization loss: " << reg_loss
-						  << "), Learning Rate: " << optimizer_->GetLearningRate()
-						  << '\n';
+						  << ", LR: " << learning_rate << std::endl;
 			}
 		}
 		loss_->CalculateAccumulatedLoss(true);

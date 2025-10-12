@@ -26,6 +26,7 @@ set(TEST_SOURCES
 	TestModel.cc
 	TestHelpers.cc
 	TestConvolution.cc
+	TestPooling.cc
 )
 
 add_executable(neural_network_tests ${TEST_SOURCES} ${NEURAL_NETWORK_SOURCES})
@@ -46,7 +47,6 @@ target_include_directories(neural_network_tests PRIVATE
 )
 
 target_link_libraries(neural_network_tests
-	gtest
 	gtest_main
 	Eigen3::Eigen
 	matplotlib_cpp

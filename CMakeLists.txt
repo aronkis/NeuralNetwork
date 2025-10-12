@@ -196,3 +196,8 @@ endif()
 if(NN_BUILD_TESTS)
 	add_subdirectory(test)
 endif()
+
+# Suppress Eigen infinity warnings
+if(NOT MSVC)
+    target_compile_options(neural_network PRIVATE -Wno-nan-infinity-disabled)
+endif()

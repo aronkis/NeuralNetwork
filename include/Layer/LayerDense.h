@@ -20,8 +20,8 @@ namespace NEURAL_NETWORK
 		const Eigen::MatrixXd& GetDInput() const override;
 		Eigen::MatrixXd predictions() const override;
 
-		const Eigen::MatrixXd& GetWeights() const;
-		const Eigen::RowVectorXd& GetBiases() const;
+		const Eigen::MatrixXd& GetWeights() const override;
+		const Eigen::RowVectorXd& GetBiases() const override;
 		const Eigen::MatrixXd& GetDWeights() const;
 		const Eigen::RowVectorXd& GetDBiases() const;
 
@@ -30,10 +30,10 @@ namespace NEURAL_NETWORK
 		const Eigen::MatrixXd& GetWeightCaches() const;
 		const Eigen::RowVectorXd& GetBiasCaches() const;
 
-		double GetWeightRegularizerL1() const;
-		double GetWeightRegularizerL2() const;
-		double GetBiasRegularizerL1() const;
-		double GetBiasRegularizerL2() const;
+		double GetWeightRegularizerL1() const override;
+		double GetWeightRegularizerL2() const override;
+		double GetBiasRegularizerL1() const override;
+		double GetBiasRegularizerL2() const override;
 
 		std::pair<Eigen::MatrixXd, Eigen::RowVectorXd> GetParameters() const override;
 		void SetParameters(const Eigen::MatrixXd& weights, 

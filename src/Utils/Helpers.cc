@@ -329,6 +329,11 @@ void NEURAL_NETWORK::Helpers::UnzipFile(const std::string& directory,
 		{
 			filesExtracted++;
 		}
+		else
+		{
+			std::cerr << "Failed to extract an entry." << std::endl;
+			exit(1);
+		}
 		err = reader.GoToNextEntry();
 	}
 
@@ -339,15 +344,15 @@ void NEURAL_NETWORK::Helpers::UnzipFile(const std::string& directory,
 
 	std::cout << "Successfully extracted " << filesExtracted 
 			  << " files" << std::endl;
-	if (!std::filesystem::remove(zipPath)) 
-	{
-			std::cerr << "Warning: Failed to remove zip file: " 
-					  << zipPath.string() << std::endl;
-	}
-	else
-	{
-		std::cout << "Deleted zipfile" << zipPath.string() << std::endl;
-	}
+	// if (!std::filesystem::remove(zipPath)) 
+	// {
+	// 		std::cerr << "Warning: Failed to remove zip file: " 
+	// 				  << zipPath.string() << std::endl;
+	// }
+	// else
+	// {
+	// 	std::cout << "Deleted zipfile" << zipPath.string() << std::endl;
+	// }
 }
 
 void NEURAL_NETWORK::Helpers::FetchData(const std::string url,

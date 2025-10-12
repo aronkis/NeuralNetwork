@@ -37,38 +37,91 @@ int main()
 	NEURAL_NETWORK::Helpers::CreateDataSets(dataset_url, output_dir, X, y, X_test, y_test);
 	
 	NEURAL_NETWORK::Model model;
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-	// High-performance CNN architecture inspired by proven MNIST designs
-	// Layer 1: 32 filters, 5x5 kernel, padding, 28x28x1 -> 28x28x32
-	model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(32, 5, 5, 28, 28, 1, true, 1, 1, 0.0, 1e-4));
-	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+	  model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
+    
+    // ===== IMPROVED ARCHITECTURE WITH POOLING =====
+    
+    // Block 1: Conv -> ReLU -> MaxPool
+    // Input: 28×28×1 -> Conv: 28×28×32 -> Pool: 14×14×32
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+        32,        // filters
+        3, 3,      // kernel size (3×3 is more efficient than 5×5)
+        28, 28, 1, // input dimensions
+        true,      // padding
+        1, 1,      // stride
+        0.0, 1e-4  // regularization
+    ));
+    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+    model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
+        BATCH_SIZE, 
+        2,          // pool_size (2×2)
+        28, 28, 32, // input dimensions after conv
+        2           // stride (non-overlapping)
+    ));
+    
+    // Block 2: Conv -> ReLU -> MaxPool
+    // Input: 14×14×32 -> Conv: 14×14×64 -> Pool: 7×7×64
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+        64,        // filters
+        3, 3,      // kernel size
+        14, 14, 32,// input dimensions
+        true,      // padding
+        1, 1,      // stride
+        0.0, 1e-4  // regularization
+    ));
+    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+    model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
+        BATCH_SIZE,
+        2,          // pool_size
+        14, 14, 64, // input dimensions
+        2           // stride
+    ));
+    
+    // Block 3: Conv -> ReLU (no pooling, spatial size already small)
+    // Input: 7×7×64 -> Conv: 7×7×128
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+        128,       // filters
+        3, 3,      // kernel size
+        7, 7, 64,  // input dimensions
+        true,      // padding
+        1, 1,      // stride
+        0.0, 1e-4  // regularization
+    ));
+    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+    
+    // Dropout after convolutional blocks
+    model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.25));
+    
+    // ===== DENSE LAYERS =====
+    // Flatten: 7×7×128 = 6272 -> Dense: 256
+    model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
+        6272,      // 7*7*128 input features
+        256,       // neurons
+        0.0, 1e-4, // L2 regularization
+        0.0, 1e-4
+    ));
+    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+    model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.5));
+    
+    // Output layer: 256 -> 10 classes
+    model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
+        256, 10,
+        0.0, 1e-4,
+        0.0, 1e-4
+    ));
+    model.Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
+    
+    model.Set(
+        std::make_unique<NEURAL_NETWORK::LossCategoricalCrossEntropy>(),
+        std::make_unique<NEURAL_NETWORK::AccuracyCategorical>(),
+        std::make_unique<NEURAL_NETWORK::Adam>(0.001, 1e-7) // Higher learning rate (pooling helps convergence)
+    );
 
-	model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(64, 5, 5, 28, 28, 32, false, 2, 2, 0.0, 1e-4));
-	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+    model.Finalize();
 
-	model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(128, 5, 5, 12, 12, 64, false, 2, 2, 0.0, 1e-4));
-	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
-
-	// Add dropout after convolutional layers
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.25));
-
-	// Dense layers with L2 regularization to prevent overfitting
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(2048, 256, 0.0, 1e-4, 0.0, 1e-4)); // 4*4*128 = 2048, L2 reg, reduced neurons
-	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.5)); // Higher dropout for dense layers
-
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(256, 10, 0.0, 1e-4, 0.0, 1e-4)); // L2 reg on output layer
-	model.Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
-
-	model.Set(std::make_unique<NEURAL_NETWORK::LossCategoricalCrossEntropy>(),
-			  std::make_unique<NEURAL_NETWORK::AccuracyCategorical>(),
-			  std::make_unique<NEURAL_NETWORK::Adam>(0.00005, 1e-7)); // Reduced learning rate
-
-	model.Finalize();
-
-	model.Train(X, y, BATCH_SIZE, NN_EPOCHS, NN_PRINT_EVERY, X_test, y_test);
-	
-	model.SaveModel("data/fashion_mnist_CNN_model_save_2.bin");
+    model.Train(X, y, BATCH_SIZE, NN_EPOCHS, NN_PRINT_EVERY, X_test, y_test);
+    
+    model.SaveModel("data/fashion_mnist_CNN_pooling_model.bin");
 }
 
 #endif

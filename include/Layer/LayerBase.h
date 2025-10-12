@@ -16,7 +16,10 @@ namespace NEURAL_NETWORK
 		
 		virtual void forward(const Eigen::MatrixXd& inputs, bool training) = 0;
 		virtual void backward(const Eigen::MatrixXd& dvalues) = 0;
-		virtual Eigen::MatrixXd predictions() const = 0;
+		virtual Eigen::MatrixXd predictions() const 
+		{
+			return Eigen::MatrixXd();
+		}
 
 		virtual const Eigen::MatrixXd& GetOutput() const = 0;
 		virtual const Eigen::MatrixXd& GetDInput() const = 0;
