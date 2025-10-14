@@ -1,4 +1,7 @@
 #include "Model.h"
+#include "LayerDense.h"
+#include "BatchNormalization.h"
+#include "Helpers.h"
 
 #include <iostream>
 #include <fstream>
@@ -58,11 +61,11 @@ void NEURAL_NETWORK::Model::Finalize()
 		if (i == 0)
 		{
 			layers_[i]->setPrev(input_layer_);
-			if (layer_count > 1) 
+			if (layer_count > 1)
 			{
 				layers_[i]->setNext(layers_[i+1]);
-			} 
-			else 
+			}
+			else
 			{
 				layers_[i]->setNext(std::shared_ptr<LayerBase>());
 			}
@@ -83,6 +86,10 @@ void NEURAL_NETWORK::Model::Finalize()
 			trainable_layers_.emplace_back(layer);
 		}
 		else if (auto layer = std::dynamic_pointer_cast<Convolution>(layers_[i]))
+		{
+			trainable_layers_.emplace_back(layer);
+		}
+		else if (auto layer = std::dynamic_pointer_cast<BatchNormalization>(layers_[i]))
 		{
 			trainable_layers_.emplace_back(layer);
 		}
@@ -252,6 +259,10 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 	{
 		std::cout << "\n========== Epoch " << (epoch + 1) << "/" << epochs << " ==========\n";
 		
+		// Reset loss and accuracy accumulators for new epoch
+		loss_->NewPass();
+		accuracy_->NewPass();
+		
 		for (int step = 0; step < train_steps; step++)
 		{
 			int start_idx = step * batch_size;
@@ -315,6 +326,14 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 					{
 						optimizer_->UpdateParameters(*dense_layer);
 					}
+					else if (auto conv_layer = std::dynamic_pointer_cast<Convolution>(layer_sp))
+					{
+						optimizer_->UpdateParameters(*conv_layer);
+					}
+					else if (auto batchnorm_layer = std::dynamic_pointer_cast<BatchNormalization>(layer_sp))
+					{
+						optimizer_->UpdateParameters(*batchnorm_layer);
+					}
 				}
 			}
 
@@ -328,6 +347,7 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 
 				std::cout << "Step: " << step 
 						  << " [" << std::fixed << std::setprecision(2) << progress << "%]"
+						  << std::defaultfloat << std::setprecision(6)
 						  << ", Accuracy: " << accuracy
 						  << ", Loss: " << loss 
 						  << ", LR: " << learning_rate << std::endl;
@@ -517,6 +537,27 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
 		{
             config.layer_types.push_back("LayerDropout");
             config.layer_params.push_back({dropout->GetRate()});
+        } 
+		else if (auto* maxpool = dynamic_cast<MaxPooling*>(layer.get()))
+		{
+            config.layer_types.push_back("MaxPooling");
+            std::vector<double> params = {
+                static_cast<double>(maxpool->GetPoolSize()),
+                static_cast<double>(maxpool->GetStride()),
+                static_cast<double>(maxpool->GetInputHeight()),
+                static_cast<double>(maxpool->GetInputWidth()),
+                static_cast<double>(maxpool->GetInputChannels())
+            };
+            config.layer_params.push_back(params);
+        }
+		else if (auto* batchnorm = dynamic_cast<BatchNormalization*>(layer.get()))
+		{
+            config.layer_types.push_back("BatchNormalization");
+            std::vector<double> params = 
+			{
+                static_cast<double>(batchnorm->GetNumFeatures())
+            };
+            config.layer_params.push_back(params);
         } 
 		else if (dynamic_cast<LayerInput*>(layer.get())) 
 		{
@@ -793,6 +834,33 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
             double rate = params[0];
             Add(std::make_shared<LayerDropout>(rate));
         }
+		else if (type == "MaxPooling")
+		{
+            if (params.size() < 5)
+			{
+				std::cerr << "Model::LoadModel warning: MaxPooling entry missing parameters; aborting load." << std::endl;
+				return;
+			}
+            int pool_size = static_cast<int>(params[0]);
+            int stride = static_cast<int>(params[1]);
+            int input_height = static_cast<int>(params[2]);
+            int input_width = static_cast<int>(params[3]);
+            int input_channels = static_cast<int>(params[4]);
+            // Use batch_size = 1 as default, it will resize automatically in forward()
+            int batch_size = 1;
+            Add(std::make_shared<MaxPooling>(batch_size, pool_size, input_height,
+                                           input_width, input_channels, stride));
+        }
+		else if (type == "BatchNormalization")
+		{
+            if (params.size() < 1)
+			{
+				std::cerr << "Model::LoadModel warning: BatchNormalization entry missing parameters; aborting load." << std::endl;
+				return;
+			}
+            int num_features = static_cast<int>(params[0]);
+            Add(std::make_shared<BatchNormalization>(num_features));
+        }
 		else if (type == "Convolution")
 		{
 			if (params.size() < 9)
@@ -943,6 +1011,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 void NEURAL_NETWORK::Model::forward(const Eigen::MatrixXd& inputs, bool training)
 {
 	input_layer_->forward(inputs, training);
+	bool flattened = false;
 	
 	for (const auto& layer : layers_)
 	{

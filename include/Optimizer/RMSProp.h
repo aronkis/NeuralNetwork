@@ -14,7 +14,7 @@ namespace NEURAL_NETWORK
 				double rho = 0.9);
 		~RMSProp() = default;
 
-		void UpdateParameters(NEURAL_NETWORK::LayerDense& layer) override;
+		void UpdateParameters(NEURAL_NETWORK::LayerBase& layer) override;
 
 		double GetRho() const;
 		double GetEpsilon() const;

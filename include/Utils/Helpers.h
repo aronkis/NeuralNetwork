@@ -50,8 +50,11 @@ namespace NEURAL_NETWORK
 
 		void ScaleData(Eigen::MatrixXd& X);
 
-		void ReadSingleImage(const std::string& filename, 
+		void ReadSingleImage(const std::string& filename,
 							 Eigen::MatrixXd& image);
+
+		// Flatten spatial data for transition from CNN to Dense layers
+		Eigen::MatrixXd Flatten(const Eigen::MatrixXd& spatial_data);
 	};
 } // namespace NEURAL_NETWORK
 

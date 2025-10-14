@@ -13,7 +13,7 @@ double NEURAL_NETWORK::AdaGrad::GetEpsilon() const
 	return epsilon_;
 }
 
-void NEURAL_NETWORK::AdaGrad::UpdateParameters(NEURAL_NETWORK::LayerDense& layer)
+void NEURAL_NETWORK::AdaGrad::UpdateParameters(NEURAL_NETWORK::LayerBase& layer)
 {
 	Eigen::MatrixXd weight_update;
 	Eigen::MatrixXd weight_cache_update;

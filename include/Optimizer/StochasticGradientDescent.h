@@ -13,7 +13,7 @@ namespace NEURAL_NETWORK
 								  double momentum = 0.0);
 		~StochasticGradientDescent() = default;
 
-		void UpdateParameters(NEURAL_NETWORK::LayerDense& layer) override;
+		void UpdateParameters(NEURAL_NETWORK::LayerBase& layer) override;
 
 		double GetMomentum() const;
 

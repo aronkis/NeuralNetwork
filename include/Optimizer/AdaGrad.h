@@ -13,7 +13,7 @@ namespace NEURAL_NETWORK
 				double epsilon = 1e-7);
 		~AdaGrad() = default;
 
-		void UpdateParameters(NEURAL_NETWORK::LayerDense& layer) override;
+		void UpdateParameters(NEURAL_NETWORK::LayerBase& layer) override;
 
 		double GetEpsilon() const;
 

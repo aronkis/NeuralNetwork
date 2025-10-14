@@ -1,7 +1,7 @@
 #ifndef __OPTIMIZER_H__
 #define __OPTIMIZER_H__
 
-#include "LayerDense.h"
+#include "LayerBase.h"
 
 namespace NEURAL_NETWORK
 {
@@ -17,7 +17,7 @@ namespace NEURAL_NETWORK
 		double GetLearningRate() const;
 
 		void PreUpdateParameters();
-		virtual void UpdateParameters(NEURAL_NETWORK::LayerDense& layer) = 0;
+		virtual void UpdateParameters(NEURAL_NETWORK::LayerBase& layer) = 0;
 		void PostUpdateParameters();
 
 		double GetDecay() const;

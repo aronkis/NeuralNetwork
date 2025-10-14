@@ -20,7 +20,7 @@ double NEURAL_NETWORK::RMSProp::GetEpsilon() const
 	return epsilon_;
 }
 
-void NEURAL_NETWORK::RMSProp::UpdateParameters(NEURAL_NETWORK::LayerDense& layer)
+void NEURAL_NETWORK::RMSProp::UpdateParameters(NEURAL_NETWORK::LayerBase& layer)
 {
 	Eigen::MatrixXd weight_update;
 	Eigen::MatrixXd weight_cache_update;

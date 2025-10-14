@@ -51,15 +51,25 @@ namespace NEURAL_NETWORK
 
 		void SetDInput(const Eigen::MatrixXd& dinput) override;
 
-		void SetWeightMomentums(const Eigen::Tensor<double, 4>& weight_momentums);
-		void SetBiasMomentums(const Eigen::VectorXd& bias_momentums);
-		void SetWeightCaches(const Eigen::Tensor<double, 4>& weight_caches);
-		void SetBiasCaches(const Eigen::VectorXd& bias_caches);
+		// LayerBase virtual method overrides for gradients
+		const Eigen::MatrixXd& GetDWeights() const override;
+		const Eigen::RowVectorXd& GetDBiases() const override;
 
-		void UpdateWeights(Eigen::Tensor<double, 4>& weight_update);
-		void UpdateWeightsCache(Eigen::Tensor<double, 4>& weight_update);
-		void UpdateBiases(Eigen::VectorXd& bias_update);
-		void UpdateBiasesCache(Eigen::VectorXd& bias_update);
+		// LayerBase virtual method overrides for momentums/caches (Matrix/RowVector interface)
+		const Eigen::MatrixXd& GetWeightMomentums() const override;
+		const Eigen::RowVectorXd& GetBiasMomentums() const override;
+		const Eigen::MatrixXd& GetWeightCaches() const override;
+		const Eigen::RowVectorXd& GetBiasCaches() const override;
+
+		void SetWeightMomentums(const Eigen::MatrixXd& weight_momentums) override;
+		void SetBiasMomentums(const Eigen::RowVectorXd& bias_momentums) override;
+		void SetWeightCaches(const Eigen::MatrixXd& weight_caches) override;
+		void SetBiasCaches(const Eigen::RowVectorXd& bias_caches) override;
+
+		void UpdateWeights(Eigen::MatrixXd& weight_update) override;
+		void UpdateWeightsCache(Eigen::MatrixXd& weight_update) override;
+		void UpdateBiases(Eigen::RowVectorXd& bias_update) override;
+		void UpdateBiasesCache(Eigen::RowVectorXd& bias_update) override;
 
 	private:
 		Eigen::Tensor<double, 4> inputs_;
@@ -100,6 +110,12 @@ namespace NEURAL_NETWORK
 
 		mutable Eigen::MatrixXd weights_matrix_cache_;
 		mutable Eigen::RowVectorXd biases_cache_;
+		mutable Eigen::MatrixXd d_weights_matrix_cache_;
+		mutable Eigen::RowVectorXd d_biases_cache_;
+		mutable Eigen::MatrixXd weight_momentums_matrix_cache_;
+		mutable Eigen::RowVectorXd bias_momentums_cache_;
+		mutable Eigen::MatrixXd weight_caches_matrix_cache_;
+		mutable Eigen::RowVectorXd bias_caches_cache_;
 
 
 		void InputMatrixToTensor(const Eigen::MatrixXd& matrix,
@@ -120,6 +136,21 @@ namespace NEURAL_NETWORK
 					int filter_height, int filter_width,
 					int pad_h, int pad_w,
 					int stride_h, int stride_w);
+
+		// Helper methods for tensor-matrix conversions
+		Eigen::MatrixXd WeightsToMatrixFromTensor(const Eigen::Tensor<double, 4>& tensor) const;
+		void MatrixToWeightsTensor(const Eigen::MatrixXd& matrix, Eigen::Tensor<double, 4>& tensor) const;
+
+		// Tensor-specific methods for internal use
+		void SetWeightMomentumsTensor(const Eigen::Tensor<double, 4>& weight_momentums);
+		void SetBiasMomentumsTensor(const Eigen::VectorXd& bias_momentums);
+		void SetWeightCachesTensor(const Eigen::Tensor<double, 4>& weight_caches);
+		void SetBiasCachesTensor(const Eigen::VectorXd& bias_caches);
+
+		void UpdateWeightsTensor(Eigen::Tensor<double, 4>& weight_update);
+		void UpdateWeightsCacheTensor(Eigen::Tensor<double, 4>& weight_update);
+		void UpdateBiasesTensor(Eigen::VectorXd& bias_update);
+		void UpdateBiasesCacheTensor(Eigen::VectorXd& bias_update);
 	};
 } // namespace NEURAL_NETWORK
 

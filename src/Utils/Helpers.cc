@@ -5,6 +5,7 @@
 #include "stb_image.h"
 #include <iostream>
 #include <random>
+#include <algorithm>
 
 void NEURAL_NETWORK::Helpers::ReadSpiralIntoEigen(const std::string& filename,
 												  Eigen::MatrixXd& coordinates,
@@ -52,18 +53,19 @@ void NEURAL_NETWORK::Helpers::ReadSpiralIntoEigen(const std::string& filename,
 	
 	long num_rows = x_coords.size();
 
-	if (num_rows > 0) {
-		coordinates.resize(num_rows, 2); 
-		classes.resize(num_rows, 1);        
-		
-		for (long i = 0; i < num_rows; i++) 
+	if (num_rows > 0)
+	{
+		coordinates.resize(num_rows, 2);
+		classes.resize(num_rows, 1);
+
+		for (long i = 0; i < num_rows; i++)
 		{
-			coordinates(i, 0) = x_coords[i]; 
-			coordinates(i, 1) = y_coords[i]; 
-			classes(i) = class_values[i];    
+			coordinates(i, 0) = x_coords[i];
+			coordinates(i, 1) = y_coords[i];
+			classes(i) = class_values[i];
 		}
-	} 
-	else 
+	}
+	else
 	{
 		std::cout << "No valid data lines found in the file." << std::endl;
 		coordinates.resize(0, 0);
@@ -111,17 +113,18 @@ void NEURAL_NETWORK::Helpers::Read1DIntoEigen(const std::string& filename,
 	
 	long num_rows = input_values.size();
 
-	if (num_rows > 0) {
-		input.resize(num_rows, 1);  
-		output.resize(num_rows, 1); 
-		
-		for (long i = 0; i < num_rows; i++) 
+	if (num_rows > 0)
+	{
+		input.resize(num_rows, 1);
+		output.resize(num_rows, 1);
+
+		for (long i = 0; i < num_rows; i++)
 		{
-			input(i, 0) = input_values[i];  
-			output(i, 0) = output_values[i]; 
+			input(i, 0) = input_values[i];
+			output(i, 0) = output_values[i];
 		}
-	} 
-	else 
+	}
+	else
 	{
 		std::cout << "No valid data lines found in the file." << std::endl;
 		input.resize(0, 0);
@@ -192,20 +195,20 @@ void NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(const std::string& filename,
     
     long num_rows = input1_values.size();
 
-    if (num_rows > 0) 
+    if (num_rows > 0)
     {
-        input.resize(num_rows, 2);  
-        output.resize(num_rows, 2); 
-        
-        for (long i = 0; i < num_rows; i++) 
+        input.resize(num_rows, 2);
+        output.resize(num_rows, 2);
+
+        for (long i = 0; i < num_rows; i++)
         {
-            input(i, 0) = input1_values[i];  
-            input(i, 1) = input2_values[i];  
-            output(i, 0) = output1_values[i]; 
-            output(i, 1) = output2_values[i]; 
+            input(i, 0) = input1_values[i];
+            input(i, 1) = input2_values[i];
+            output(i, 0) = output1_values[i];
+            output(i, 1) = output2_values[i];
         }
-    } 
-    else 
+    }
+    else
     {
         std::cout << "No valid data lines found in the file." << std::endl;
         input.resize(0, 0);
@@ -508,8 +511,17 @@ void NEURAL_NETWORK::Helpers::LoadData(const std::string& path,
 				continue;
 			}
 
-            X.row(current_row) = Eigen::Map<Eigen::RowVectorXd>(img.data(), 
-																img.size());
+			// Use row-major flattening to preserve spatial structure
+			Eigen::RowVectorXd correct_flattened(img.size());
+			int idx = 0;
+			for (int y = 0; y < img.rows(); y++)
+			{
+				for (int x = 0; x < img.cols(); x++)
+				{
+					correct_flattened(idx++) = img(y, x);
+				}
+			}
+			X.row(current_row) = correct_flattened;
 			y(current_row, 0) = std::stoi(label);
 			current_row++;
 		}

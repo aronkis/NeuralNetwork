@@ -24,6 +24,8 @@
 
 #include <iostream>
 #include "Convolution.h"
+#include "MaxPooling.h"
+#include "BatchNormalization.h"
 
 int main()
 {
@@ -37,91 +39,94 @@ int main()
 	NEURAL_NETWORK::Helpers::CreateDataSets(dataset_url, output_dir, X, y, X_test, y_test);
 	
 	NEURAL_NETWORK::Model model;
-	  model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-    
-    // ===== IMPROVED ARCHITECTURE WITH POOLING =====
-    
-    // Block 1: Conv -> ReLU -> MaxPool
-    // Input: 28×28×1 -> Conv: 28×28×32 -> Pool: 14×14×32
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
+
+    // ===== COMPLETE CNN WITH MAXPOOLING + BATCH NORMALIZATION =====
+    std::cout << "\n=== Testing Complete CNN with MaxPooling + BatchNormalization ===" << std::endl;
+    std::cout << "Architecture: Conv -> BatchNorm -> ReLU -> MaxPool -> Conv -> BatchNorm -> ReLU -> MaxPool -> Dense -> ReLU -> Dropout -> Dense -> Softmax" << std::endl;
+
+    // First Convolution Block
     model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
-        32,        // filters
-        3, 3,      // kernel size (3×3 is more efficient than 5×5)
-        28, 28, 1, // input dimensions
+        32,        // 32 filters
+        3, 3,      // 3x3 filters
+        28, 28, 1, // 28x28x1 input (Fashion-MNIST)
         true,      // padding
-        1, 1,      // stride
-        0.0, 1e-4  // regularization
+        1, 1,      // stride 1x1
+        0.0, 1e-4  // L2 regularization
     ));
+
+    // BatchNormalization after first convolution
+    model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(
+        32         // number of channels (filters)
+    ));
+
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+
+    // MaxPooling: 28x28 -> 14x14
     model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
-        BATCH_SIZE, 
-        2,          // pool_size (2×2)
-        28, 28, 32, // input dimensions after conv
-        2           // stride (non-overlapping)
+        64,        // batch_size (will be adjusted dynamically)
+        2,         // pool_size 2x2
+        28, 28, 32, // input dimensions
+        2          // stride = 2 (non-overlapping)
     ));
-    
-    // Block 2: Conv -> ReLU -> MaxPool
-    // Input: 14×14×32 -> Conv: 14×14×64 -> Pool: 7×7×64
+
+    // Second Convolution Block
     model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
-        64,        // filters
-        3, 3,      // kernel size
-        14, 14, 32,// input dimensions
+        64,        // 64 filters
+        3, 3,      // 3x3 filters
+        14, 14, 32, // 14x14x32 input from pooling
         true,      // padding
-        1, 1,      // stride
-        0.0, 1e-4  // regularization
+        1, 1,      // stride 1x1
+        0.0, 1e-4  // L2 regularization
     ));
+
+    // BatchNormalization after second convolution
+    model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(
+        64         // number of channels (filters)
+    ));
+
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+
+    // MaxPooling: 14x14 -> 7x7
     model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
-        BATCH_SIZE,
-        2,          // pool_size
+        64,        // batch_size (will be adjusted dynamically)
+        2,         // pool_size 2x2
         14, 14, 64, // input dimensions
-        2           // stride
+        2          // stride = 2 (non-overlapping)
     ));
-    
-    // Block 3: Conv -> ReLU (no pooling, spatial size already small)
-    // Input: 7×7×64 -> Conv: 7×7×128
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
-        128,       // filters
-        3, 3,      // kernel size
-        7, 7, 64,  // input dimensions
-        true,      // padding
-        1, 1,      // stride
-        0.0, 1e-4  // regularization
-    ));
-    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
-    
-    // Dropout after convolutional blocks
-    model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.25));
-    
-    // ===== DENSE LAYERS =====
-    // Flatten: 7×7×128 = 6272 -> Dense: 256
+
+    // Dense Layers - Transition from 7x7x64 = 3136 features
     model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
-        6272,      // 7*7*128 input features
-        256,       // neurons
-        0.0, 1e-4, // L2 regularization
-        0.0, 1e-4
+        7*7*64,    // Flattened size: 7×7×64 = 3136
+        128,       // Hidden layer with 128 neurons
+        0.0, 1e-4  // L2 regularization
     ));
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+
+    // Dropout for regularization in dense layers
     model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.5));
-    
-    // Output layer: 256 -> 10 classes
+
+    // Output layer
     model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
-        256, 10,
-        0.0, 1e-4,
-        0.0, 1e-4
+        128, 10,   // 128 -> 10 classes
+        0.0, 1e-4  // L2 regularization
     ));
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
+
+    std::cout << "Expected data flow:" << std::endl;
+    std::cout << "Input: 28x28x1 -> Conv1: 28x28x32 -> BatchNorm -> ReLU -> Pool: 14x14x32 -> Conv2: 14x14x64 -> BatchNorm -> ReLU -> Pool: 7x7x64 -> Dense: 128 -> ReLU -> Dropout(0.5) -> Output: 10" << std::endl;
     
     model.Set(
         std::make_unique<NEURAL_NETWORK::LossCategoricalCrossEntropy>(),
         std::make_unique<NEURAL_NETWORK::AccuracyCategorical>(),
-        std::make_unique<NEURAL_NETWORK::Adam>(0.001, 1e-7) // Higher learning rate (pooling helps convergence)
+        std::make_unique<NEURAL_NETWORK::Adam>(0.0005, 1e-7) // Lower learning rate for stability
     );
 
     model.Finalize();
 
-    model.Train(X, y, BATCH_SIZE, NN_EPOCHS, NN_PRINT_EVERY, X_test, y_test);
+    model.Train(X, y, BATCH_SIZE, 10, NN_PRINT_EVERY, X_test, y_test);
     
-    model.SaveModel("data/fashion_mnist_CNN_pooling_model.bin");
+    model.SaveModel("data/fashion_mnist_CNN_complete_model.bin");
 }
 
 #endif
@@ -410,3 +415,206 @@ int main()
 	model.SaveModel("data/fashion_mnist_model_save_2.bin");
 }
 #endif
+
+
+/* 
+CNN
+========== Epoch 10/10 ==========
+Step: 0 [1.06%], Accuracy: 0.953125, Loss: 0.205157, LR: 0.000499958
+Step: 12 [13.83%], Accuracy: 0.96875, Loss: 0.142752, LR: 0.000499957
+Step: 24 [26.60%], Accuracy: 0.9375, Loss: 0.142313, LR: 0.000499957
+Step: 36 [39.36%], Accuracy: 0.984375, Loss: 0.118973, LR: 0.000499956
+Step: 48 [52.13%], Accuracy: 0.953125, Loss: 0.0935616, LR: 0.000499955
+Step: 60 [64.89%], Accuracy: 0.9375, Loss: 0.202393, LR: 0.000499955
+Step: 72 [77.66%], Accuracy: 0.96875, Loss: 0.1327, LR: 0.000499954
+Step: 84 [90.43%], Accuracy: 0.953125, Loss: 0.14065, LR: 0.000499954
+Step: 93 [100.00%], Accuracy: 0.979167, Loss: 0.147982, LR: 0.000499953
+Training: Accuracy: 0.937833, Loss: 0.194663 (Data loss: 0.194663 | Regularization loss: 0), Learning Rate: 0.000499953
+Validation Accuracy: 0.835, Validation Loss: 0.59472
+
+CNN -> MaxPool
+========== Epoch 10/10 ==========
+Step: 0 [1.06%], Accuracy: 0.96875, Loss: 0.217884, LR: 0.000499958
+Step: 12 [13.83%], Accuracy: 0.953125, Loss: 0.280522, LR: 0.000499957
+Step: 24 [26.60%], Accuracy: 0.90625, Loss: 0.468903, LR: 0.000499957
+Step: 36 [39.36%], Accuracy: 0.84375, Loss: 0.358572, LR: 0.000499956
+Step: 48 [52.13%], Accuracy: 0.875, Loss: 0.432397, LR: 0.000499955
+Step: 60 [64.89%], Accuracy: 0.921875, Loss: 0.255831, LR: 0.000499955
+Step: 72 [77.66%], Accuracy: 0.984375, Loss: 0.182179, LR: 0.000499954
+Step: 84 [90.43%], Accuracy: 0.984375, Loss: 0.140204, LR: 0.000499954
+Step: 93 [100.00%], Accuracy: 0.895833, Loss: 0.320941, LR: 0.000499953
+Training: Accuracy: 0.921333, Loss: 0.280477 (Data loss: 0.233282 | Regularization loss: 0.0471946), Learning Rate: 0.000499953
+Validation Accuracy: 0.84, Validation Loss: 0.441634
+
+CNN -> MaxPool -> BatchNorm -> Dense -> Dropout
+========== Epoch 10/10 ==========
+Step: 0 [1.06%], Accuracy: 0.796875, Loss: 0.517113, LR: 0.000499958
+Step: 12 [13.83%], Accuracy: 0.859375, Loss: 0.412646, LR: 0.000499957
+Step: 24 [26.60%], Accuracy: 0.78125, Loss: 0.575299, LR: 0.000499957
+Step: 36 [39.36%], Accuracy: 0.765625, Loss: 0.662682, LR: 0.000499956
+Step: 48 [52.13%], Accuracy: 0.8125, Loss: 0.470909, LR: 0.000499955
+Step: 60 [64.89%], Accuracy: 0.90625, Loss: 0.361092, LR: 0.000499955
+Step: 72 [77.66%], Accuracy: 0.828125, Loss: 0.442175, LR: 0.000499954
+Step: 84 [90.43%], Accuracy: 0.828125, Loss: 0.532051, LR: 0.000499954
+Step: 93 [100.00%], Accuracy: 0.958333, Loss: 0.253314, LR: 0.000499953
+Training: Accuracy: 0.853167, Loss: 0.456743 (Data loss: 0.408862 | Regularization loss: 0.0478814), Learning Rate: 0.000499953
+Validation Accuracy: 0.863, Validation Loss: 0.417673
+
+
+CNN -> MaxPool -> BatchNorm(trained) -> Dense -> Dropout
+
+*/
+
+/*
+TODO:
+Memory Management
+
+  - Reduce memory allocations in training loops: In Model::Train(), consider pre-allocating
+  matrices for weight_update, bias_update etc. outside the training loop to avoid repeated
+  allocations
+  - Eigen memory alignment: Add EIGEN_MAKE_ALIGNED_OPERATOR_NEW macros to classes with Eigen
+  members for better vectorization
+  - Tensor operations: In Convolution.cc, the tensor-to-matrix conversions could be optimized with
+   better memory layouts
+
+  Computational Efficiency
+
+  - BLAS optimization: The comment about EIGEN_USE_BLAS in Convolution.h suggests this could be
+  enabled for better linear algebra performance
+  - Parallelize batch operations: The batch processing in Model::Train() could benefit from OpenMP
+   parallelization
+  - Vectorized operations: Some loops in TensorUtils.cc could be replaced with Eigen's vectorized
+  operations
+
+  🏗️ Architecture & Design Improvements
+
+  Layer System
+
+  - Abstract Factory Pattern: Create a LayerFactory for dynamic layer creation from config, making
+   model loading more extensible
+  - Layer Registration System: Implement a registry pattern so new layers can self-register for
+  serialization
+  - Visitor Pattern: For operations like parameter counting, gradient clipping, etc.
+
+  Model Configuration
+
+  - YAML/JSON Config: Replace the hard-coded model architecture in main.cc with external
+  configuration files
+  - Builder Pattern: Implement a ModelBuilder class for more flexible model construction
+  - Hyperparameter Management: Create a dedicated hyperparameter class with validation
+
+  🛡️ Error Handling & Robustness
+
+  Input Validation
+
+  - Dimension Checking: Add comprehensive dimension validation in all layer forward/backward
+  methods
+  - Data Validation: Validate input ranges, check for NaN/infinity values
+  - Configuration Validation: Validate optimizer parameters, layer parameters at construction time
+
+  Exception Safety
+
+  - RAII: Ensure all resource management follows RAII principles
+  - Custom Exceptions: Replace std::cerr error messages with proper exception handling
+  - Rollback Mechanisms: For failed model loads/saves
+
+  🔧 Code Quality Improvements
+
+  Modern C++ Features
+
+  - Smart Pointers: Consistent use of std::unique_ptr/std::shared_ptr (already partially done)
+  - Move Semantics: Add move constructors/assignment operators for heavy classes
+  - Constexpr: Make compile-time constants constexpr where possible
+  - Auto: Use auto more consistently for type deduction
+
+  Interface Design
+
+  - Pure Virtual Interface: Create IOptimizer, ILoss, IAccuracy interfaces for better testability
+  - Const Correctness: Many getter methods could return const& instead of copies
+  - Method Chaining: Allow fluent interface for model building (model.Add().Add().Set())
+
+  📊 Numerical Stability
+
+  Gradient Handling
+
+  - Gradient Clipping: Add global gradient clipping to prevent exploding gradients
+  - Gradient Accumulation: For very large models that don't fit in memory
+  - Mixed Precision: Consider float16 support for memory efficiency
+
+  Numerical Precision
+
+  - Epsilon Handling: Centralize epsilon values and make them configurable
+  - Overflow/Underflow Protection: Add checks in activation functions and loss calculations
+  - Numerical Derivatives: Add gradient checking for debugging
+
+  🧪 Testing & Validation
+
+  Unit Testing
+
+  - Layer Testing: Individual tests for each layer's forward/backward pass
+  - Gradient Tests: Numerical gradient checking
+  - Serialization Tests: Round-trip testing for model save/load
+
+  Integration Testing
+
+  - End-to-End Tests: Complete training pipelines with known datasets
+  - Performance Benchmarks: Track training speed and memory usage
+  - Convergence Tests: Verify models converge on simple synthetic datasets
+
+  📝 Documentation & Maintainability
+
+  Code Documentation
+
+  - Doxygen Comments: Add comprehensive API documentation
+  - Mathematical Formulas: Document the math behind each layer
+  - Usage Examples: More comprehensive examples beyond Fashion-MNIST
+
+  Logging & Monitoring
+
+  - Structured Logging: Replace std::cout with a proper logging framework
+  - Training Metrics: More detailed metrics tracking (gradients, activations, etc.)
+  - Progress Visualization: Better progress reporting during training
+
+  🎯 Specific Technical Suggestions
+
+  BatchNormalization
+
+  - Running Statistics: The momentum update could be made more numerically stable
+  - Training/Inference Mode: Make the mode switching more explicit
+
+  Convolution Layer
+
+  - Memory Layout: Consider NCHW vs NHWC layout optimization based on hardware
+  - Winograd Convolution: For 3x3 convolutions, Winograd algorithm could be faster
+  - Im2Col Optimization: The current implementation could be vectorized better
+
+  Model Serialization
+
+  - Version Compatibility: Add version numbers to saved models
+  - Incremental Loading: For very large models, support streaming/partial loading
+  - Compression: Add optional compression for saved models
+
+  Data Loading
+
+  - Async Loading: In Helpers.cc, implement asynchronous data loading
+  - Data Augmentation: Built-in support for common augmentations
+  - Memory Mapping: For very large datasets
+
+  🔄 Long-term Architectural Considerations
+
+  Modularity
+
+  - Plugin System: Allow loading custom layers/optimizers as plugins
+  - Backend Abstraction: Prepare for GPU/other accelerator support
+  - Distributed Training: Design for future distributed training support
+
+  Performance Monitoring
+
+  - Profiling Integration: Built-in profiling hooks
+  - Memory Tracking: Track peak memory usage
+  - Computational Graph: For advanced optimizations
+
+  These suggestions range from simple code quality improvements to more significant architectural
+  changes. The priority would depend on your current needs - performance, maintainability, or
+  feature completeness.
+*/

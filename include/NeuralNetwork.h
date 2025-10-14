@@ -8,6 +8,7 @@
 #include "LayerDropout.h"
 #include "Convolution.h"
 #include "MaxPooling.h"
+#include "BatchNormalization.h"
 
 // Activations
 #include "ActivationLinear.h"

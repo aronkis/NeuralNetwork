@@ -7,7 +7,7 @@ NEURAL_NETWORK::StochasticGradientDescent::StochasticGradientDescent(double lear
 	momentum_ = momentum;
 }
 
-void NEURAL_NETWORK::StochasticGradientDescent::UpdateParameters(NEURAL_NETWORK::LayerDense& layer)
+void NEURAL_NETWORK::StochasticGradientDescent::UpdateParameters(NEURAL_NETWORK::LayerBase& layer)
 {
 	Eigen::MatrixXd weight_update;
 	Eigen::RowVectorXd bias_update;

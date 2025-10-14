@@ -38,6 +38,83 @@ namespace NEURAL_NETWORK
 		virtual double GetWeightRegularizerL2() const { return 0.0; }
 		virtual double GetBiasRegularizerL1() const { return 0.0; }
 		virtual double GetBiasRegularizerL2() const { return 0.0; }
+
+		virtual const Eigen::MatrixXd& GetDWeights() const 
+		{
+			static const Eigen::MatrixXd empty;
+			return empty;
+		}
+		
+		virtual const Eigen::RowVectorXd& GetDBiases() const 
+		{
+			static const Eigen::RowVectorXd empty;
+			return empty;
+		}
+
+		virtual const Eigen::MatrixXd& GetWeightMomentums() const 
+		{
+			static const Eigen::MatrixXd empty;
+			return empty;
+		}
+		
+		virtual const Eigen::RowVectorXd& GetBiasMomentums() const 
+		{
+			static const Eigen::RowVectorXd empty;
+			return empty;
+		}
+		
+		virtual const Eigen::MatrixXd& GetWeightCaches() const 
+		{
+			static const Eigen::MatrixXd empty;
+			return empty;
+		}
+		
+		virtual const Eigen::RowVectorXd& GetBiasCaches() const 
+		{
+			static const Eigen::RowVectorXd empty;
+			return empty;
+		}
+		
+		virtual void SetWeightMomentums(const Eigen::MatrixXd& weight_momentums) 
+		{
+			(void)weight_momentums; // Suppress unused parameter warning
+		}
+		
+		virtual void SetBiasMomentums(const Eigen::RowVectorXd& bias_momentums) 
+		{
+			(void)bias_momentums; // Suppress unused parameter warning
+		}
+		
+		virtual void SetWeightCaches(const Eigen::MatrixXd& weight_caches) 
+		{
+			(void)weight_caches; // Suppress unused parameter warning
+		}
+		
+		virtual void SetBiasCaches(const Eigen::RowVectorXd& bias_caches) 
+		{
+			(void)bias_caches; // Suppress unused parameter warning
+		}
+		
+		virtual void UpdateWeights(Eigen::MatrixXd& weight_update) 
+		{
+			(void)weight_update; // Suppress unused parameter warning
+		}
+		
+		virtual void UpdateWeightsCache(Eigen::MatrixXd& weight_update) 
+		{
+			(void)weight_update; // Suppress unused parameter warning
+		}
+		
+		virtual void UpdateBiases(Eigen::RowVectorXd& bias_update) 
+		{
+			(void)bias_update; // Suppress unused parameter warning
+		}
+		
+		virtual void UpdateBiasesCache(Eigen::RowVectorXd& bias_update) 
+		{
+			(void)bias_update; // Suppress unused parameter warning
+		}
+		
 		virtual const Eigen::MatrixXd& GetWeights() const
 		{
 			static const Eigen::MatrixXd empty;

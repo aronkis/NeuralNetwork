@@ -1,5 +1,6 @@
 #include "Adam.h"
 #include "Helpers.h"
+#include "BatchNormalization.h"
 
 NEURAL_NETWORK::Adam::Adam(double learning_rate, 
 						   double decay, 
@@ -12,8 +13,16 @@ NEURAL_NETWORK::Adam::Adam(double learning_rate,
 	epsilon_ = epsilon;
 }
 
-void NEURAL_NETWORK::Adam::UpdateParameters(NEURAL_NETWORK::LayerDense& layer)
+void NEURAL_NETWORK::Adam::UpdateParameters(NEURAL_NETWORK::LayerBase& layer)
 {
+	// Special case for BatchNormalization layer
+	auto bn_layer = dynamic_cast<NEURAL_NETWORK::BatchNormalization*>(&layer);
+	if (bn_layer)
+	{
+		UpdateBatchNormalizationParameters(*bn_layer);
+		return;
+	}
+
 	Eigen::MatrixXd weight_momentum_update;
 	Eigen::MatrixXd weight_momentum_corrected;
 	Eigen::MatrixXd weight_cache_update;
@@ -25,11 +34,11 @@ void NEURAL_NETWORK::Adam::UpdateParameters(NEURAL_NETWORK::LayerDense& layer)
 	Eigen::RowVectorXd bias_cache_corrected;
 	Eigen::RowVectorXd bias_update;
 
-	if (layer.GetWeightCaches().size() == 0) 
+	if (layer.GetWeightCaches().size() == 0)
 	{
-		layer.SetWeightCaches(Eigen::MatrixXd::Zero(layer.GetWeights().rows(), 
+		layer.SetWeightCaches(Eigen::MatrixXd::Zero(layer.GetWeights().rows(),
 													layer.GetWeights().cols()));
-		layer.SetWeightMomentums(Eigen::MatrixXd::Zero(layer.GetWeights().rows(), 
+		layer.SetWeightMomentums(Eigen::MatrixXd::Zero(layer.GetWeights().rows(),
 													   layer.GetWeights().cols()));
 		layer.SetBiasCaches(Eigen::RowVectorXd::Zero(layer.GetBiases().size()));
 		layer.SetBiasMomentums(Eigen::RowVectorXd::Zero(layer.GetBiases().size()));
@@ -87,4 +96,51 @@ double NEURAL_NETWORK::Adam::GetBeta2() const
 double NEURAL_NETWORK::Adam::GetEpsilon() const 
 { 
 	return epsilon_; 
+}
+
+void NEURAL_NETWORK::Adam::UpdateBatchNormalizationParameters(NEURAL_NETWORK::BatchNormalization& bn_layer)
+{
+	// Get current parameters and gradients
+	Eigen::MatrixXd gamma = bn_layer.GetWeights();  // gamma (scale parameters)
+	Eigen::RowVectorXd beta = bn_layer.GetBiases(); // beta (shift parameters)
+	Eigen::MatrixXd d_gamma = bn_layer.GetDWeights();
+	Eigen::RowVectorXd d_beta = bn_layer.GetDBiases();
+
+	// Initialize or resize momentum and cache if needed (BatchNorm can resize dynamically)
+	if (bn_gamma_momentum_.size() == 0 ||
+		bn_gamma_momentum_.rows() != gamma.rows() ||
+		bn_gamma_momentum_.cols() != gamma.cols() ||
+		bn_beta_momentum_.size() != beta.size())
+	{
+		bn_gamma_momentum_ = Eigen::MatrixXd::Zero(gamma.rows(), gamma.cols());
+		bn_beta_momentum_ = Eigen::RowVectorXd::Zero(beta.size());
+		bn_gamma_cache_ = Eigen::MatrixXd::Zero(gamma.rows(), gamma.cols());
+		bn_beta_cache_ = Eigen::RowVectorXd::Zero(beta.size());
+	}
+	
+	// Update momentum (first moment)
+	bn_gamma_momentum_ = beta1_ * bn_gamma_momentum_ + (1 - beta1_) * d_gamma;
+	bn_beta_momentum_ = beta1_ * bn_beta_momentum_ + (1 - beta1_) * d_beta;
+	
+	// Update cache (second moment)
+	bn_gamma_cache_ = beta2_ * bn_gamma_cache_ + (1 - beta2_) * d_gamma.array().square().matrix();
+	bn_beta_cache_ = beta2_ * bn_beta_cache_ + (1 - beta2_) * d_beta.array().square().matrix();
+	
+	// Bias correction
+	Eigen::MatrixXd gamma_momentum_corrected = bn_gamma_momentum_ / (1 - std::pow(beta1_, iterations_ + 1));
+	Eigen::RowVectorXd beta_momentum_corrected = bn_beta_momentum_ / (1 - std::pow(beta1_, iterations_ + 1));
+	Eigen::MatrixXd gamma_cache_corrected = bn_gamma_cache_ / (1 - std::pow(beta2_, iterations_ + 1));
+	Eigen::RowVectorXd beta_cache_corrected = bn_beta_cache_ / (1 - std::pow(beta2_, iterations_ + 1));
+	
+	// Compute updates
+	Eigen::MatrixXd gamma_update = -current_learning_rate_ * 
+								   gamma_momentum_corrected.array() / 
+								   (gamma_cache_corrected.array().sqrt() + epsilon_);
+	Eigen::RowVectorXd beta_update = -current_learning_rate_ * 
+									 beta_momentum_corrected.array() / 
+									 (beta_cache_corrected.array().sqrt() + epsilon_);
+	
+	// Apply updates
+	bn_layer.UpdateWeights(gamma_update);
+	bn_layer.UpdateBiases(beta_update);
 }
