@@ -1,4 +1,5 @@
 #include "BatchNormalization.h"
+#include <iostream>
 
 NEURAL_NETWORK::BatchNormalization::BatchNormalization(int num_features, 
 													   double epsilon, 
@@ -129,4 +130,47 @@ void NEURAL_NETWORK::BatchNormalization::UpdateBiases(Eigen::RowVectorXd& bias_u
 int NEURAL_NETWORK::BatchNormalization::GetNumFeatures() const
 {
 	return num_features_;
+}
+
+std::pair<Eigen::MatrixXd, Eigen::RowVectorXd> NEURAL_NETWORK::BatchNormalization::GetParameters() const
+{
+	// Pack gamma, running_mean, and running_var into the weights matrix
+	// Row 0: gamma
+	// Row 1: running_mean
+	// Row 2: running_var
+	Eigen::MatrixXd weights(3, num_features_);
+	weights.row(0) = gamma_.row(0);
+	weights.row(1) = running_mean_.transpose();
+	weights.row(2) = running_var_.transpose();
+	
+	return std::make_pair(weights, beta_);
+}
+
+void NEURAL_NETWORK::BatchNormalization::SetParameters(const Eigen::MatrixXd& weights, const Eigen::RowVectorXd& biases)
+{
+	// Check if this is the new format (3 rows) or old format (1 row)
+	if (weights.rows() == 3 && weights.cols() == num_features_)
+	{
+		// New format: unpack gamma, running_mean, and running_var
+		gamma_.row(0) = weights.row(0);
+		running_mean_ = weights.row(1).transpose();
+		running_var_ = weights.row(2).transpose();
+	}
+	else if (weights.rows() == 1 && weights.cols() == num_features_)
+	{
+		// Old format: only gamma (for backward compatibility)
+		gamma_ = weights;
+		// Keep existing running statistics or reset them
+		std::cerr << "BatchNormalization::SetParameters warning: loading old format without running statistics" << std::endl;
+	}
+	else if (weights.rows() == gamma_.rows() && weights.cols() == gamma_.cols())
+	{
+		// Fallback for any other size match
+		gamma_ = weights;
+	}
+	
+	if (biases.cols() == beta_.cols())
+	{
+		beta_ = biases;
+	}
 }

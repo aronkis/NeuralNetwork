@@ -416,7 +416,7 @@ Eigen::MatrixXd NEURAL_NETWORK::Model::Predict(const Eigen::MatrixXd& X,
 
 		forward(batch_X, false);
 
-		 output.block(start_idx, 
+		output.block(start_idx, 
 		 			  0, 
 		 			  batch_X.rows(), 
 		 			  output_size) = layers_.back()->predictions();
@@ -555,7 +555,8 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             config.layer_types.push_back("BatchNormalization");
             std::vector<double> params = 
 			{
-                static_cast<double>(batchnorm->GetNumFeatures())
+                static_cast<double>(batchnorm->GetNumFeatures()),
+
             };
             config.layer_params.push_back(params);
         } 

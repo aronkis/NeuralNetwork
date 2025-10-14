@@ -17,8 +17,8 @@
 // #define PLUTO_MODEL
 // #define FASHION_MNIST
 // #define MODEL
-#define CNN
-// #define CNN_MODEL
+// #define CNN
+#define CNN_MODEL
 
 #ifdef CNN
 
@@ -124,7 +124,7 @@ int main()
 
     model.Finalize();
 
-    model.Train(X, y, BATCH_SIZE, 10, NN_PRINT_EVERY, X_test, y_test);
+    model.Train(X, y, BATCH_SIZE, 2, NN_PRINT_EVERY, X_test, y_test);
     
     model.SaveModel("data/fashion_mnist_CNN_complete_model.bin");
 }
@@ -148,7 +148,7 @@ int main()
 	NEURAL_NETWORK::Model model;
 
 	std::cout << "Loading model..." << std::endl;
-	model.LoadModel("data/fashion_mnist_CNN_model_save_2.bin");
+	model.LoadModel("data/fashion_mnist_CNN_complete_model.bin");
 	std::cout << "Model loaded successfully!" << std::endl;
 
 	std::cout << "Testing forward pass on small batch..." << std::endl;
@@ -461,7 +461,22 @@ Training: Accuracy: 0.853167, Loss: 0.456743 (Data loss: 0.408862 | Regularizati
 Validation Accuracy: 0.863, Validation Loss: 0.417673
 
 
-CNN -> MaxPool -> BatchNorm(trained) -> Dense -> Dropout
+CNN -> MaxPool -> BatchNorm(trained) -> Dense -> Dropout (FULL SET)
+========== Epoch 5/5 ==========
+Step: 0 [0.21%], Accuracy: 0.84375, Loss: 0.466412, LR: 0.000499906
+Step: 50 [10.87%], Accuracy: 0.835938, Loss: 0.424009, LR: 0.000499904
+Step: 100 [21.54%], Accuracy: 0.875, Loss: 0.391405, LR: 0.000499901
+Step: 150 [32.20%], Accuracy: 0.835938, Loss: 0.478866, LR: 0.000499899
+Step: 200 [42.86%], Accuracy: 0.898438, Loss: 0.279198, LR: 0.000499896
+Step: 250 [53.52%], Accuracy: 0.851562, Loss: 0.49053, LR: 0.000499894
+Step: 300 [64.18%], Accuracy: 0.851562, Loss: 0.420675, LR: 0.000499891
+Step: 350 [74.84%], Accuracy: 0.851562, Loss: 0.404609, LR: 0.000499889
+Step: 400 [85.50%], Accuracy: 0.882812, Loss: 0.397719, LR: 0.000499886
+Step: 450 [96.16%], Accuracy: 0.898438, Loss: 0.432853, LR: 0.000499884
+Step: 468 [100.00%], Accuracy: 0.8125, Loss: 0.54317, LR: 0.000499883
+Training: Accuracy: 0.869617, Loss: 0.414934 (Data loss: 0.366657 | Regularization loss: 0.0482769), Learning Rate: 0.000499883
+Validation Accuracy: 0.8887, Validation Loss: 0.308375
+Model saved to "data/fashion_mnist_CNN_complete_model.bin"
 
 */
 
