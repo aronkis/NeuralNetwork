@@ -140,7 +140,7 @@ int main()
 	std::cout << "Finalizing model..." << std::endl;
     model.Finalize();
 	std::cout << "Model finalized successfully!" << std::endl;
-    model.Train(X_tensor, y_tensor, BATCH_SIZE, 2, 1, X_test_tensor, y_test_tensor);
+    model.Train(X_tensor, y_tensor, BATCH_SIZE, 2, NN_PRINT_EVERY, X_test_tensor, y_test_tensor);
     
     // model.SaveModel("data/fashion_mnist_CNN_complete_model.bin");
 }
