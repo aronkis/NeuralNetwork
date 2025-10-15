@@ -2,6 +2,7 @@
 #define __LAYERBASE_H__
 
 #include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
 
 namespace NEURAL_NETWORK 
@@ -16,6 +17,20 @@ namespace NEURAL_NETWORK
 		
 		virtual void forward(const Eigen::MatrixXd& inputs, bool training) = 0;
 		virtual void backward(const Eigen::MatrixXd& dvalues) = 0;
+
+		// Tensor-based interface for CNN layers
+		virtual bool SupportsTensorInterface() const { return false; }
+		virtual void forward(const Eigen::Tensor<double, 4>& inputs, bool training)
+		{
+			// Default implementation converts tensor to matrix and calls matrix version
+			// This allows non-CNN layers to work without modification
+			(void)inputs; (void)training; // Suppress unused parameter warnings
+		}
+		virtual void backward(const Eigen::Tensor<double, 4>& dvalues)
+		{
+			// Default implementation converts tensor to matrix and calls matrix version
+			(void)dvalues; // Suppress unused parameter warning
+		}
 		virtual Eigen::MatrixXd predictions() const 
 		{
 			return Eigen::MatrixXd();
@@ -25,6 +40,22 @@ namespace NEURAL_NETWORK
 		virtual const Eigen::MatrixXd& GetDInput() const = 0;
 
 		virtual void SetDInput(const Eigen::MatrixXd& dinput) = 0;
+
+		// Tensor-based getters for CNN layers
+		virtual const Eigen::Tensor<double, 4>& GetTensorOutput() const
+		{
+			static const Eigen::Tensor<double, 4> empty;
+			return empty;
+		}
+		virtual const Eigen::Tensor<double, 4>& GetTensorDInput() const
+		{
+			static const Eigen::Tensor<double, 4> empty;
+			return empty;
+		}
+		virtual void SetTensorDInput(const Eigen::Tensor<double, 4>& dinput)
+		{
+			(void)dinput; // Suppress unused parameter warning
+		}
 
 		virtual std::pair<Eigen::MatrixXd, Eigen::RowVectorXd> GetParameters() const 
 		{

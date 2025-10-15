@@ -15,6 +15,14 @@ namespace NEURAL_NETWORK
         void forward(const Eigen::MatrixXd& inputs, bool training) override = 0;
         void backward(const Eigen::MatrixXd& dvalues) override = 0;
 
+        // Tensor interface implementation
+        bool SupportsTensorInterface() const override;
+        void forward(const Eigen::Tensor<double, 4>& inputs, bool training) override = 0;
+        void backward(const Eigen::Tensor<double, 4>& dvalues) override = 0;
+        const Eigen::Tensor<double, 4>& GetTensorOutput() const override;
+        const Eigen::Tensor<double, 4>& GetTensorDInput() const override;
+        void SetTensorDInput(const Eigen::Tensor<double, 4>& dinput) override;
+
         const Eigen::MatrixXd& GetOutput() const override;
         const Eigen::MatrixXd& GetDInput() const override;
         void SetDInput(const Eigen::MatrixXd& dinput) override;

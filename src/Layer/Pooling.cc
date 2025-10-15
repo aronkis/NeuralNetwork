@@ -80,3 +80,26 @@ int NEURAL_NETWORK::Pooling::GetOutputWidth() const
 {
     return output_width_;
 }
+
+// Tensor interface implementations
+bool NEURAL_NETWORK::Pooling::SupportsTensorInterface() const
+{
+    return true;
+}
+
+const Eigen::Tensor<double, 4>& NEURAL_NETWORK::Pooling::GetTensorOutput() const
+{
+    return output_tensor_;
+}
+
+const Eigen::Tensor<double, 4>& NEURAL_NETWORK::Pooling::GetTensorDInput() const
+{
+    return d_input_tensor_;
+}
+
+void NEURAL_NETWORK::Pooling::SetTensorDInput(const Eigen::Tensor<double, 4>& dinput)
+{
+    d_input_tensor_ = dinput;
+    // Also update matrix version for backward compatibility
+    d_input_ = InputTensorToMatrix(d_input_tensor_);
+}

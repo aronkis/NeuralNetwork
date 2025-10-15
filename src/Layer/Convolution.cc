@@ -146,6 +146,142 @@ void NEURAL_NETWORK::Convolution::backward(const Eigen::MatrixXd &d_values)
 	d_input_ = InputTensorToMatrix(d_input_tensor_);
 }
 
+// Tensor interface implementations
+bool NEURAL_NETWORK::Convolution::SupportsTensorInterface() const
+{
+	return true;
+}
+
+void NEURAL_NETWORK::Convolution::forward(const Eigen::Tensor<double, 4>& inputs, bool training)
+{
+	int batch_size = inputs.dimension(0);
+	int filter_height = weights_.dimension(0);
+	int filter_width = weights_.dimension(1);
+	int input_channels = weights_.dimension(2);
+	int num_filters = weights_.dimension(3);
+
+	// Store tensor input directly (no conversion)
+	inputs_ = inputs;
+
+	im2col_input_ = im2col(inputs_,
+						   filter_height, filter_width,
+						   pad_height_, pad_width_,
+						   stride_height_, stride_width_);
+
+	const Eigen::MatrixXd filter_matrix = WeightsToMatrix();
+
+	Eigen::MatrixXd result = filter_matrix * im2col_input_; // Convolution
+
+	result.colwise() += biases_;
+
+	int output_height = ((input_height_ + (2 * pad_height_) - filter_height) /
+						  stride_height_) + 1;
+	int output_width =  ((input_width_ + (2 * pad_width_) - filter_width) /
+						  stride_width_) + 1;
+
+	if (tensor_output_.size() == 0 ||
+		tensor_output_.dimension(0) != batch_size ||
+		tensor_output_.dimension(1) != output_height ||
+		tensor_output_.dimension(2) != output_width ||
+		tensor_output_.dimension(3) != num_filters)
+	{
+		tensor_output_ = Eigen::Tensor<double, 4>(batch_size, output_height, output_width, num_filters);
+	}
+
+	// Convert convolution result to output tensor using row-major ordering
+	for (int b = 0; b < batch_size; b++) {
+		for (int h = 0; h < output_height; h++) {
+			for (int w = 0; w < output_width; w++) {
+				int spatial_idx = b * output_height * output_width + h * output_width + w;
+				for (int f = 0; f < num_filters; f++) {
+					tensor_output_(b, h, w, f) = result(f, spatial_idx);
+				}
+			}
+		}
+	}
+
+	// Only convert to matrix if needed for backward compatibility
+	// The tensor output is the primary output now
+	output_ = InputTensorToMatrix(tensor_output_);
+}
+
+void NEURAL_NETWORK::Convolution::backward(const Eigen::Tensor<double, 4>& dvalues)
+{
+	// Convert tensor dvalues to matrix for processing (temporary until fully tensor-based)
+	Eigen::MatrixXd d_values_matrix = TensorUtils::Tensor4DToMatrix(dvalues);
+
+	int batch_size = d_values_matrix.rows();
+	int filter_height = weights_.dimension(0);
+	int filter_width = weights_.dimension(1);
+	int input_channels = weights_.dimension(2);
+	int num_filters = weights_.dimension(3);
+
+	int output_height = ((input_height_ + (2 * pad_height_) - filter_height) /
+						 stride_height_) + 1;
+	int output_width = ((input_width_ + (2 * pad_width_) - filter_width) /
+						stride_width_) + 1;
+
+	int total_spatial = batch_size * output_height * output_width;
+	Eigen::Map<const Eigen::MatrixXd> d_values_reshaped(d_values_matrix.data(),
+														num_filters, total_spatial);
+
+	d_biases_ = d_values_reshaped.rowwise().sum();
+
+	Eigen::MatrixXd d_weights_matrix = im2col_input_ * d_values_reshaped.transpose();
+
+	WeightsToTensor(d_weights_matrix);
+
+	// Add regularization to d_weights_ tensor
+	if (weight_regularizer_l1_ > 0)
+	{
+		d_weights_ = d_weights_ + weight_regularizer_l1_ * weights_.sign();
+	}
+
+	if (weight_regularizer_l2_ > 0)
+	{
+		d_weights_ = d_weights_ + 2 * weight_regularizer_l2_ * weights_;
+	}
+
+	// Add regularization to d_biases_
+	if (bias_regularizer_l1_ > 0)
+	{
+		d_biases_.array() += bias_regularizer_l1_ * biases_.array().sign();
+	}
+
+	if (bias_regularizer_l2_ > 0)
+	{
+		d_biases_.array() += 2 * bias_regularizer_l2_ * biases_.array();
+	}
+
+	Eigen::MatrixXd weights_matrix = WeightsToMatrix();
+	Eigen::MatrixXd d_input_col = weights_matrix.transpose() * d_values_reshaped;
+
+	col2im(d_input_col, d_values_matrix.rows(), input_height_,
+		   input_width_, input_channels, filter_height,
+		   filter_width, pad_height_, pad_width_,
+		   stride_height_, stride_width_);
+
+	// Only convert to matrix if needed for backward compatibility
+	d_input_ = InputTensorToMatrix(d_input_tensor_);
+}
+
+const Eigen::Tensor<double, 4>& NEURAL_NETWORK::Convolution::GetTensorOutput() const
+{
+	return tensor_output_;
+}
+
+const Eigen::Tensor<double, 4>& NEURAL_NETWORK::Convolution::GetTensorDInput() const
+{
+	return d_input_tensor_;
+}
+
+void NEURAL_NETWORK::Convolution::SetTensorDInput(const Eigen::Tensor<double, 4>& dinput)
+{
+	d_input_tensor_ = dinput;
+	// Also update matrix version for backward compatibility
+	d_input_ = InputTensorToMatrix(d_input_tensor_);
+}
+
 void NEURAL_NETWORK::Convolution::InputMatrixToTensor(const Eigen::MatrixXd& matrix,
 												  int batch_size, int height, int width, int channels)
 {

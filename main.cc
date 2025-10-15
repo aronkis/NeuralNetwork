@@ -17,8 +17,8 @@
 // #define PLUTO_MODEL
 // #define FASHION_MNIST
 // #define MODEL
-// #define CNN
-#define CNN_MODEL
+#define CNN
+// #define CNN_MODEL
 
 #ifdef CNN
 

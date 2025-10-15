@@ -52,3 +52,9 @@ void NEURAL_NETWORK::LayerDropout::SetDInput(const Eigen::MatrixXd& dinput)
 {
 	d_inputs_ = dinput;
 }
+
+// Tensor interface implementations
+bool NEURAL_NETWORK::LayerDropout::SupportsTensorInterface() const
+{
+	return false; // Keep simple - dropout doesn't need tensor interface
+}

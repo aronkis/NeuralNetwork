@@ -15,6 +15,10 @@ namespace NEURAL_NETWORK
 
         void forward(const Eigen::MatrixXd& inputs, bool training) override;
         void backward(const Eigen::MatrixXd& dvalues) override;
+
+        // Tensor interface implementation
+        void forward(const Eigen::Tensor<double, 4>& inputs, bool training) override;
+        void backward(const Eigen::Tensor<double, 4>& dvalues) override;
     private:
         Eigen::Tensor<int, 4> max_indices_;
     };

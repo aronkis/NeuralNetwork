@@ -1,6 +1,7 @@
 #include "Model.h"
 #include "LayerDense.h"
 #include "BatchNormalization.h"
+#include "TensorUtils.h"
 #include "Helpers.h"
 
 #include <iostream>
@@ -285,7 +286,22 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 																		end_idx - start_idx, 
 																		y.cols());
 
-			forward(batch_X, true);
+			// Determine which forward function to use based on model architecture
+			bool has_cnn = StartsWithCNNLayers();
+			if (has_cnn)
+			{
+				Eigen::Tensor<double, 4> tensor_input;
+				TensorUtils::MatrixToTensor4D(batch_X, tensor_input,
+											  batch_X.rows(),  // batch_size
+											  1,               // height
+											  1,               // width
+											  batch_X.cols()); // channels
+				forward(tensor_input, true);
+			}
+			else
+			{
+				forward(batch_X, true);
+			}
 
 			double reg_loss = 0.0;
 			if (auto* mse = dynamic_cast<LossMeanSquaredError*>(loss_.get())) 
@@ -1012,18 +1028,52 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 void NEURAL_NETWORK::Model::forward(const Eigen::MatrixXd& inputs, bool training)
 {
 	input_layer_->forward(inputs, training);
-	bool flattened = false;
-	
-	for (const auto& layer : layers_)
+
+	bool seen_dense_layer = false; // Track if we've encountered a Dense layer
+
+	for (size_t i = 0; i < layers_.size(); i++)
 	{
-		auto prev = layer->getPrev();
+		auto current_layer = layers_[i];
+		auto prev = current_layer->getPrev();
+
+		// Check if current layer is Dense - if so, everything after is matrix flow
+		if (dynamic_cast<LayerDense*>(current_layer.get()))
+		{
+			seen_dense_layer = true;
+		}
+
 		if (prev)
 		{
-			layer->forward(prev->GetOutput(), training);
+			// Check if we should use tensor flow
+			// Key insight: Use tensor flow only in the CNN portion before first Dense layer
+			bool prev_is_cnn_layer = (dynamic_cast<Convolution*>(prev.get()) ||
+									  dynamic_cast<MaxPooling*>(prev.get()) ||
+									  dynamic_cast<BatchNormalization*>(prev.get()) ||
+									  dynamic_cast<ActivationReLU*>(prev.get()));
+			bool current_is_dense_layer = dynamic_cast<LayerDense*>(current_layer.get());
+
+			if (!seen_dense_layer &&
+				prev->SupportsTensorInterface() && current_layer->SupportsTensorInterface() &&
+				prev_is_cnn_layer && !current_is_dense_layer)
+			{
+				// Both layers support tensors AND we're still in CNN portion - use tensor flow
+				current_layer->forward(prev->GetTensorOutput(), training);
+			}
+			else if (!seen_dense_layer &&
+					 prev->SupportsTensorInterface() && prev_is_cnn_layer && current_is_dense_layer)
+			{
+				current_layer->forward(prev->GetOutput(), training);
+			}
+			else
+			{
+				// Regular matrix flow (Dense layers and beyond, or after first Dense layer)
+				current_layer->forward(prev->GetOutput(), training);
+			}
 		}
 		else
 		{
-			layer->forward(inputs, training);
+			// First layer always gets matrix input from input_layer
+			current_layer->forward(input_layer_->GetOutput(), training);
 		}
 	}
 
@@ -1068,11 +1118,73 @@ void NEURAL_NETWORK::Model::backward(const Eigen::MatrixXd& output,
 		auto next = (*layer)->getNext();
 		if (next)
 		{
-			(*layer)->backward(next->GetDInput());
+			// Check if we should use tensor flow for backward pass
+			if ((*layer)->SupportsTensorInterface() && next->SupportsTensorInterface())
+			{
+				// Both layers support tensors - use tensor flow
+				(*layer)->backward(next->GetTensorDInput());
+			}
+			else if (!(*layer)->SupportsTensorInterface() && next->SupportsTensorInterface())
+			{
+				// Current layer needs matrix input, next has tensor output
+				// This is the Dense->CNN transition point in backward pass
+				(*layer)->backward(next->GetDInput());
+			}
+			else
+			{
+				// Regular matrix flow
+				(*layer)->backward(next->GetDInput());
+			}
 		}
 		else if (loss_)
 		{
 			(*layer)->backward(loss_->GetDInput());
 		}
 	}
+}
+
+// Tensor-based forward function for CNN layers
+void NEURAL_NETWORK::Model::forward(const Eigen::Tensor<double, 4>& inputs, bool training)
+{
+	// Convert tensor input to matrix once and use regular forward path
+	Eigen::MatrixXd matrix_input = TensorUtils::Tensor4DToMatrix(inputs);
+
+	// Use regular matrix-based forward
+	forward(matrix_input, training);
+}
+
+// Tensor-based backward function for CNN layers
+void NEURAL_NETWORK::Model::backward(const Eigen::Tensor<double, 4>& output, const Eigen::MatrixXd& targets)
+{
+	// Convert tensor output to matrix once and use regular backward path
+	Eigen::MatrixXd matrix_output = TensorUtils::Tensor4DToMatrix(output);
+
+	// Use regular matrix-based backward
+	backward(matrix_output, targets);
+}
+
+// Helper function to determine if model contains CNN layers
+bool NEURAL_NETWORK::Model::StartsWithCNNLayers() const
+{
+	if (layers_.empty()) return false;
+
+	// Check if any of the early layers are CNN layers
+	// If we find CNN layers before Dense layers, we should use tensor path
+	for (size_t i = 0; i < layers_.size(); i++)
+	{
+		if (dynamic_cast<Convolution*>(layers_[i].get()) ||
+		    dynamic_cast<MaxPooling*>(layers_[i].get()) ||
+		    dynamic_cast<BatchNormalization*>(layers_[i].get()))
+		{
+			return true; // Found CNN layer, use tensor path
+		}
+
+		// If we hit a dense layer first, use matrix path
+		if (dynamic_cast<LayerDense*>(layers_[i].get()))
+		{
+			return false;
+		}
+	}
+
+	return false; // No CNN layers found
 }

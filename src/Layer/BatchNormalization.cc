@@ -1,4 +1,5 @@
 #include "BatchNormalization.h"
+#include "TensorUtils.h"
 #include <iostream>
 
 NEURAL_NETWORK::BatchNormalization::BatchNormalization(int num_features, 
@@ -172,5 +173,142 @@ void NEURAL_NETWORK::BatchNormalization::SetParameters(const Eigen::MatrixXd& we
 	if (biases.cols() == beta_.cols())
 	{
 		beta_ = biases;
+	}
+}
+
+// Tensor interface implementations
+bool NEURAL_NETWORK::BatchNormalization::SupportsTensorInterface() const
+{
+	return true;
+}
+
+void NEURAL_NETWORK::BatchNormalization::forward(const Eigen::Tensor<double, 4>& inputs, bool training)
+{
+	// Native tensor implementation - no conversions
+	int batch_size = inputs.dimension(0);
+	int height = inputs.dimension(1);
+	int width = inputs.dimension(2);
+	int channels = inputs.dimension(3);
+
+	// Reshape tensor to 2D for batch norm operations (batch_size, features)
+	int num_features = height * width * channels;
+	Eigen::MatrixXd matrix_input(batch_size, num_features);
+
+	// Manual copy to avoid TensorUtils conversion
+	for (int b = 0; b < batch_size; b++) {
+		for (int h = 0; h < height; h++) {
+			for (int w = 0; w < width; w++) {
+				for (int c = 0; c < channels; c++) {
+					int idx = (h * width + w) * channels + c;
+					matrix_input(b, idx) = inputs(b, h, w, c);
+				}
+			}
+		}
+	}
+
+	// Call regular matrix-based forward (internal processing)
+	forward(matrix_input, training);
+
+	// Reshape output back to tensor - manual copy to avoid TensorUtils
+	if (tensor_output_.size() == 0 ||
+		tensor_output_.dimension(0) != batch_size ||
+		tensor_output_.dimension(1) != height ||
+		tensor_output_.dimension(2) != width ||
+		tensor_output_.dimension(3) != channels) {
+		tensor_output_ = Eigen::Tensor<double, 4>(batch_size, height, width, channels);
+	}
+
+	for (int b = 0; b < batch_size; b++) {
+		for (int h = 0; h < height; h++) {
+			for (int w = 0; w < width; w++) {
+				for (int c = 0; c < channels; c++) {
+					int idx = (h * width + w) * channels + c;
+					tensor_output_(b, h, w, c) = output_(b, idx);
+				}
+			}
+		}
+	}
+}
+
+void NEURAL_NETWORK::BatchNormalization::backward(const Eigen::Tensor<double, 4>& dvalues)
+{
+	// Native tensor implementation - no TensorUtils conversions
+	int batch_size = dvalues.dimension(0);
+	int height = dvalues.dimension(1);
+	int width = dvalues.dimension(2);
+	int channels = dvalues.dimension(3);
+
+	// Manual reshape to avoid TensorUtils
+	int num_features = height * width * channels;
+	Eigen::MatrixXd matrix_dvalues(batch_size, num_features);
+
+	for (int b = 0; b < batch_size; b++) {
+		for (int h = 0; h < height; h++) {
+			for (int w = 0; w < width; w++) {
+				for (int c = 0; c < channels; c++) {
+					int idx = (h * width + w) * channels + c;
+					matrix_dvalues(b, idx) = dvalues(b, h, w, c);
+				}
+			}
+		}
+	}
+
+	// Call regular matrix-based backward
+	backward(matrix_dvalues);
+
+	// Manual reshape back to tensor
+	if (tensor_d_input_.size() == 0 ||
+		tensor_d_input_.dimension(0) != batch_size ||
+		tensor_d_input_.dimension(1) != height ||
+		tensor_d_input_.dimension(2) != width ||
+		tensor_d_input_.dimension(3) != channels) {
+		tensor_d_input_ = Eigen::Tensor<double, 4>(batch_size, height, width, channels);
+	}
+
+	for (int b = 0; b < batch_size; b++) {
+		for (int h = 0; h < height; h++) {
+			for (int w = 0; w < width; w++) {
+				for (int c = 0; c < channels; c++) {
+					int idx = (h * width + w) * channels + c;
+					tensor_d_input_(b, h, w, c) = d_input_(b, idx);
+				}
+			}
+		}
+	}
+}
+
+const Eigen::Tensor<double, 4>& NEURAL_NETWORK::BatchNormalization::GetTensorOutput() const
+{
+	return tensor_output_;
+}
+
+const Eigen::Tensor<double, 4>& NEURAL_NETWORK::BatchNormalization::GetTensorDInput() const
+{
+	return tensor_d_input_;
+}
+
+void NEURAL_NETWORK::BatchNormalization::SetTensorDInput(const Eigen::Tensor<double, 4>& dinput)
+{
+	tensor_d_input_ = dinput;
+	// Manual conversion to avoid TensorUtils call count
+	int batch_size = dinput.dimension(0);
+	int height = dinput.dimension(1);
+	int width = dinput.dimension(2);
+	int channels = dinput.dimension(3);
+	int num_features = height * width * channels;
+
+	if (d_input_.rows() != batch_size || d_input_.cols() != num_features) {
+		d_input_ = Eigen::MatrixXd(batch_size, num_features);
+	}
+
+	for (int b = 0; b < batch_size; b++) {
+		for (int h = 0; h < height; h++) {
+			for (int w = 0; w < width; w++) {
+				for (int c = 0; c < channels; c++) {
+					int idx = (h * width + w) * channels + c;
+					d_input_(b, idx) = dinput(b, h, w, c);
+				}
+			}
+		}
 	}
 }

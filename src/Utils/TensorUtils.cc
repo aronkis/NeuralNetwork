@@ -1,4 +1,5 @@
 #include "TensorUtils.h"
+#include <iostream>
 
 void NEURAL_NETWORK::TensorUtils::MatrixToTensor4D(const Eigen::MatrixXd& matrix,
                                                     Eigen::Tensor<double, 4>& tensor,

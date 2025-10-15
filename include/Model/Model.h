@@ -40,8 +40,16 @@ namespace NEURAL_NETWORK
 		void LoadModel(const std::string& path);
 
     private:
+        // Matrix-based forward/backward for dense layers
         void forward(const Eigen::MatrixXd& inputs, bool training);
         void backward(const Eigen::MatrixXd& output, const Eigen::MatrixXd& targets);
+
+        // Tensor-based forward/backward for CNN layers
+        void forward(const Eigen::Tensor<double, 4>& inputs, bool training);
+        void backward(const Eigen::Tensor<double, 4>& output, const Eigen::MatrixXd& targets);
+
+        // Helper function to determine if model starts with CNN layers
+        bool StartsWithCNNLayers() const;
 
 		std::shared_ptr<LayerInput> input_layer_;
 		std::vector<std::shared_ptr<LayerBase>> layers_;
@@ -52,7 +60,8 @@ namespace NEURAL_NETWORK
         std::unique_ptr<Optimizer> optimizer_;
 
         Eigen::MatrixXd output_;
-        
+        Eigen::Tensor<double, 4> tensor_output_;
+
         bool softmax_classifier_ = false;
     };
 } // namespace NEURAL_NETWORK

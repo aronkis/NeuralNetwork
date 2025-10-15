@@ -2,6 +2,7 @@
 #define __LAYER_DROPOUT_H__
 
 #include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include "LayerBase.h"
 
 namespace NEURAL_NETWORK 
@@ -14,6 +15,9 @@ namespace NEURAL_NETWORK
 
 		void forward(const Eigen::MatrixXd& inputs, bool training) override;
 		void backward(const Eigen::MatrixXd& dvalues) override;
+
+		// Tensor interface implementation
+		bool SupportsTensorInterface() const override;
 		Eigen::MatrixXd predictions() const override;
 
 		const Eigen::MatrixXd& GetOutput() const override;
@@ -30,7 +34,7 @@ namespace NEURAL_NETWORK
 		Eigen::MatrixXd d_inputs_;
 
 		Eigen::MatrixXd mask_;
-		
+
 		double rate_;
 	};
 } // namespace NEURAL_NETWORK
