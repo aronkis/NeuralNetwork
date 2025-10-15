@@ -2,8 +2,9 @@
 #define __ACCURACY_H__
 
 #include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 
-namespace NEURAL_NETWORK 
+namespace NEURAL_NETWORK
 {
 	class Accuracy
 	{
@@ -14,17 +15,17 @@ namespace NEURAL_NETWORK
 		Accuracy(const Accuracy&) = delete;
 		Accuracy& operator=(const Accuracy&) = delete;
 
-		void Calculate(const Eigen::MatrixXd& predictions, const Eigen::MatrixXd& labels);
+		void Calculate(const Eigen::Tensor<double, 2>& predictions, const Eigen::Tensor<double, 2>& labels);
 		void CalculateAccumulated();
 		void NewPass();
 
 		double GetAccuracy() const;
 		double GetAccumulatedAccuracy() const;
 
-		virtual void init(const Eigen::MatrixXd& target, bool reinit = false) = 0;
+		virtual void init(const Eigen::Tensor<double, 2>& target, bool reinit = false) = 0;
 
 	protected:
-		virtual Eigen::ArrayXd compare(const Eigen::MatrixXd& predictions, const Eigen::MatrixXd& targets) const = 0;
+		virtual Eigen::Tensor<double, 1> compare(const Eigen::Tensor<double, 2>& predictions, const Eigen::Tensor<double, 2>& targets) const = 0;
 	
 	private:
 		double accuracy_ = 0.0;

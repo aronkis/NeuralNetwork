@@ -13,8 +13,8 @@ namespace NEURAL_NETWORK
                    int stride);
         ~MaxPooling() = default;
 
-        void forward(const Eigen::MatrixXd& inputs, bool training) override;
-        void backward(const Eigen::MatrixXd& dvalues) override;
+        void forward(const Eigen::Tensor<double, 2>& inputs, bool training) override;
+        void backward(const Eigen::Tensor<double, 2>& dvalues) override;
     private:
         Eigen::Tensor<int, 4> max_indices_;
     };

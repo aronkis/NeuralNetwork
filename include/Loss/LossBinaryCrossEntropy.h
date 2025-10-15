@@ -11,11 +11,11 @@ namespace NEURAL_NETWORK
 		LossBinaryCrossEntropy() = default;
 		~LossBinaryCrossEntropy() = default;
 
-		void forward(const Eigen::MatrixXd& predictions,
-					 const Eigen::MatrixXd& targets) override;
+		void forward(const Eigen::Tensor<double, 2>& predictions,
+					 const Eigen::Tensor<double, 2>& targets) override;
 
-		void backward(const Eigen::MatrixXd& d_values,
-					  const Eigen::MatrixXd& targets) override;
+		void backward(const Eigen::Tensor<double, 2>& d_values,
+					  const Eigen::Tensor<double, 2>& targets) override;
 	};
 } // namespace NEURAL_NETWORK
 

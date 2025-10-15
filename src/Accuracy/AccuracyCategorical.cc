@@ -1,69 +1,128 @@
 #include "AccuracyCategorical.h"
 
-Eigen::ArrayXd NEURAL_NETWORK::AccuracyCategorical::compare(const Eigen::MatrixXd& predictions, 
-															const Eigen::MatrixXd& targets) const
+Eigen::Tensor<double, 1> NEURAL_NETWORK::AccuracyCategorical::compare(const Eigen::Tensor<double, 2>& predictions,
+															const Eigen::Tensor<double, 2>& targets) const
 {
-	Eigen::MatrixXi targets_int;
+	int rows = targets.dimension(0);
+	int cols = targets.dimension(1);
 
-	if (targets.cols() > 1)
+	// Convert targets to integer representation
+	std::vector<int> targets_int(rows);
+
+	if (cols > 1)
 	{
-		targets_int.resize(targets.rows(), 1);
-		for (Eigen::Index i = 0; i < targets.rows(); i++)
+		// One-hot encoded targets: find argmax for each row
+		for (int i = 0; i < rows; i++)
 		{
-			Eigen::Index idx;
-			targets.row(i).maxCoeff(&idx);
-			targets_int(i, 0) = static_cast<int>(idx);
+			int max_idx = 0;
+			double max_val = targets(i, 0);
+			for (int j = 1; j < cols; j++)
+			{
+				if (targets(i, j) > max_val)
+				{
+					max_val = targets(i, j);
+					max_idx = j;
+				}
+			}
+			targets_int[i] = max_idx;
 		}
 	}
 	else
 	{
-		targets_int = targets.cast<int>();
+		// Single column targets: cast to int
+		for (int i = 0; i < rows; i++)
+		{
+			targets_int[i] = static_cast<int>(targets(i, 0));
+		}
 	}
 
+	// Determine number of classes
 	int num_classes = 0;
-
-	if (targets.cols() > 1)
+	if (cols > 1)
 	{
-		num_classes = static_cast<int>(targets.cols());
+		num_classes = cols;
 	}
 	else
 	{
-		double max_label = targets.maxCoeff();
+		// Find max label value
+		double max_label = targets(0, 0);
+		for (int i = 0; i < rows; i++)
+		{
+			if (targets(i, 0) > max_label)
+				max_label = targets(i, 0);
+		}
 		num_classes = static_cast<int>(max_label) + 1;
 		if (num_classes < 2) num_classes = 2;
 	}
 
-	Eigen::VectorXi pred_classes(predictions.rows());
-	
-	if (predictions.cols() > 1)
+	// Get predicted classes
+	std::vector<int> pred_classes(rows);
+	int pred_cols = predictions.dimension(1);
+
+	if (pred_cols > 1)
 	{
-		for (Eigen::Index i = 0; i < predictions.rows(); i++)
+		// Multi-class predictions: find argmax for each row
+		for (int i = 0; i < rows; i++)
 		{
-			Eigen::Index idx;
-			predictions.row(i).maxCoeff(&idx);
-			pred_classes(i) = static_cast<int>(idx);
+			int max_idx = 0;
+			double max_val = predictions(i, 0);
+			for (int j = 1; j < pred_cols; j++)
+			{
+				if (predictions(i, j) > max_val)
+				{
+					max_val = predictions(i, j);
+					max_idx = j;
+				}
+			}
+			pred_classes[i] = max_idx;
 		}
 	}
 	else
 	{
+		// Single column predictions
 		if (num_classes > 2)
 		{
-			pred_classes = predictions.cast<int>().col(0);
+			for (int i = 0; i < rows; i++)
+			{
+				pred_classes[i] = static_cast<int>(predictions(i, 0));
+			}
 		}
 		else
 		{
-			double min_val = predictions.minCoeff();
-			double max_val = predictions.maxCoeff();
+			// Binary classification
+			double min_val = predictions(0, 0);
+			double max_val = predictions(0, 0);
+			for (int i = 0; i < rows; i++)
+			{
+				if (predictions(i, 0) < min_val) min_val = predictions(i, 0);
+				if (predictions(i, 0) > max_val) max_val = predictions(i, 0);
+			}
+
 			if (min_val >= 0.0 && max_val <= 1.0)
 			{
-				pred_classes = (predictions.array() > 0.5).cast<int>().matrix().col(0);
+				// Probability output
+				for (int i = 0; i < rows; i++)
+				{
+					pred_classes[i] = predictions(i, 0) > 0.5 ? 1 : 0;
+				}
 			}
 			else
 			{
-				pred_classes = predictions.cast<int>().col(0);
+				// Raw output
+				for (int i = 0; i < rows; i++)
+				{
+					pred_classes[i] = static_cast<int>(predictions(i, 0));
+				}
 			}
 		}
 	}
 
-	return (pred_classes.array() == targets_int.col(0).array()).cast<double>();
+	// Compare predictions with targets
+	Eigen::Tensor<double, 1> result(rows);
+	for (int i = 0; i < rows; i++)
+	{
+		result(i) = (pred_classes[i] == targets_int[i]) ? 1.0 : 0.0;
+	}
+
+	return result;
 }

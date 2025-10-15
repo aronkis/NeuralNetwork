@@ -1,5 +1,6 @@
 #include "MaxPooling.h"
 #include "TensorUtils.h"
+#include <iostream>
 
 NEURAL_NETWORK::MaxPooling::MaxPooling(int batch_size, int pool_size, int input_height, 
                                        int input_width, int input_channels, 
@@ -10,10 +11,10 @@ NEURAL_NETWORK::MaxPooling::MaxPooling(int batch_size, int pool_size, int input_
     output_tensor_ = Eigen::Tensor<double, 4>(batch_size, output_height_, output_width_, input_channels_);
 }
 
-void NEURAL_NETWORK::MaxPooling::forward(const Eigen::MatrixXd& inputs, bool training)
+void NEURAL_NETWORK::MaxPooling::forward(const Eigen::Tensor<double, 2>& inputs, bool training)
 {
-    int actual_batch_size = inputs.rows();
-    
+    int actual_batch_size = inputs.dimension(0);
+
     if (actual_batch_size != batch_size_)
     {
         batch_size_ = actual_batch_size;
@@ -22,9 +23,9 @@ void NEURAL_NETWORK::MaxPooling::forward(const Eigen::MatrixXd& inputs, bool tra
         inputs_.resize(batch_size_, input_height_, input_width_, input_channels_);
     }
     
-    InputMatrixToTensor(inputs, batch_size_, input_height_, input_width_, input_channels_);
+    InputTensor2DToTensor4D(inputs, batch_size_, input_height_, input_width_, input_channels_);
 
-    Eigen::MatrixXd col = TensorUtils::im2col(inputs_, 
+    Eigen::MatrixXd col = TensorUtils::im2col(inputs_,
                                               pool_size_, pool_size_,
                                               0, 0,
                                               stride_, stride_);
@@ -57,12 +58,12 @@ void NEURAL_NETWORK::MaxPooling::forward(const Eigen::MatrixXd& inputs, bool tra
         }
     }
     
-    output_ = TensorUtils::Tensor4DToMatrix(output_tensor_);
+    output_ = InputTensor4DToTensor2D(output_tensor_);
 }
 
-void NEURAL_NETWORK::MaxPooling::backward(const Eigen::MatrixXd& dvalues)
+void NEURAL_NETWORK::MaxPooling::backward(const Eigen::Tensor<double, 2>& dvalues)
 {
-    int actual_batch_size = dvalues.rows();
+    int actual_batch_size = dvalues.dimension(0);
     
     if (d_input_tensor_.dimension(0) != actual_batch_size)
     {
@@ -70,7 +71,22 @@ void NEURAL_NETWORK::MaxPooling::backward(const Eigen::MatrixXd& dvalues)
     }
     
     Eigen::Tensor<double, 4> dvalues_tensor(actual_batch_size, output_height_, output_width_, input_channels_);
-    TensorUtils::MatrixToTensor4D(dvalues, dvalues_tensor, actual_batch_size, output_height_, output_width_, input_channels_);
+
+    // Convert 2D dvalues tensor to 4D tensor manually
+    for (int b = 0; b < actual_batch_size; b++)
+    {
+        for (int c = 0; c < input_channels_; c++)
+        {
+            for (int h = 0; h < output_height_; h++)
+            {
+                for (int w = 0; w < output_width_; w++)
+                {
+                    int idx = c * (output_height_ * output_width_) + h * output_width_ + w;
+                    dvalues_tensor(b, h, w, c) = dvalues(b, idx);
+                }
+            }
+        }
+    }
     
     int window_size = pool_size_ * pool_size_ * input_channels_;
     int num_windows = actual_batch_size * output_height_ * output_width_;
@@ -99,5 +115,5 @@ void NEURAL_NETWORK::MaxPooling::backward(const Eigen::MatrixXd& dvalues)
                        0, 0,
                        stride_, stride_);
     
-    d_input_ = TensorUtils::Tensor4DToMatrix(d_input_tensor_);
+    d_input_ = InputTensor4DToTensor2D(d_input_tensor_);
 }

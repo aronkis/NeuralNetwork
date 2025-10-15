@@ -1,11 +1,19 @@
 #include  "Accuracy.h"
 
-void NEURAL_NETWORK::Accuracy::Calculate(const Eigen::MatrixXd& predictions, 
-										 const Eigen::MatrixXd& targets)
+void NEURAL_NETWORK::Accuracy::Calculate(const Eigen::Tensor<double, 2>& predictions,
+										 const Eigen::Tensor<double, 2>& targets)
 {
-	Eigen::ArrayXd comparisons = compare(predictions, targets);
-	accuracy_ = comparisons.mean();
+	Eigen::Tensor<double, 1> comparisons_tensor = compare(predictions, targets);
 
+	// Convert tensor to array for mean calculation
+	int size = comparisons_tensor.dimension(0);
+	Eigen::ArrayXd comparisons(size);
+	for (int i = 0; i < size; i++)
+	{
+		comparisons(i) = comparisons_tensor(i);
+	}
+
+	accuracy_ = comparisons.mean();
 	accumulated_accuracy_ += comparisons.sum();
 	accumulated_count_ += comparisons.size();
 }

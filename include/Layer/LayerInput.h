@@ -2,9 +2,10 @@
 #define __LAYER_INPUT_H__
 
 #include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include "LayerBase.h"
 
-namespace NEURAL_NETWORK 
+namespace NEURAL_NETWORK
 {
     class LayerInput : public LayerBase
     {
@@ -12,17 +13,17 @@ namespace NEURAL_NETWORK
         LayerInput() = default;
         ~LayerInput() = default;
 
-        void forward(const Eigen::MatrixXd& inputs, bool training) override;
-        void backward(const Eigen::MatrixXd& dvalues) override;
-        Eigen::MatrixXd predictions() const override;
+        void forward(const Eigen::Tensor<double, 2>& inputs, bool training) override;
+        void backward(const Eigen::Tensor<double, 2>& dvalues) override;
+        Eigen::Tensor<double, 2> predictions() const override;
 
-        const Eigen::MatrixXd& GetOutput() const override;
-        const Eigen::MatrixXd& GetDInput() const override;
-        
-        void SetDInput(const Eigen::MatrixXd& dinput) override {}
+        const Eigen::Tensor<double, 2>& GetOutput() const override;
+        const Eigen::Tensor<double, 2>& GetDInput() const override;
+
+        void SetDInput(const Eigen::Tensor<double, 2>& dinput) override {}
 
     private:
-        Eigen::MatrixXd output_;
+        Eigen::Tensor<double, 2> output_;
     };
 } // namespace NEURAL_NETWORK
 

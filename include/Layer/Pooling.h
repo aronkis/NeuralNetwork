@@ -12,13 +12,13 @@ namespace NEURAL_NETWORK
     public:
         virtual ~Pooling() = default;
 
-        void forward(const Eigen::MatrixXd& inputs, bool training) override = 0;
-        void backward(const Eigen::MatrixXd& dvalues) override = 0;
+        void forward(const Eigen::Tensor<double, 2>& inputs, bool training) override = 0;
+        void backward(const Eigen::Tensor<double, 2>& dvalues) override = 0;
 
-        const Eigen::MatrixXd& GetOutput() const override;
-        const Eigen::MatrixXd& GetDInput() const override;
-        void SetDInput(const Eigen::MatrixXd& dinput) override;
-        Eigen::MatrixXd predictions() const override;
+        const Eigen::Tensor<double, 2>& GetOutput() const override;
+        const Eigen::Tensor<double, 2>& GetDInput() const override;
+        void SetDInput(const Eigen::Tensor<double, 2>& dinput) override;
+        Eigen::Tensor<double, 2> predictions() const override;
 
         int GetPoolSize() const;
         int GetStride() const;
@@ -33,17 +33,17 @@ namespace NEURAL_NETWORK
                 int input_width, int input_channels,
                 int stride);
 
-        void InputMatrixToTensor(const Eigen::MatrixXd& matrix, 
-                                 int batch_size, int height, 
+        void InputTensor2DToTensor4D(const Eigen::Tensor<double, 2>& tensor2d,
+                                 int batch_size, int height,
                                  int width, int channels);
-        Eigen::MatrixXd InputTensorToMatrix(const Eigen::Tensor<double, 4>& tensor);
+        Eigen::Tensor<double, 2> InputTensor4DToTensor2D(const Eigen::Tensor<double, 4>& tensor);
 
         Eigen::Tensor<double, 4> inputs_;
         Eigen::Tensor<double, 4> output_tensor_;
-        Eigen::MatrixXd output_;
+        Eigen::Tensor<double, 2> output_;
 
         Eigen::Tensor<double, 4> d_input_tensor_;
-        Eigen::MatrixXd d_input_;
+        Eigen::Tensor<double, 2> d_input_;
 
         int batch_size_;
         int pool_size_;

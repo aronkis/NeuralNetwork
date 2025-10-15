@@ -10,8 +10,10 @@
 #include <string>
 #include <sstream>
 #include <filesystem>
+#include <type_traits>
+#include <iomanip>
 
-struct ModelConfig 
+struct ModelConfig
 {
     std::vector<std::string> layer_types;
     std::vector<std::vector<double>> layer_params;
@@ -21,7 +23,7 @@ struct ModelConfig
     std::vector<double> optimizer_params;
     std::string accuracy_type;
     std::vector<double> accuracy_params;
-    std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> parameters;
+    std::vector<std::pair<Eigen::Tensor<double, 2>, Eigen::Tensor<double, 1>>> parameters;
     bool softmax_classifier_;
 };
 
@@ -123,9 +125,9 @@ void NEURAL_NETWORK::Model::Finalize()
 	}
 }
 
-void NEURAL_NETWORK::Model::Evaluate(const Eigen::MatrixXd& X, 
-                                     const Eigen::MatrixXd& y, 
-                                     int batch_size)
+void NEURAL_NETWORK::Model::EvaluateTensor2D(const Eigen::Tensor<double, 2>& X,
+                                             const Eigen::Tensor<double, 2>& y,
+                                             int batch_size)
 {
     if (!loss_ || !accuracy_)
     {
@@ -135,13 +137,12 @@ void NEURAL_NETWORK::Model::Evaluate(const Eigen::MatrixXd& X,
     }
 
 	int validation_steps = 1;
-	Eigen::MatrixXd all_val_predictions; 
 	if (batch_size > 1)
 	{
 		if (X.size() > 0 && y.size() > 0)
 		{
-			validation_steps = X.rows() / batch_size;
-			if (validation_steps * batch_size < X.rows())
+			validation_steps = X.dimension(0) / batch_size;
+			if (validation_steps * batch_size < X.dimension(0))
 			{
 				validation_steps++;
 			}
@@ -151,13 +152,6 @@ void NEURAL_NETWORK::Model::Evaluate(const Eigen::MatrixXd& X,
 	loss_->NewPass();
 	accuracy_->NewPass();
 
-	int output_cols = layers_.back()->GetOutput().cols();
-	if (output_cols == 0 && y.cols() > 0)
-	{
-		output_cols = y.cols();
-	}
-	all_val_predictions.resize(X.rows(), output_cols);
-
 	for (int validation_step = 0; 
 		 validation_step < validation_steps; 
 		 validation_step++)
@@ -166,30 +160,38 @@ void NEURAL_NETWORK::Model::Evaluate(const Eigen::MatrixXd& X,
 		int end_idx;
 		if (batch_size > 1)
 		{
-			end_idx = std::min((validation_step + 1) * batch_size, 
-							   static_cast<int>(X.rows()));
+			end_idx = std::min((validation_step + 1) * batch_size,
+							   static_cast<int>(X.dimension(0)));
 		}
 		else
 		{
-			end_idx = X.rows();
+			end_idx = X.dimension(0);
 		}
-		const Eigen::Block<const Eigen::MatrixXd> batch_X = X.block(start_idx, 
-																	0, 
-																	end_idx - start_idx, 
-																	X.cols());
-		const Eigen::Block<const Eigen::MatrixXd> batch_y = y.block(start_idx, 
-																	0, 
-																	end_idx - start_idx, 
-																	y.cols());
+		// Extract tensor slices manually
+		int batch_size_actual = end_idx - start_idx;
+		Eigen::Tensor<double, 2> batch_X(batch_size_actual, X.dimension(1));
+		Eigen::Tensor<double, 2> batch_y(batch_size_actual, y.dimension(1));
 
-		forward(batch_X, false);
-		
-		if (auto* mse = dynamic_cast<LossMeanSquaredError*>(loss_.get())) 
+		for (int i = 0; i < batch_size_actual; i++)
+		{
+			for (int j = 0; j < X.dimension(1); j++)
+			{
+				batch_X(i, j) = X(start_idx + i, j);
+			}
+			for (int j = 0; j < y.dimension(1); j++)
+			{
+				batch_y(i, j) = y(start_idx + i, j);
+			}
+		}
+
+		forwardTensor2D(batch_X, false);
+
+		if (auto* mse = dynamic_cast<LossMeanSquaredError*>(loss_.get()))
 		{
 			mse->forward(output_, batch_y);
 			loss_->CalculateLoss(output_, batch_y, false);
-		} 
-		else 
+		}
+		else
 		{
 			loss_->CalculateLoss(output_, batch_y);
 
@@ -201,11 +203,8 @@ void NEURAL_NETWORK::Model::Evaluate(const Eigen::MatrixXd& X,
 				}
 			}
 		}
-		Eigen::MatrixXd val_predictions = layers_.back()->predictions();
-		all_val_predictions.block(start_idx, 
-								  0, 
-								  val_predictions.rows(), 
-								  val_predictions.cols()) = val_predictions;
+		Eigen::Tensor<double, 2> val_predictions = layers_.back()->predictions();
+		// Use tensor predictions for accuracy calculation
 		accuracy_->Calculate(val_predictions, batch_y);
 	}
 
@@ -217,11 +216,11 @@ void NEURAL_NETWORK::Model::Evaluate(const Eigen::MatrixXd& X,
 			<< ", Validation Loss: " << val_loss << '\n';
 }
 
-void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X, 
-								  const Eigen::MatrixXd& y,
-				   				  int batch_size, int epochs, int print_every, 
-				   				  const Eigen::MatrixXd& X_val, 
-								  const Eigen::MatrixXd& y_val)
+void NEURAL_NETWORK::Model::TrainTensor2D(const Eigen::Tensor<double, 2>& X,
+								           const Eigen::Tensor<double, 2>& y,
+				   				           int batch_size, int epochs, int print_every,
+				   				           const Eigen::Tensor<double, 2>& X_val,
+								           const Eigen::Tensor<double, 2>& y_val)
 {
 	if (!optimizer_)
 	{
@@ -231,7 +230,7 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 		return;
 	}
 
-	if (X.rows() == 0 || X.cols() == 0 || y.rows() == 0 || y.cols() == 0)
+	if (X.dimension(0) == 0 || X.dimension(1) == 0 || y.dimension(0) == 0 || y.dimension(1) == 0)
 	{
 		std::cout << "Model::Train notice: received empty training data; skipping optimization." << std::endl;
 		if (X_val.size() > 0 && y_val.size() > 0)
@@ -242,14 +241,15 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 		return;
 	}
 
+	// Initialize accuracy with tensor targets
 	accuracy_->init(y);
 
 	int train_steps = 1;
 
 	if (batch_size > 1)
 	{
-		train_steps = X.rows() / batch_size;
-		if (train_steps * batch_size < X.rows())
+		train_steps = X.dimension(0) / batch_size;
+		if (train_steps * batch_size < X.dimension(0))
 		{
 			train_steps++;
 		}
@@ -269,48 +269,67 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 			int end_idx;
 			if (batch_size > 1)
 			{
-				end_idx = std::min((step + 1) * batch_size, 
-									static_cast<int>(X.rows()));
+				end_idx = std::min((step + 1) * batch_size,
+									static_cast<int>(X.dimension(0)));
 			}
 			else
 			{
-				end_idx = X.rows();
+				end_idx = X.dimension(0);
 			}
-			const Eigen::Block<const Eigen::MatrixXd> batch_X = X.block(start_idx, 
-																		0, 
-																		end_idx - start_idx, 
-																		X.cols());
-			const Eigen::Block<const Eigen::MatrixXd> batch_y = y.block(start_idx, 
-																		0, 
-																		end_idx - start_idx, 
-																		y.cols());
+			// Extract tensor slices manually
+			int batch_size_actual = end_idx - start_idx;
+			Eigen::Tensor<double, 2> batch_X(batch_size_actual, X.dimension(1));
+			Eigen::Tensor<double, 2> batch_y(batch_size_actual, y.dimension(1));
 
-			forward(batch_X, true);
+			for (int i = 0; i < batch_size_actual; i++)
+			{
+				for (int j = 0; j < X.dimension(1); j++)
+				{
+					batch_X(i, j) = X(start_idx + i, j);
+				}
+				for (int j = 0; j < y.dimension(1); j++)
+				{
+					batch_y(i, j) = y(start_idx + i, j);
+				}
+			}
 
+			forwardTensor2D(batch_X, true);
+
+			// Use tensor operations directly
 			double reg_loss = 0.0;
-			if (auto* mse = dynamic_cast<LossMeanSquaredError*>(loss_.get())) 
+			if (auto* mse = dynamic_cast<LossMeanSquaredError*>(loss_.get()))
 			{
 				mse->forward(output_, batch_y);
 				loss_->CalculateLoss(output_, batch_y, true);
 				loss_->RegularizationLoss();
 				reg_loss = loss_->GetRegularizationLoss();
-			} 
-			else 
+			}
+			else
 			{
 				loss_->CalculateLoss(output_, batch_y, true);
 				loss_->GetRegularizationLoss();
 				reg_loss = loss_->GetRegularizationLoss();
 
-				if (softmax_classifier_) 
+				if (softmax_classifier_)
 				{
-					if (auto* combined = dynamic_cast<ActivationSoftmaxLossCategoricalCrossEntropy*>(layers_.back().get())) 
+					if (auto* combined = dynamic_cast<ActivationSoftmaxLossCategoricalCrossEntropy*>(layers_.back().get()))
 					{
-						combined->storeTargets(batch_y.cast<int>());
+						// Convert tensor to int tensor for storeTargets
+						Eigen::Tensor<int, 2> batch_y_int(batch_y.dimension(0), batch_y.dimension(1));
+						for (int i = 0; i < batch_y.dimension(0); i++)
+						{
+							for (int j = 0; j < batch_y.dimension(1); j++)
+							{
+								batch_y_int(i, j) = static_cast<int>(batch_y(i, j));
+							}
+						}
+						combined->storeTargets(batch_y_int);
 					}
 				}
 			}
 			double loss = loss_->GetLoss() + reg_loss;
-			Eigen::MatrixXd predictions = layers_.back()->predictions();
+			// Get tensor predictions directly for accuracy calculation
+			Eigen::Tensor<double, 2> predictions = layers_.back()->predictions();
 			accuracy_->Calculate(predictions, batch_y);
 			double accuracy = accuracy_->GetAccuracy();
 
@@ -376,21 +395,23 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 	}
 }
 
-Eigen::MatrixXd NEURAL_NETWORK::Model::Predict(const Eigen::MatrixXd& X, 
-											   int batch_size)
+Eigen::Tensor<double, 2> NEURAL_NETWORK::Model::PredictTensor2D(const Eigen::Tensor<double, 2>& X,
+											                int batch_size)
 {
 	int prediction_steps = 1;
 
 	if (batch_size > 1)
 	{
-		prediction_steps = X.rows() / batch_size;
-		if (prediction_steps * batch_size < X.rows())
+		prediction_steps = X.dimension(0) / batch_size;
+		if (prediction_steps * batch_size < X.dimension(0))
 		{
 			prediction_steps++;
 		}
 	}
-	long output_size = layers_.back()->predictions().cols();
-	Eigen::MatrixXd output = Eigen::MatrixXd::Zero(X.rows(), output_size);
+	// Get output size from a sample prediction (use tensor dimensions)
+	Eigen::Tensor<double, 2> sample_pred = layers_.back()->predictions();
+	long output_size = sample_pred.dimension(1);
+	Eigen::Tensor<double, 2> output(X.dimension(0), output_size);
 
 	for (int prediction_step = 0; 
 		 prediction_step < prediction_steps; 
@@ -401,34 +422,46 @@ Eigen::MatrixXd NEURAL_NETWORK::Model::Predict(const Eigen::MatrixXd& X,
 		
 		if (batch_size > 1)
 		{
-			end_idx = std::min((prediction_step + 1) * batch_size, 
-								static_cast<int>(X.rows()));
+			end_idx = std::min((prediction_step + 1) * batch_size,
+								static_cast<int>(X.dimension(0)));
 		}
 		else
 		{
-			end_idx = X.rows();
+			end_idx = X.dimension(0);
 		}
 
-		const Eigen::Block<const Eigen::MatrixXd> batch_X = X.block(start_idx, 
-																	0, 
-																	end_idx - start_idx, 
-																	X.cols());
+		// Extract tensor slices manually
+		int batch_size_actual = end_idx - start_idx;
+		Eigen::Tensor<double, 2> batch_X(batch_size_actual, X.dimension(1));
 
-		forward(batch_X, false);
+		for (int i = 0; i < batch_size_actual; i++)
+		{
+			for (int j = 0; j < X.dimension(1); j++)
+			{
+				batch_X(i, j) = X(start_idx + i, j);
+			}
+		}
 
-		output.block(start_idx, 
-		 			  0, 
-		 			  batch_X.rows(), 
-		 			  output_size) = layers_.back()->predictions();
+		forwardTensor2D(batch_X, false);
+
+		Eigen::Tensor<double, 2> batch_predictions = layers_.back()->predictions();
+		// Copy predictions to output tensor manually
+		for (int i = 0; i < batch_size_actual; i++)
+		{
+			for (int j = 0; j < output_size; j++)
+			{
+				output(start_idx + i, j) = batch_predictions(i, j);
+			}
+		}
 	}
 
 	return output;
 }
 
-std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> NEURAL_NETWORK::Model::GetParameters() const
+std::vector<std::pair<Eigen::Tensor<double, 2>, Eigen::Tensor<double, 1>>> NEURAL_NETWORK::Model::GetParameters() const
 {
-	std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> params;
-	
+	std::vector<std::pair<Eigen::Tensor<double, 2>, Eigen::Tensor<double, 1>>> params;
+
 	for (const auto& layer : trainable_layers_)
 	{
 		params.push_back(layer->GetParameters());
@@ -437,7 +470,7 @@ std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> NEURAL_NETWORK::Mode
 	return params;
 }
 
-void NEURAL_NETWORK::Model::SetParameters(const std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>>& params)
+void NEURAL_NETWORK::Model::SetParameters(const std::vector<std::pair<Eigen::Tensor<double, 2>, Eigen::Tensor<double, 1>>>& params)
 {
 	for (size_t i = 0; i < trainable_layers_.size(); i++)
 	{
@@ -459,10 +492,13 @@ void NEURAL_NETWORK::Model::SaveParameters(const std::string& path) const
 
     size_t numParams = params.size();
     NEURAL_NETWORK::Serialization::WriteRaw(ofs, &numParams, sizeof(numParams));
-    for (const auto& param : params) 
+    for (const auto& param : params)
 	{
-        NEURAL_NETWORK::Serialization::WriteMatrix(ofs, param.first);
-        NEURAL_NETWORK::Serialization::WriteRowVector(ofs, param.second);
+        // Convert tensors to matrices for serialization
+        Eigen::MatrixXd weights_matrix = Helpers::TensorToMatrix(param.first);
+        Eigen::RowVectorXd biases_vector = Helpers::TensorToRowVector(param.second);
+        NEURAL_NETWORK::Serialization::WriteMatrix(ofs, weights_matrix);
+        NEURAL_NETWORK::Serialization::WriteRowVector(ofs, biases_vector);
     }
 
     ofs.close();
@@ -480,12 +516,15 @@ void NEURAL_NETWORK::Model::LoadParameters(const std::string& path)
 
     size_t numParams;
     NEURAL_NETWORK::Serialization::ReadRaw(ifs, &numParams, sizeof(numParams));
-    std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> params(numParams);
+    std::vector<std::pair<Eigen::Tensor<double, 2>, Eigen::Tensor<double, 1>>> params(numParams);
 
-    for (auto& param : params) 
+    for (auto& param : params)
 	{
-        param.first = NEURAL_NETWORK::Serialization::ReadMatrix(ifs);
-        param.second = NEURAL_NETWORK::Serialization::ReadRowVector(ifs);
+        // Read matrices and convert to tensors
+        Eigen::MatrixXd weights_matrix = NEURAL_NETWORK::Serialization::ReadMatrix(ifs);
+        Eigen::RowVectorXd biases_vector = NEURAL_NETWORK::Serialization::ReadRowVector(ifs);
+        param.first = Helpers::MatrixToTensor2D(weights_matrix);
+        param.second = Helpers::RowVectorToTensor1D(biases_vector);
     }
 
     SetParameters(params);
@@ -504,8 +543,8 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
 		{
             config.layer_types.push_back("LayerDense");
             std::vector<double> params = {
-                static_cast<double>(dense->GetWeights().cols()),
-                static_cast<double>(dense->GetWeights().rows()),
+                static_cast<double>(dense->GetWeights().dimension(1)),
+                static_cast<double>(dense->GetWeights().dimension(0)),
                 dense->GetWeightRegularizerL1(),
                 dense->GetWeightRegularizerL2(),
                 dense->GetBiasRegularizerL1(),
@@ -723,10 +762,13 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
     size_t numParams = config.parameters.size();
     NEURAL_NETWORK::Serialization::WriteRaw(ofs, &numParams, sizeof(numParams));
 
-    for (const auto& param : config.parameters) 
+    for (const auto& param : config.parameters)
 	{
-        NEURAL_NETWORK::Serialization::WriteMatrix(ofs, param.first);
-        NEURAL_NETWORK::Serialization::WriteRowVector(ofs, param.second);
+        // Convert tensors to matrices for serialization
+        Eigen::MatrixXd weights_matrix = Helpers::TensorToMatrix(param.first);
+        Eigen::RowVectorXd biases_vector = Helpers::TensorToRowVector(param.second);
+        NEURAL_NETWORK::Serialization::WriteMatrix(ofs, weights_matrix);
+        NEURAL_NETWORK::Serialization::WriteRowVector(ofs, biases_vector);
     }
 
     NEURAL_NETWORK::Serialization::WriteRaw(ofs, 
@@ -772,10 +814,13 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
     
 	config.parameters.resize(numParams);
 
-    for (auto& param : config.parameters) 
+    for (auto& param : config.parameters)
 	{
-        param.first = NEURAL_NETWORK::Serialization::ReadMatrix(ifs);
-        param.second = NEURAL_NETWORK::Serialization::ReadRowVector(ifs);
+        // Read matrices and convert to tensors
+        Eigen::MatrixXd weights_matrix = NEURAL_NETWORK::Serialization::ReadMatrix(ifs);
+        Eigen::RowVectorXd biases_vector = NEURAL_NETWORK::Serialization::ReadRowVector(ifs);
+        param.first = Helpers::MatrixToTensor2D(weights_matrix);
+        param.second = Helpers::RowVectorToTensor1D(biases_vector);
     }
 
     NEURAL_NETWORK::Serialization::ReadRaw(ifs, 
@@ -1009,11 +1054,10 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 	SetParameters(config.parameters);
 }
 
-void NEURAL_NETWORK::Model::forward(const Eigen::MatrixXd& inputs, bool training)
+void NEURAL_NETWORK::Model::forwardTensor2D(const Eigen::Tensor<double, 2>& inputs, bool training)
 {
 	input_layer_->forward(inputs, training);
-	bool flattened = false;
-	
+
 	for (const auto& layer : layers_)
 	{
 		auto prev = layer->getPrev();
@@ -1027,11 +1071,13 @@ void NEURAL_NETWORK::Model::forward(const Eigen::MatrixXd& inputs, bool training
 		}
 	}
 
+	// Get the final layer output (already a tensor)
 	output_ = layers_.back()->GetOutput();
 }
 
-void NEURAL_NETWORK::Model::backward(const Eigen::MatrixXd& output, 
-									 const Eigen::MatrixXd& targets)
+
+void NEURAL_NETWORK::Model::backward(const Eigen::Tensor<double, 2>& output,
+									 const Eigen::Tensor<double, 2>& targets)
 {
 	auto start_iter = layers_.rbegin();
 	if (softmax_classifier_)
@@ -1076,3 +1122,165 @@ void NEURAL_NETWORK::Model::backward(const Eigen::MatrixXd& output,
 		}
 	}
 }
+
+
+
+
+// Template method implementations
+template<typename InputType>
+void NEURAL_NETWORK::Model::forward(const InputType& inputs, bool training)
+{
+    Eigen::Tensor<double, 2> tensor_inputs;
+
+    if constexpr (std::is_same_v<InputType, Eigen::MatrixXd>)
+    {
+        // Matrix input - convert to tensor
+        tensor_inputs = Helpers::MatrixToTensor2D(inputs);
+    }
+    else if constexpr (std::is_same_v<InputType, Eigen::Tensor<double, 4>>)
+    {
+        // 4D Tensor input - flatten to 2D
+        tensor_inputs = Helpers::TensorToTensor2D(inputs);
+    }
+    else if constexpr (std::is_same_v<InputType, Eigen::Tensor<double, 2>>)
+    {
+        // Already 2D tensor
+        tensor_inputs = inputs;
+    }
+
+    // Always use 2D tensor forward pass
+    forwardTensor2D(tensor_inputs, training);
+}
+
+template<typename XType, typename YType>
+void NEURAL_NETWORK::Model::Train(const XType& X, const YType& y,
+                                  int batch_size, int epochs, int print_every,
+                                  const XType& X_val, const YType& y_val)
+{
+    // Always convert to tensors and use tensor-based training
+    Eigen::Tensor<double, 2> X_tensor, y_tensor, X_val_tensor, y_val_tensor;
+
+    if constexpr (std::is_same_v<XType, Eigen::Tensor<double, 4>>)
+    {
+        // 4D input - convert to 2D for training (CNN layers will handle reshaping internally)
+        X_tensor = Helpers::TensorToTensor2D(X);
+        X_val_tensor = Helpers::TensorToTensor2D(X_val);
+    }
+    else if constexpr (std::is_same_v<XType, Eigen::Tensor<double, 2>>)
+    {
+        // Already 2D tensor
+        X_tensor = X;
+        X_val_tensor = X_val;
+    }
+    else if constexpr (std::is_same_v<XType, Eigen::MatrixXd>)
+    {
+        // Matrix - convert to tensor
+        X_tensor = Helpers::MatrixToTensor2D(X);
+        X_val_tensor = Helpers::MatrixToTensor2D(X_val);
+    }
+
+    if constexpr (std::is_same_v<YType, Eigen::Tensor<double, 2>>)
+    {
+        // Already 2D tensor
+        y_tensor = y;
+        y_val_tensor = y_val;
+    }
+    else if constexpr (std::is_same_v<YType, Eigen::MatrixXd>)
+    {
+        // Matrix - convert to tensor
+        y_tensor = Helpers::MatrixToTensor2D(y);
+        y_val_tensor = Helpers::MatrixToTensor2D(y_val);
+    }
+
+    // Always use 2D tensor training (layers handle their internal reshaping)
+    TrainTensor2D(X_tensor, y_tensor, batch_size, epochs, print_every, X_val_tensor, y_val_tensor);
+}
+
+template<typename XType, typename YType>
+void NEURAL_NETWORK::Model::Evaluate(const XType& X, const YType& y, int batch_size)
+{
+    // Always convert to tensors and use tensor-based evaluation
+    Eigen::Tensor<double, 2> X_tensor, y_tensor;
+
+    if constexpr (std::is_same_v<XType, Eigen::Tensor<double, 4>>)
+    {
+        // 4D input - convert to 2D for evaluation
+        X_tensor = Helpers::TensorToTensor2D(X);
+    }
+    else if constexpr (std::is_same_v<XType, Eigen::Tensor<double, 2>>)
+    {
+        // Already 2D tensor
+        X_tensor = X;
+    }
+    else if constexpr (std::is_same_v<XType, Eigen::MatrixXd>)
+    {
+        // Matrix - convert to tensor
+        X_tensor = Helpers::MatrixToTensor2D(X);
+    }
+
+    if constexpr (std::is_same_v<YType, Eigen::Tensor<double, 2>>)
+    {
+        // Already 2D tensor
+        y_tensor = y;
+    }
+    else if constexpr (std::is_same_v<YType, Eigen::MatrixXd>)
+    {
+        // Matrix - convert to tensor
+        y_tensor = Helpers::MatrixToTensor2D(y);
+    }
+
+    // Always use 2D tensor evaluation
+    EvaluateTensor2D(X_tensor, y_tensor, batch_size);
+}
+
+template<typename XType>
+Eigen::Tensor<double, 2> NEURAL_NETWORK::Model::Predict(const XType& X, int batch_size)
+{
+    // Always convert to 2D tensor and use tensor-based prediction
+    Eigen::Tensor<double, 2> X_tensor;
+
+    if constexpr (std::is_same_v<XType, Eigen::Tensor<double, 4>>)
+    {
+        // 4D input - convert to 2D for prediction
+        X_tensor = Helpers::TensorToTensor2D(X);
+    }
+    else if constexpr (std::is_same_v<XType, Eigen::Tensor<double, 2>>)
+    {
+        // Already 2D tensor
+        X_tensor = X;
+    }
+    else if constexpr (std::is_same_v<XType, Eigen::MatrixXd>)
+    {
+        // Matrix - convert to tensor
+        X_tensor = Helpers::MatrixToTensor2D(X);
+    }
+
+    // Always use 2D tensor prediction
+    return PredictTensor2D(X_tensor, batch_size);
+}
+
+// Explicit template instantiations
+template void NEURAL_NETWORK::Model::forward<Eigen::MatrixXd>(const Eigen::MatrixXd&, bool);
+template void NEURAL_NETWORK::Model::forward<Eigen::Tensor<double, 4>>(const Eigen::Tensor<double, 4>&, bool);
+template void NEURAL_NETWORK::Model::forward<Eigen::Tensor<double, 2>>(const Eigen::Tensor<double, 2>&, bool);
+
+template void NEURAL_NETWORK::Model::Train<Eigen::MatrixXd, Eigen::MatrixXd>(
+    const Eigen::MatrixXd&, const Eigen::MatrixXd&, int, int, int,
+    const Eigen::MatrixXd&, const Eigen::MatrixXd&);
+template void NEURAL_NETWORK::Model::Train<Eigen::Tensor<double, 4>, Eigen::Tensor<double, 2>>(
+    const Eigen::Tensor<double, 4>&, const Eigen::Tensor<double, 2>&, int, int, int,
+    const Eigen::Tensor<double, 4>&, const Eigen::Tensor<double, 2>&);
+template void NEURAL_NETWORK::Model::Train<Eigen::Tensor<double, 2>, Eigen::Tensor<double, 2>>(
+    const Eigen::Tensor<double, 2>&, const Eigen::Tensor<double, 2>&, int, int, int,
+    const Eigen::Tensor<double, 2>&, const Eigen::Tensor<double, 2>&);
+
+template void NEURAL_NETWORK::Model::Evaluate<Eigen::MatrixXd, Eigen::MatrixXd>(
+    const Eigen::MatrixXd&, const Eigen::MatrixXd&, int);
+template void NEURAL_NETWORK::Model::Evaluate<Eigen::Tensor<double, 4>, Eigen::Tensor<double, 2>>(
+    const Eigen::Tensor<double, 4>&, const Eigen::Tensor<double, 2>&, int);
+template void NEURAL_NETWORK::Model::Evaluate<Eigen::Tensor<double, 2>, Eigen::Tensor<double, 2>>(
+    const Eigen::Tensor<double, 2>&, const Eigen::Tensor<double, 2>&, int);
+
+template Eigen::Tensor<double, 2> NEURAL_NETWORK::Model::Predict<Eigen::MatrixXd>(const Eigen::MatrixXd&, int);
+template Eigen::Tensor<double, 2> NEURAL_NETWORK::Model::Predict<Eigen::Tensor<double, 4>>(const Eigen::Tensor<double, 4>&, int);
+template Eigen::Tensor<double, 2> NEURAL_NETWORK::Model::Predict<Eigen::Tensor<double, 2>>(const Eigen::Tensor<double, 2>&, int);

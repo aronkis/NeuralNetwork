@@ -6,6 +6,7 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
+#include <numeric>
 
 void NEURAL_NETWORK::Helpers::ReadSpiralIntoEigen(const std::string& filename,
 												  Eigen::MatrixXd& coordinates,
@@ -347,15 +348,15 @@ void NEURAL_NETWORK::Helpers::UnzipFile(const std::string& directory,
 
 	std::cout << "Successfully extracted " << filesExtracted 
 			  << " files" << std::endl;
-	// if (!std::filesystem::remove(zipPath)) 
-	// {
-	// 		std::cerr << "Warning: Failed to remove zip file: " 
-	// 				  << zipPath.string() << std::endl;
-	// }
-	// else
-	// {
-	// 	std::cout << "Deleted zipfile" << zipPath.string() << std::endl;
-	// }
+	if (!std::filesystem::remove(zipPath)) 
+	{
+			std::cerr << "Warning: Failed to remove zip file: " 
+					  << zipPath.string() << std::endl;
+	}
+	else
+	{
+		std::cout << "Deleted zipfile" << zipPath.string() << std::endl;
+	}
 }
 
 void NEURAL_NETWORK::Helpers::FetchData(const std::string url,
@@ -451,164 +452,340 @@ Eigen::MatrixXd LoadImage(const std::string& filename,
     return image;
 }
 
-void NEURAL_NETWORK::Helpers::LoadData(const std::string& path, 
-									   Eigen::MatrixXd& X,
-									   Eigen::MatrixXd& y) 
+void NEURAL_NETWORK::Helpers::LoadData(const std::string& path,
+									   Eigen::Tensor<double, 4>& X_tensor,
+									   Eigen::Tensor<double, 2>& y_tensor)
 {
 	std::vector<std::string> labels = GetFolderContent(path, true);
 
 	int total_images = 0;
 
 	for (const auto& label : labels)
-    {
-        std::filesystem::path folder = std::filesystem::path(path) / label;
-        total_images += GetFolderContent(folder.string()).size();
-    }
-
-	if (total_images == 0) 
 	{
-        X.resize(0, 0);
-        y.resize(0, 0);
-        return;
-    }
+		std::filesystem::path folder = std::filesystem::path(path) / label;
+		total_images += GetFolderContent(folder.string()).size();
+	}
 
-    int width = 0, height = 0, channels = 0;
-    Eigen::MatrixXd first_img;
+	if (total_images == 0)
+	{
+		return;
+	}
+
+	int width = 0, height = 0, channels = 0;
+	Eigen::MatrixXd first_img;
 	std::filesystem::path folder = std::filesystem::path(path) / labels[0];
 	std::filesystem::path imgPath = folder / GetFolderContent(folder.string())[0];
 	first_img = LoadImage(imgPath.string(), width, height, channels);
 
-	if (first_img.size() == 0) 
+	if (first_img.size() == 0)
 	{
-        std::cerr << "Could not load any images to determine dimensions." 
+		std::cerr << "Could not load any images to determine dimensions."
 				  << std::endl;
-        X.resize(0, 0);
-        y.resize(0, 0);
-        return;
-    }
+		return;
+	}
 
-	int feature_size = width * height;
-    X.resize(total_images, feature_size);
-    y.resize(total_images, 1);
+	X_tensor = Eigen::Tensor<double, 4>(total_images, height, width, channels);
+	y_tensor = Eigen::Tensor<double, 2>(total_images, 1);
 
-	int current_row = 0;
+	int current_image = 0;
 	for (const auto& label : labels)
 	{
-    	std::filesystem::path folder = std::filesystem::path(path) / label;
+		std::filesystem::path folder = std::filesystem::path(path) / label;
 		std::vector<std::string> images = GetFolderContent(folder.string());
 		for (const auto& image : images)
 		{
 			std::filesystem::path imgPath = folder / image;
-			Eigen::MatrixXd img = LoadImage(imgPath.string(), 
-											width, 
-											height, 
+			Eigen::MatrixXd img = LoadImage(imgPath.string(),
+											width,
+											height,
 											channels);
-			
-			if (img.size() == 0) 
+
+			if (img.size() == 0)
 			{
-		    	std::cerr << "Failed to load image: " 
+				std::cerr << "Failed to load image: "
 						  << imgPath.string() << std::endl;
 				continue;
 			}
 
-			// Use row-major flattening to preserve spatial structure
-			Eigen::RowVectorXd correct_flattened(img.size());
-			int idx = 0;
-			for (int y = 0; y < img.rows(); y++)
+			for (int h = 0; h < height; h++)
 			{
-				for (int x = 0; x < img.cols(); x++)
+				for (int w = 0; w < width; w++)
 				{
-					correct_flattened(idx++) = img(y, x);
+					for (int c = 0; c < channels; c++)
+					{
+						X_tensor(current_image, h, w, c) = img(h, w);
+					}
 				}
 			}
-			X.row(current_row) = correct_flattened;
-			y(current_row, 0) = std::stoi(label);
-			current_row++;
+
+			y_tensor(current_image, 0) = std::stoi(label);
+			current_image++;
 		}
 	}
 
-	if (current_row < total_images) 
+	if (current_image < total_images) // to account for any skipped images
 	{
-        X.conservativeResize(current_row, feature_size);
-        y.conservativeResize(current_row, 1);
-    }
+		Eigen::Tensor<double, 4> resized_X_tensor(current_image, height, width, channels);
+		Eigen::Tensor<double, 2> resized_y_tensor(current_image, 1);
 
-    std::cout << "Loaded " << X.rows() << " images." << std::endl;
+		for (int i = 0; i < current_image; i++)
+		{
+			for (int h = 0; h < height; h++)
+			{
+				for (int w = 0; w < width; w++)
+				{
+					for (int c = 0; c < channels; c++)
+					{
+						resized_X_tensor(i, h, w, c) = X_tensor(i, h, w, c);
+					}
+				}
+			}
+			resized_y_tensor(i, 0) = y_tensor(i, 0);
+		}
+
+		X_tensor = std::move(resized_X_tensor);
+		y_tensor = std::move(resized_y_tensor);
+	}
+
+	std::cout << "Loaded " << current_image << " images into tensor format." << std::endl;
 }
 
 void NEURAL_NETWORK::Helpers::CreateDataSets(const std::string& dataset_url,
 											 const std::string& output_dir,
-											 Eigen::MatrixXd& X,
-											 Eigen::MatrixXd& y,
-											 Eigen::MatrixXd& X_test,
-											 Eigen::MatrixXd& y_test)
+											 Eigen::Tensor<double, 4>& X_tensor,
+											 Eigen::Tensor<double, 2>& y_tensor,
+											 Eigen::Tensor<double, 4>& X_test_tensor,
+											 Eigen::Tensor<double, 2>& y_test_tensor)
 {
 	NEURAL_NETWORK::Helpers::FetchData(dataset_url,
-                                       output_dir,
-                                       "data.zip",
-                                       true);
-	std::vector<Eigen::MatrixXd> X_vect;
-	std::vector<int> y_vect;
-	std::vector<Eigen::MatrixXd> X_test_vect;
-	std::vector<int> y_test_vect;
+									   output_dir,
+									   "data.zip",
+									   true);
 
-	std::cout << "Loading training data..." << std::endl;
-    NEURAL_NETWORK::Helpers::LoadData(output_dir + "extracted/train", 
-									  X, 
-									  y);
-									  
-    std::cout << "Loading test data..." << std::endl;
-    NEURAL_NETWORK::Helpers::LoadData(output_dir + "extracted/test", 
-									  X_test, 
-									  y_test);
+	std::cout << "Loading training data as tensor..." << std::endl;
+	NEURAL_NETWORK::Helpers::LoadData(output_dir + "extracted/train",
+									  X_tensor,
+									  y_tensor);
 
-	NEURAL_NETWORK::Helpers::ShuffleData(X, y);
-	NEURAL_NETWORK::Helpers::ScaleData(X);
-    NEURAL_NETWORK::Helpers::ScaleData(X_test);
+	std::cout << "Loading test data as tensor..." << std::endl;
+	NEURAL_NETWORK::Helpers::LoadData(output_dir + "extracted/test",
+									  X_test_tensor,
+									  y_test_tensor);
+
+	NEURAL_NETWORK::Helpers::ShuffleData(X_tensor, y_tensor);
+	NEURAL_NETWORK::Helpers::ScaleData(X_tensor);
+	NEURAL_NETWORK::Helpers::ScaleData(X_test_tensor);
+	std::cout << "Data loading and preprocessing complete." << std::endl;
 }
 
-void NEURAL_NETWORK::Helpers::ShuffleData(Eigen::MatrixXd& X,
-                                          Eigen::MatrixXd& y) 
+void NEURAL_NETWORK::Helpers::ShuffleData(Eigen::Tensor<double, 4>& X_tensor,
+                                          Eigen::Tensor<double, 2>& y_tensor)
 {
-    if (X.rows() != y.rows()) 
+    int batch_size = X_tensor.dimension(0);
+    int height = X_tensor.dimension(1);
+    int width = X_tensor.dimension(2);
+    int channels = X_tensor.dimension(3);
+
+    if (batch_size != y_tensor.dimension(0))
     {
-        std::cerr << "Error: X and y row counts do not match." << std::endl;
+        std::cerr << "Error: X and y batch sizes do not match." << std::endl;
         return;
     }
 
-    Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> perm(X.rows());
-    perm.setIdentity();
+    std::vector<int> indices(batch_size);
+    std::iota(indices.begin(), indices.end(), 0);
     std::random_device rd;
     std::mt19937 g(rd());
-    std::shuffle(perm.indices().data(), 
-				 perm.indices().data() + perm.indices().size(), 
-				 g);
+    std::shuffle(indices.begin(), indices.end(), g);
 
-    X = perm * X;
-    y = perm * y;
+    Eigen::Tensor<double, 4> X_shuffled(batch_size, height, width, channels);
+    Eigen::Tensor<double, 2> y_shuffled(batch_size, 1);
+
+    for (int i = 0; i < batch_size; i++)
+    {
+        int shuffled_idx = indices[i];
+        for (int h = 0; h < height; h++)
+        {
+            for (int w = 0; w < width; w++)
+            {
+                for (int c = 0; c < channels; c++)
+                {
+                    X_shuffled(i, h, w, c) = X_tensor(shuffled_idx, h, w, c);
+                }
+            }
+        }
+        y_shuffled(i, 0) = y_tensor(shuffled_idx, 0);
+    }
+
+    // Move shuffled data back to original tensors
+    X_tensor = std::move(X_shuffled);
+    y_tensor = std::move(y_shuffled);
 }
 
-void NEURAL_NETWORK::Helpers::ScaleData(Eigen::MatrixXd& X) 
+void NEURAL_NETWORK::Helpers::ScaleData(Eigen::Tensor<double, 4>& X_tensor)
 {
-	double mean = X.mean();
-	double std_dev = std::sqrt((X.array() - mean).square().mean());
-	if (std_dev > 0) 
+	double min_val = X_tensor(0, 0, 0, 0);
+	double max_val = X_tensor(0, 0, 0, 0);
+
+	for (int b = 0; b < X_tensor.dimension(0); b++)
 	{
-		X = (X.array() - mean) / std_dev;
+		for (int h = 0; h < X_tensor.dimension(1); h++)
+		{
+			for (int w = 0; w < X_tensor.dimension(2); w++)
+			{
+				for (int c = 0; c < X_tensor.dimension(3); c++)
+				{
+					double val = X_tensor(b, h, w, c);
+					min_val = std::min(min_val, val);
+					max_val = std::max(max_val, val);
+				}
+			}
+		}
+	}
+
+	double range = max_val - min_val;
+	if (range > 0)
+	{
+		for (int b = 0; b < X_tensor.dimension(0); b++)
+		{
+			for (int h = 0; h < X_tensor.dimension(1); h++)
+			{
+				for (int w = 0; w < X_tensor.dimension(2); w++)
+				{
+					for (int c = 0; c < X_tensor.dimension(3); c++)
+					{
+						X_tensor(b, h, w, c) = 2.0 * (X_tensor(b, h, w, c) - min_val) / range - 1.0;
+					}
+				}
+			}
+		}
 	}
 }
 
-void NEURAL_NETWORK::Helpers::ReadSingleImage(const std::string& filename, 
-											   Eigen::MatrixXd& image)
-{    
+void NEURAL_NETWORK::Helpers::ReadSingleImage(const std::string& filename,
+											   Eigen::Tensor<double, 4>& image_tensor)
+{
 	int width = 0, height = 0, channels = 0;
-	image = LoadImage(filename, width, height, channels);
+	Eigen::MatrixXd image = LoadImage(filename, width, height, channels);
 
-	if (image.size() == 0) 
+	if (image.size() == 0)
 	{
 		std::cerr << "Failed to load image: " << filename << std::endl;
+		image_tensor = Eigen::Tensor<double, 4>(0, 0, 0, 0);
 		return;
 	}
-	image = Eigen::Map<Eigen::RowVectorXd>(image.data(), image.size());
+
+	image_tensor = Eigen::Tensor<double, 4>(1, height, width, channels);
+
+	for (int h = 0; h < height; h++)
+	{
+		for (int w = 0; w < width; w++)
+		{
+			for (int c = 0; c < channels; c++)
+			{
+				image_tensor(0, h, w, c) = image(h, w);
+			}
+		}
+	}
+
 	std::cout << "Image loaded successfully: " << filename << std::endl;
+	std::cout << "Image dimensions: " << height << "x" << width << "x" << channels << std::endl;
+}
+
+Eigen::MatrixXd NEURAL_NETWORK::Helpers::Flatten(const Eigen::MatrixXd& spatial_data)
+{
+	// This function is for 2D spatial data (e.g., from a flattened tensor)
+	// For 4D tensor flattening, we'll need a different approach
+	return Eigen::Map<const Eigen::MatrixXd>(spatial_data.data(), spatial_data.rows(), spatial_data.cols());
+}
+
+Eigen::Tensor<double, 2> NEURAL_NETWORK::Helpers::TensorToTensor2D(const Eigen::Tensor<double, 4>& tensor)
+{
+	int batch_size = tensor.dimension(0);
+	int height = tensor.dimension(1);
+	int width = tensor.dimension(2);
+	int channels = tensor.dimension(3);
+
+	// Flatten spatial dimensions: (batch, height, width, channels) -> (batch, height*width*channels)
+	int flattened_size = height * width * channels;
+	Eigen::Tensor<double, 2> tensor2d(batch_size, flattened_size);
+
+	for (int b = 0; b < batch_size; b++)
+	{
+		int col = 0;
+		for (int h = 0; h < height; h++)
+		{
+			for (int w = 0; w < width; w++)
+			{
+				for (int c = 0; c < channels; c++)
+				{
+					tensor2d(b, col++) = tensor(b, h, w, c);
+				}
+			}
+		}
+	}
+
+	return tensor2d;
+}
+
+Eigen::Tensor<double, 2> NEURAL_NETWORK::Helpers::MatrixToTensor2D(const Eigen::MatrixXd& matrix)
+{
+	int rows = matrix.rows();
+	int cols = matrix.cols();
+
+	Eigen::Tensor<double, 2> tensor(rows, cols);
+
+	for (int r = 0; r < rows; r++)
+	{
+		for (int c = 0; c < cols; c++)
+		{
+			tensor(r, c) = matrix(r, c);
+		}
+	}
+
+	return tensor;
+}
+
+Eigen::Tensor<double, 1> NEURAL_NETWORK::Helpers::RowVectorToTensor1D(const Eigen::RowVectorXd& rowvec)
+{
+	int size = rowvec.cols();
+	Eigen::Tensor<double, 1> tensor(size);
+
+	for (int i = 0; i < size; i++)
+	{
+		tensor(i) = rowvec(i);
+	}
+
+	return tensor;
+}
+
+Eigen::MatrixXd NEURAL_NETWORK::Helpers::TensorToMatrix(const Eigen::Tensor<double, 2>& tensor)
+{
+	int rows = tensor.dimension(0);
+	int cols = tensor.dimension(1);
+
+	Eigen::MatrixXd matrix(rows, cols);
+
+	for (int r = 0; r < rows; r++)
+	{
+		for (int c = 0; c < cols; c++)
+		{
+			matrix(r, c) = tensor(r, c);
+		}
+	}
+
+	return matrix;
+}
+
+Eigen::RowVectorXd NEURAL_NETWORK::Helpers::TensorToRowVector(const Eigen::Tensor<double, 1>& tensor)
+{
+	int size = tensor.dimension(0);
+	Eigen::RowVectorXd rowvec(size);
+
+	for (int i = 0; i < size; i++)
+	{
+		rowvec(i) = tensor(i);
+	}
+
+	return rowvec;
 }

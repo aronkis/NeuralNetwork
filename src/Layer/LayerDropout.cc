@@ -1,44 +1,84 @@
 #include "LayerDropout.h"
+#include <random>
 
 NEURAL_NETWORK::LayerDropout::LayerDropout(double rate)
 {
 	rate_ = 1 - rate;
 }
 
-void NEURAL_NETWORK::LayerDropout::forward(const Eigen::MatrixXd& inputs, 
+void NEURAL_NETWORK::LayerDropout::forward(const Eigen::Tensor<double, 2>& inputs,
 										   bool training)
 {
 	inputs_ = inputs;
+	int rows = inputs.dimension(0);
+	int cols = inputs.dimension(1);
+
+	output_ = Eigen::Tensor<double, 2>(rows, cols);
+	mask_ = Eigen::Tensor<double, 2>(rows, cols);
 
 	if (!training)
 	{
 		output_ = inputs_;
-		mask_.resize(inputs_.rows(), inputs_.cols());
-		mask_.setOnes();
+		for (int r = 0; r < rows; r++)
+		{
+			for (int c = 0; c < cols; c++)
+			{
+				mask_(r, c) = 1.0;
+			}
+		}
 		return;
 	}
 
-	mask_ = (Eigen::MatrixXd::Random(inputs_.rows(), inputs_.cols()).array() + 1) / 2;
-	mask_ = (mask_.array() < rate_).cast<double>() / rate_;
-	output_ = inputs_.array() * mask_.array();
+	// Generate random mask and apply dropout
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<double> dis(0.0, 1.0);
+
+	for (int r = 0; r < rows; r++)
+	{
+		for (int c = 0; c < cols; c++)
+		{
+			double random_val = dis(gen);
+			if (random_val < rate_)
+			{
+				mask_(r, c) = 1.0 / rate_;  // Scale up to maintain expected value
+				output_(r, c) = inputs(r, c) * mask_(r, c);
+			}
+			else
+			{
+				mask_(r, c) = 0.0;
+				output_(r, c) = 0.0;
+			}
+		}
+	}
 }
 
-void NEURAL_NETWORK::LayerDropout::backward(const Eigen::MatrixXd& dvalues)
+void NEURAL_NETWORK::LayerDropout::backward(const Eigen::Tensor<double, 2>& dvalues)
 {
-	d_inputs_ = dvalues.array() * mask_.array();
+	int rows = dvalues.dimension(0);
+	int cols = dvalues.dimension(1);
+	d_inputs_ = Eigen::Tensor<double, 2>(rows, cols);
+
+	for (int r = 0; r < rows; r++)
+	{
+		for (int c = 0; c < cols; c++)
+		{
+			d_inputs_(r, c) = dvalues(r, c) * mask_(r, c);
+		}
+	}
 }
 
-Eigen::MatrixXd NEURAL_NETWORK::LayerDropout::predictions() const
+Eigen::Tensor<double, 2> NEURAL_NETWORK::LayerDropout::predictions() const
 {
 	return output_;
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::LayerDropout::GetOutput() const
+const Eigen::Tensor<double, 2>& NEURAL_NETWORK::LayerDropout::GetOutput() const
 {
 	return output_;
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::LayerDropout::GetDInput() const
+const Eigen::Tensor<double, 2>& NEURAL_NETWORK::LayerDropout::GetDInput() const
 {
 	return d_inputs_;
 }
@@ -48,7 +88,7 @@ double NEURAL_NETWORK::LayerDropout::GetRate() const
 	return rate_; 
 }
 
-void NEURAL_NETWORK::LayerDropout::SetDInput(const Eigen::MatrixXd& dinput)
+void NEURAL_NETWORK::LayerDropout::SetDInput(const Eigen::Tensor<double, 2>& dinput)
 {
 	d_inputs_ = dinput;
 }

@@ -2,6 +2,7 @@
 #define __LAYERDENSE_H__
 
 #include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include "LayerBase.h"
 
 namespace NEURAL_NETWORK
@@ -9,64 +10,63 @@ namespace NEURAL_NETWORK
 	class LayerDense : public LayerBase
 	{
 	public:
-		LayerDense(int n_inputs, int n_neurons, 
-				   double weight_regularizer_l1 = 0, double weight_regularizer_l2 = 0, 
+		LayerDense(int n_inputs, int n_neurons,
+				   double weight_regularizer_l1 = 0, double weight_regularizer_l2 = 0,
 				   double bias_regularizer_l1 = 0, double bias_regularizer_l2 = 0);
 		~LayerDense() = default;
 
-		void forward(const Eigen::MatrixXd& inputs, bool training) override;
-		void backward(const Eigen::MatrixXd& d_values) override;
-		const Eigen::MatrixXd& GetOutput() const override;
-		const Eigen::MatrixXd& GetDInput() const override;
-		Eigen::MatrixXd predictions() const override;
+		void forward(const Eigen::Tensor<double, 2>& inputs, bool training) override;
+		void backward(const Eigen::Tensor<double, 2>& d_values) override;
+		const Eigen::Tensor<double, 2>& GetOutput() const override;
+		const Eigen::Tensor<double, 2>& GetDInput() const override;
+		Eigen::Tensor<double, 2> predictions() const override;
 
-		const Eigen::MatrixXd& GetWeights() const override;
-		const Eigen::RowVectorXd& GetBiases() const override;
-		const Eigen::MatrixXd& GetDWeights() const;
-		const Eigen::RowVectorXd& GetDBiases() const;
+		const Eigen::Tensor<double, 2>& GetWeights() const override;
+		const Eigen::Tensor<double, 1>& GetBiases() const override;
+		const Eigen::Tensor<double, 2>& GetDWeights() const override;
+		const Eigen::Tensor<double, 1>& GetDBiases() const override;
 
-		const Eigen::MatrixXd& GetWeightMomentums() const;
-		const Eigen::RowVectorXd& GetBiasMomentums() const;
-		const Eigen::MatrixXd& GetWeightCaches() const;
-		const Eigen::RowVectorXd& GetBiasCaches() const;
+		const Eigen::Tensor<double, 2>& GetWeightMomentums() const override;
+		const Eigen::Tensor<double, 1>& GetBiasMomentums() const override;
+		const Eigen::Tensor<double, 2>& GetWeightCaches() const override;
+		const Eigen::Tensor<double, 1>& GetBiasCaches() const override;
 
 		double GetWeightRegularizerL1() const override;
 		double GetWeightRegularizerL2() const override;
 		double GetBiasRegularizerL1() const override;
 		double GetBiasRegularizerL2() const override;
 
-		std::pair<Eigen::MatrixXd, Eigen::RowVectorXd> GetParameters() const override;
-		void SetParameters(const Eigen::MatrixXd& weights, 
-						   const Eigen::RowVectorXd& biases) override;
+		std::pair<Eigen::Tensor<double, 2>, Eigen::Tensor<double, 1>> GetParameters() const override;
+		void SetParameters(const Eigen::Tensor<double, 2>& weights,
+						   const Eigen::Tensor<double, 1>& biases) override;
 
-		void SetDInput(const Eigen::MatrixXd& dinput) override;
+		void SetDInput(const Eigen::Tensor<double, 2>& dinput) override;
 
-		void SetWeightMomentums(const Eigen::MatrixXd& weight_momentums);
-		void SetBiasMomentums(const Eigen::RowVectorXd& bias_momentums);
-		void SetWeightCaches(const Eigen::MatrixXd& weight_caches);
-		void SetBiasCaches(const Eigen::RowVectorXd& bias_caches);
+		void SetWeightMomentums(const Eigen::Tensor<double, 2>& weight_momentums) override;
+		void SetBiasMomentums(const Eigen::Tensor<double, 1>& bias_momentums) override;
+		void SetWeightCaches(const Eigen::Tensor<double, 2>& weight_caches) override;
+		void SetBiasCaches(const Eigen::Tensor<double, 1>& bias_caches) override;
 
-		void UpdateWeights(Eigen::MatrixXd& weight_update);
-		void UpdateWeightsCache(Eigen::MatrixXd& weight_update);
-		void UpdateBiases(Eigen::RowVectorXd& bias_update);
-		void UpdateBiasesCache(Eigen::RowVectorXd& bias_update);
-
+		void UpdateWeights(Eigen::Tensor<double, 2>& weight_update) override;
+		void UpdateWeightsCache(Eigen::Tensor<double, 2>& weight_update) override;
+		void UpdateBiases(Eigen::Tensor<double, 1>& bias_update) override;
+		void UpdateBiasesCache(Eigen::Tensor<double, 1>& bias_update) override;
 
 	private:
-		Eigen::MatrixXd inputs_;
-		Eigen::MatrixXd weights_;
-		Eigen::RowVectorXd biases_;
+		Eigen::Tensor<double, 2> inputs_;
+		Eigen::Tensor<double, 2> weights_;
+		Eigen::Tensor<double, 1> biases_;
 
-		Eigen::MatrixXd output_;
+		Eigen::Tensor<double, 2> output_;
 
-		Eigen::MatrixXd d_inputs_;
-		Eigen::MatrixXd d_weights_;
-		Eigen::RowVectorXd d_biases_;
+		Eigen::Tensor<double, 2> d_inputs_;
+		Eigen::Tensor<double, 2> d_weights_;
+		Eigen::Tensor<double, 1> d_biases_;
 
-		Eigen::MatrixXd weight_momentums_;
-		Eigen::RowVectorXd bias_momentums_;
-		Eigen::MatrixXd weight_caches_;
-		Eigen::RowVectorXd bias_caches_;
+		Eigen::Tensor<double, 2> weight_momentums_;
+		Eigen::Tensor<double, 1> bias_momentums_;
+		Eigen::Tensor<double, 2> weight_caches_;
+		Eigen::Tensor<double, 1> bias_caches_;
 
 		double weight_regularizer_l1_;
 		double weight_regularizer_l2_;

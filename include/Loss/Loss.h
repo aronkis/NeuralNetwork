@@ -2,6 +2,7 @@
 #define __LOSS_H__
 
 #include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
 #include "LayerBase.h"
 
@@ -16,8 +17,8 @@ namespace NEURAL_NETWORK
 		Loss(const Loss&) = delete;
 		Loss& operator=(const Loss&) = delete;
 
-		void CalculateLoss(const Eigen::MatrixXd& predictions,
-						   const Eigen::MatrixXd& targets,
+		void CalculateLoss(const Eigen::Tensor<double, 2>& predictions,
+						   const Eigen::Tensor<double, 2>& targets,
 						   bool include_regularization = false);
 		void CalculateAccumulatedLoss(bool include_regularization = false);
 		void RegularizationLoss();
@@ -27,20 +28,20 @@ namespace NEURAL_NETWORK
 		const double GetRegularizationLoss() const;
 		const double GetLoss() const;
 		const double GetAccumulatedLoss() const;
-        const Eigen::MatrixXd& GetOutput() const;
-        const Eigen::MatrixXd& GetDInput() const;
+        const Eigen::Tensor<double, 2>& GetOutput() const;
+        const Eigen::Tensor<double, 2>& GetDInput() const;
 
-		virtual void forward(const Eigen::MatrixXd& predictions, 
-							 const Eigen::MatrixXd& targets) = 0;
-		virtual void backward(const Eigen::MatrixXd& d_values,
-							  const Eigen::MatrixXd& targets) = 0;
+		virtual void forward(const Eigen::Tensor<double, 2>& predictions,
+							 const Eigen::Tensor<double, 2>& targets) = 0;
+		virtual void backward(const Eigen::Tensor<double, 2>& d_values,
+							  const Eigen::Tensor<double, 2>& targets) = 0;
 
 	protected:
 		double loss_ = 0.0;
 
-		Eigen::MatrixXd output_;
+		Eigen::Tensor<double, 2> output_;
 
-		Eigen::MatrixXd d_inputs_;
+		Eigen::Tensor<double, 2> d_inputs_;
 
 	private:
 		std::vector<std::weak_ptr<LayerBase>> trainable_layers_;

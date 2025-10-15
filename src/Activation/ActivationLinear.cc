@@ -1,33 +1,33 @@
 #include "ActivationLinear.h"
 
-void NEURAL_NETWORK::ActivationLinear::forward(const Eigen::MatrixXd& inputs, 
+void NEURAL_NETWORK::ActivationLinear::forward(const Eigen::Tensor<double, 2>& inputs,
 											   bool training)
 {
 	inputs_ = inputs;
 	output_ = inputs;
 }
 
-void NEURAL_NETWORK::ActivationLinear::backward(const Eigen::MatrixXd& dvalues)
+void NEURAL_NETWORK::ActivationLinear::backward(const Eigen::Tensor<double, 2>& dvalues)
 {
 	d_inputs_ = dvalues;
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::ActivationLinear::GetOutput() const
+const Eigen::Tensor<double, 2>& NEURAL_NETWORK::ActivationLinear::GetOutput() const
 {
 	return output_;
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::ActivationLinear::GetDInput() const
+const Eigen::Tensor<double, 2>& NEURAL_NETWORK::ActivationLinear::GetDInput() const
 {
 	return d_inputs_;
 }
 
-void NEURAL_NETWORK::ActivationLinear::SetDInput(const Eigen::MatrixXd& dinput)
+void NEURAL_NETWORK::ActivationLinear::SetDInput(const Eigen::Tensor<double, 2>& dinput)
 {
 	d_inputs_ = dinput;
 }
 
-Eigen::MatrixXd NEURAL_NETWORK::ActivationLinear::predictions() const
+Eigen::Tensor<double, 2> NEURAL_NETWORK::ActivationLinear::predictions() const
 {
 	return output_;
 }

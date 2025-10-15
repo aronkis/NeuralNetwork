@@ -1,33 +1,69 @@
 #include "ActivationSigmoid.h"
+#include <cmath>
 
-void NEURAL_NETWORK::ActivationSigmoid::forward(const Eigen::MatrixXd& inputs, 
+void NEURAL_NETWORK::ActivationSigmoid::forward(const Eigen::Tensor<double, 2>& inputs,
 												bool training)
 {
 	inputs_ = inputs;
-	output_ = 1.0 / (1.0 + (-inputs).array().exp());
+	int rows = inputs.dimension(0);
+	int cols = inputs.dimension(1);
+
+	output_ = Eigen::Tensor<double, 2>(rows, cols);
+
+	for (int r = 0; r < rows; r++)
+	{
+		for (int c = 0; c < cols; c++)
+		{
+			output_(r, c) = 1.0 / (1.0 + std::exp(-inputs(r, c)));
+		}
+	}
 }
 
-void NEURAL_NETWORK::ActivationSigmoid::backward(const Eigen::MatrixXd& dvalues)
+void NEURAL_NETWORK::ActivationSigmoid::backward(const Eigen::Tensor<double, 2>& dvalues)
 {
-	d_inputs_ = dvalues.array() * output_.array() * (1 - output_.array());
+	int rows = dvalues.dimension(0);
+	int cols = dvalues.dimension(1);
+
+	d_inputs_ = Eigen::Tensor<double, 2>(rows, cols);
+
+	for (int r = 0; r < rows; r++)
+	{
+		for (int c = 0; c < cols; c++)
+		{
+			d_inputs_(r, c) = dvalues(r, c) * output_(r, c) * (1.0 - output_(r, c));
+		}
+	}
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSigmoid::GetOutput() const
+const Eigen::Tensor<double, 2>& NEURAL_NETWORK::ActivationSigmoid::GetOutput() const
 {
 	return output_;
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::ActivationSigmoid::GetDInput() const
+const Eigen::Tensor<double, 2>& NEURAL_NETWORK::ActivationSigmoid::GetDInput() const
 {
 	return d_inputs_;
 }
 
-void NEURAL_NETWORK::ActivationSigmoid::SetDInput(const Eigen::MatrixXd& dinput)
+void NEURAL_NETWORK::ActivationSigmoid::SetDInput(const Eigen::Tensor<double, 2>& dinput)
 {
 	d_inputs_ = dinput;
 }
 
-Eigen::MatrixXd NEURAL_NETWORK::ActivationSigmoid::predictions() const
+Eigen::Tensor<double, 2> NEURAL_NETWORK::ActivationSigmoid::predictions() const
 {
-	return (output_.array() > 0.5).cast<double>();
+	int rows = output_.dimension(0);
+	int cols = output_.dimension(1);
+
+	Eigen::Tensor<double, 2> predictions(rows, cols);
+
+	for (int r = 0; r < rows; r++)
+	{
+		for (int c = 0; c < cols; c++)
+		{
+			predictions(r, c) = output_(r, c) > 0.5 ? 1.0 : 0.0;
+		}
+	}
+
+	return predictions;
 }

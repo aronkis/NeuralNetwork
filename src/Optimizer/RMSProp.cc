@@ -22,38 +22,44 @@ double NEURAL_NETWORK::RMSProp::GetEpsilon() const
 
 void NEURAL_NETWORK::RMSProp::UpdateParameters(NEURAL_NETWORK::LayerBase& layer)
 {
-	Eigen::MatrixXd weight_update;
-	Eigen::MatrixXd weight_cache_update;
-	Eigen::RowVectorXd bias_update;
-	Eigen::RowVectorXd bias_cache_update;
+	Eigen::Tensor<double, 2> weight_update;
+	Eigen::Tensor<double, 2> weight_cache_update;
+	Eigen::Tensor<double, 1> bias_update;
+	Eigen::Tensor<double, 1> bias_cache_update;
 
-	if (layer.GetWeightCaches().size() == 0) 
+	// Initialize caches if they don't exist
+	if (layer.GetWeightCaches().dimension(0) == 0 || layer.GetWeightCaches().dimension(1) == 0)
 	{
-		layer.SetWeightCaches(Eigen::MatrixXd::Zero(layer.GetWeights().rows(), 
-													layer.GetWeights().cols()));
-		layer.SetBiasCaches(Eigen::RowVectorXd::Zero(layer.GetBiases().size()));
+		Eigen::Tensor<double, 2> weight_caches(layer.GetWeights().dimension(0),
+											   layer.GetWeights().dimension(1));
+		weight_caches.setZero();
+		layer.SetWeightCaches(weight_caches);
+
+		Eigen::Tensor<double, 1> bias_caches(layer.GetBiases().dimension(0));
+		bias_caches.setZero();
+		layer.SetBiasCaches(bias_caches);
 	}
 
-	weight_cache_update = rho_ * 
-						  layer.GetWeightCaches() + 
-						  (1 - rho_) * 
-						  layer.GetDWeights().array().square().matrix();
-	bias_cache_update = rho_ * 
-						layer.GetBiasCaches() + 
-						(1 - rho_) * 
-						layer.GetDBiases().array().square().matrix();
+	// Update caches manually
+	weight_cache_update = Eigen::Tensor<double, 2>(layer.GetWeights().dimension(0),
+													layer.GetWeights().dimension(1));
+	bias_cache_update = Eigen::Tensor<double, 1>(layer.GetBiases().dimension(0));
+
+	// Vectorized cache updates
+	weight_cache_update = layer.GetWeightCaches() * rho_ + layer.GetDWeights().square() * (1 - rho_);
+	bias_cache_update = layer.GetBiasCaches() * rho_ + layer.GetDBiases().square() * (1 - rho_);
 
 	layer.SetWeightCaches(weight_cache_update);
 	layer.SetBiasCaches(bias_cache_update);
 
-	weight_update = -current_learning_rate_ * 
-					layer.GetDWeights().array() / 
-					(layer.GetWeightCaches().array().sqrt() + 
-					 epsilon_);
-	bias_update = -current_learning_rate_ * 
-				  layer.GetDBiases().array() / 
-				  (layer.GetBiasCaches().array().sqrt() + 
-				   epsilon_);
+	// Calculate parameter updates
+	weight_update = Eigen::Tensor<double, 2>(layer.GetWeights().dimension(0),
+											  layer.GetWeights().dimension(1));
+	bias_update = Eigen::Tensor<double, 1>(layer.GetBiases().dimension(0));
+
+	// Vectorized parameter updates
+	weight_update = layer.GetDWeights() * (-current_learning_rate_) / (layer.GetWeightCaches() + epsilon_).sqrt();
+	bias_update = layer.GetDBiases() * (-current_learning_rate_) / (layer.GetBiasCaches() + epsilon_).sqrt();
 
 	layer.UpdateWeights(weight_update);
 	layer.UpdateBiases(bias_update);

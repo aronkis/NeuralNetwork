@@ -1,54 +1,98 @@
 #include "LossCategoricalCrossentropy.h"
 
-void NEURAL_NETWORK::LossCategoricalCrossEntropy::forward(const Eigen::MatrixXd& predictions, 
-														  const Eigen::MatrixXd& targets)
+void NEURAL_NETWORK::LossCategoricalCrossEntropy::forward(const Eigen::Tensor<double, 2>& predictions,
+														  const Eigen::Tensor<double, 2>& targets)
 {
-	int samples = predictions.rows();
+	int samples = predictions.dimension(0);
+	int num_classes = predictions.dimension(1);
 
-	Eigen::MatrixXd y_pred_clipped = predictions.array().max(1e-7).min(1-1e-7);
-	Eigen::VectorXd correct_confidences(samples);
-
-	if (targets.cols() == 1) 
+	// Initialize output tensor
+	if (output_.size() == 0 || output_.dimension(0) != samples || output_.dimension(1) != 1)
 	{
-		for (int i = 0; i < samples; i++) 
-		{
-			const Eigen::Index col = static_cast<Eigen::Index>(targets(i, 0));
-			correct_confidences(i) = y_pred_clipped(i, col);
-		}
-	} 
-	else if(targets.cols() > 1)
-	{
-		correct_confidences = (y_pred_clipped.array() * targets.array()).rowwise().sum();
+		output_ = Eigen::Tensor<double, 2>(samples, 1);
 	}
 
-	output_ = -correct_confidences.array().log();
+	// Process each sample
+	for (int i = 0; i < samples; i++)
+	{
+		double correct_confidence = 0.0;
+
+		if (targets.dimension(1) == 1)  // Sparse labels
+		{
+			// Get the target class index
+			int target_class = static_cast<int>(targets(i, 0));
+
+			// Clip prediction to avoid log(0)
+			double pred_clipped = std::max(1e-7, std::min(1.0 - 1e-7, predictions(i, target_class)));
+			correct_confidence = pred_clipped;
+		}
+		else if (targets.dimension(1) > 1)  // One-hot encoded labels
+		{
+			// Sum of element-wise multiplication (dot product)
+			for (int j = 0; j < num_classes; j++)
+			{
+				double pred_clipped = std::max(1e-7, std::min(1.0 - 1e-7, predictions(i, j)));
+				correct_confidence += pred_clipped * targets(i, j);
+			}
+		}
+
+		// Categorical cross entropy loss
+		output_(i, 0) = -std::log(correct_confidence);
+	}
 }
 
-void NEURAL_NETWORK::LossCategoricalCrossEntropy::backward(const Eigen::MatrixXd& d_values, 
-														   const Eigen::MatrixXd& targets)
+void NEURAL_NETWORK::LossCategoricalCrossEntropy::backward(const Eigen::Tensor<double, 2>& d_values,
+														   const Eigen::Tensor<double, 2>& targets)
 {
-	int samples = d_values.rows();
-	int labels = d_values.cols();
+	int samples = d_values.dimension(0);
+	int labels = d_values.dimension(1);
 
-	Eigen::MatrixXd y_true;
-
-	if (targets.cols() == 1) 
+	// Initialize d_inputs_ tensor
+	if (d_inputs_.size() == 0 || d_inputs_.dimension(0) != samples || d_inputs_.dimension(1) != labels)
 	{
-		Eigen::MatrixXd identity = Eigen::MatrixXd::Identity(labels, labels);
-		
-		y_true = Eigen::MatrixXd::Zero(samples, labels);
-		for (int i = 0; i < samples; i++) 
+		d_inputs_ = Eigen::Tensor<double, 2>(samples, labels);
+	}
+
+	// Process gradients for each sample
+	for (int i = 0; i < samples; i++)
+	{
+		if (targets.dimension(1) == 1)  // Sparse labels
 		{
-			const Eigen::Index target_class = static_cast<Eigen::Index>(targets(i, 0));
-			y_true.row(i) = identity.row(target_class);
+			// Convert sparse label to one-hot
+			int target_class = static_cast<int>(targets(i, 0));
+
+			for (int j = 0; j < labels; j++)
+			{
+				if (j == target_class)
+				{
+					// Gradient for correct class
+					double clipped_pred = std::max(1e-7, std::min(1.0 - 1e-7, d_values(i, j)));
+					d_inputs_(i, j) = -1.0 / clipped_pred;
+				}
+				else
+				{
+					// Gradient for incorrect classes
+					d_inputs_(i, j) = 0.0;
+				}
+			}
+		}
+		else if (targets.dimension(1) > 1)  // One-hot encoded labels
+		{
+			// Direct computation for one-hot encoded targets
+			for (int j = 0; j < labels; j++)
+			{
+				double clipped_pred = std::max(1e-7, std::min(1.0 - 1e-7, d_values(i, j)));
+				d_inputs_(i, j) = -targets(i, j) / clipped_pred;
+			}
 		}
 	}
-	else if (targets.cols() > 1) 
+
+	// Normalize by number of samples
+	for (int i = 0; i < samples; i++)
 	{
-		y_true = targets;
-	} 
-
-	d_inputs_ = -y_true.array() / d_values.array();
-
-	d_inputs_ /= samples;
+		for (int j = 0; j < labels; j++)
+		{
+			d_inputs_(i, j) /= samples;
+		}
+	}
 }

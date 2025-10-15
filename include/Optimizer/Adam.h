@@ -31,10 +31,10 @@ namespace NEURAL_NETWORK
 		double epsilon_;
 
 		// BatchNormalization specific momentum and cache storage
-		Eigen::MatrixXd bn_gamma_momentum_;
-		Eigen::RowVectorXd bn_beta_momentum_;
-		Eigen::MatrixXd bn_gamma_cache_;
-		Eigen::RowVectorXd bn_beta_cache_;
+		Eigen::Tensor<double, 2> bn_gamma_momentum_;
+		Eigen::Tensor<double, 1> bn_beta_momentum_;
+		Eigen::Tensor<double, 2> bn_gamma_cache_;
+		Eigen::Tensor<double, 1> bn_beta_cache_;
 	};
 } // namespace NEURAL_NETWORK
 

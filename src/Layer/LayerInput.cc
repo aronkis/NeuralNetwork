@@ -1,27 +1,27 @@
 #include "LayerInput.h"
 
-void NEURAL_NETWORK::LayerInput::forward(const Eigen::MatrixXd& inputs, 
-										 bool training) 
+void NEURAL_NETWORK::LayerInput::forward(const Eigen::Tensor<double, 2>& inputs,
+										 bool training)
 {
     output_ = inputs;
 }
 
-void NEURAL_NETWORK::LayerInput::backward(const Eigen::MatrixXd& dvalues) 
+void NEURAL_NETWORK::LayerInput::backward(const Eigen::Tensor<double, 2>& dvalues)
 {
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::LayerInput::GetOutput() const 
+const Eigen::Tensor<double, 2>& NEURAL_NETWORK::LayerInput::GetOutput() const
 {
     return output_;
 }
 
-const Eigen::MatrixXd& NEURAL_NETWORK::LayerInput::GetDInput() const 
+const Eigen::Tensor<double, 2>& NEURAL_NETWORK::LayerInput::GetDInput() const
 {
-    static const Eigen::MatrixXd empty_matrix;
-    return empty_matrix;
+    static const Eigen::Tensor<double, 2> empty_tensor;
+    return empty_tensor;
 }
 
-Eigen::MatrixXd NEURAL_NETWORK::LayerInput::predictions() const 
+Eigen::Tensor<double, 2> NEURAL_NETWORK::LayerInput::predictions() const
 {
     return output_;
 }

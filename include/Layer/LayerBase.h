@@ -2,36 +2,37 @@
 #define __LAYERBASE_H__
 
 #include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
 
-namespace NEURAL_NETWORK 
+namespace NEURAL_NETWORK
 {
-	class LayerBase 
+	class LayerBase
 	{
 	public:
 		virtual ~LayerBase() = default;
-		
+
 		LayerBase(const LayerBase&) = delete;
 		LayerBase& operator=(const LayerBase&) = delete;
-		
-		virtual void forward(const Eigen::MatrixXd& inputs, bool training) = 0;
-		virtual void backward(const Eigen::MatrixXd& dvalues) = 0;
-		virtual Eigen::MatrixXd predictions() const 
+
+		virtual void forward(const Eigen::Tensor<double, 2>& inputs, bool training) = 0;
+		virtual void backward(const Eigen::Tensor<double, 2>& dvalues) = 0;
+		virtual Eigen::Tensor<double, 2> predictions() const
 		{
-			return Eigen::MatrixXd();
+			return Eigen::Tensor<double, 2>();
 		}
 
-		virtual const Eigen::MatrixXd& GetOutput() const = 0;
-		virtual const Eigen::MatrixXd& GetDInput() const = 0;
+		virtual const Eigen::Tensor<double, 2>& GetOutput() const = 0;
+		virtual const Eigen::Tensor<double, 2>& GetDInput() const = 0;
 
-		virtual void SetDInput(const Eigen::MatrixXd& dinput) = 0;
+		virtual void SetDInput(const Eigen::Tensor<double, 2>& dinput) = 0;
 
-		virtual std::pair<Eigen::MatrixXd, Eigen::RowVectorXd> GetParameters() const 
+		virtual std::pair<Eigen::Tensor<double, 2>, Eigen::Tensor<double, 1>> GetParameters() const
 		{
-			return std::make_pair(Eigen::MatrixXd(), Eigen::RowVectorXd());
+			return std::make_pair(Eigen::Tensor<double, 2>(), Eigen::Tensor<double, 1>());
 		}
-		
-		virtual void SetParameters(const Eigen::MatrixXd& weights, const Eigen::RowVectorXd& biases)
+
+		virtual void SetParameters(const Eigen::Tensor<double, 2>& weights, const Eigen::Tensor<double, 1>& biases)
 		{}
 
 		virtual double GetWeightRegularizerL1() const { return 0.0; }
@@ -39,90 +40,90 @@ namespace NEURAL_NETWORK
 		virtual double GetBiasRegularizerL1() const { return 0.0; }
 		virtual double GetBiasRegularizerL2() const { return 0.0; }
 
-		virtual const Eigen::MatrixXd& GetDWeights() const 
+		virtual const Eigen::Tensor<double, 2>& GetDWeights() const
 		{
-			static const Eigen::MatrixXd empty;
-			return empty;
-		}
-		
-		virtual const Eigen::RowVectorXd& GetDBiases() const 
-		{
-			static const Eigen::RowVectorXd empty;
+			static const Eigen::Tensor<double, 2> empty;
 			return empty;
 		}
 
-		virtual const Eigen::MatrixXd& GetWeightMomentums() const 
+		virtual const Eigen::Tensor<double, 1>& GetDBiases() const
 		{
-			static const Eigen::MatrixXd empty;
+			static const Eigen::Tensor<double, 1> empty;
 			return empty;
 		}
-		
-		virtual const Eigen::RowVectorXd& GetBiasMomentums() const 
+
+		virtual const Eigen::Tensor<double, 2>& GetWeightMomentums() const
 		{
-			static const Eigen::RowVectorXd empty;
+			static const Eigen::Tensor<double, 2> empty;
 			return empty;
 		}
-		
-		virtual const Eigen::MatrixXd& GetWeightCaches() const 
+
+		virtual const Eigen::Tensor<double, 1>& GetBiasMomentums() const
 		{
-			static const Eigen::MatrixXd empty;
+			static const Eigen::Tensor<double, 1> empty;
 			return empty;
 		}
-		
-		virtual const Eigen::RowVectorXd& GetBiasCaches() const 
+
+		virtual const Eigen::Tensor<double, 2>& GetWeightCaches() const
 		{
-			static const Eigen::RowVectorXd empty;
+			static const Eigen::Tensor<double, 2> empty;
 			return empty;
 		}
-		
-		virtual void SetWeightMomentums(const Eigen::MatrixXd& weight_momentums) 
+
+		virtual const Eigen::Tensor<double, 1>& GetBiasCaches() const
+		{
+			static const Eigen::Tensor<double, 1> empty;
+			return empty;
+		}
+
+		virtual void SetWeightMomentums(const Eigen::Tensor<double, 2>& weight_momentums)
 		{
 			(void)weight_momentums; // Suppress unused parameter warning
 		}
-		
-		virtual void SetBiasMomentums(const Eigen::RowVectorXd& bias_momentums) 
+
+		virtual void SetBiasMomentums(const Eigen::Tensor<double, 1>& bias_momentums)
 		{
 			(void)bias_momentums; // Suppress unused parameter warning
 		}
-		
-		virtual void SetWeightCaches(const Eigen::MatrixXd& weight_caches) 
+
+		virtual void SetWeightCaches(const Eigen::Tensor<double, 2>& weight_caches)
 		{
 			(void)weight_caches; // Suppress unused parameter warning
 		}
-		
-		virtual void SetBiasCaches(const Eigen::RowVectorXd& bias_caches) 
+
+		virtual void SetBiasCaches(const Eigen::Tensor<double, 1>& bias_caches)
 		{
 			(void)bias_caches; // Suppress unused parameter warning
 		}
-		
-		virtual void UpdateWeights(Eigen::MatrixXd& weight_update) 
+
+		virtual void UpdateWeights(Eigen::Tensor<double, 2>& weight_update)
 		{
 			(void)weight_update; // Suppress unused parameter warning
 		}
-		
-		virtual void UpdateWeightsCache(Eigen::MatrixXd& weight_update) 
+
+		virtual void UpdateWeightsCache(Eigen::Tensor<double, 2>& weight_update)
 		{
 			(void)weight_update; // Suppress unused parameter warning
 		}
-		
-		virtual void UpdateBiases(Eigen::RowVectorXd& bias_update) 
+
+		virtual void UpdateBiases(Eigen::Tensor<double, 1>& bias_update)
 		{
 			(void)bias_update; // Suppress unused parameter warning
 		}
-		
-		virtual void UpdateBiasesCache(Eigen::RowVectorXd& bias_update) 
+
+		virtual void UpdateBiasesCache(Eigen::Tensor<double, 1>& bias_update)
 		{
 			(void)bias_update; // Suppress unused parameter warning
 		}
-		
-		virtual const Eigen::MatrixXd& GetWeights() const
+
+		virtual const Eigen::Tensor<double, 2>& GetWeights() const
 		{
-			static const Eigen::MatrixXd empty;
+			static const Eigen::Tensor<double, 2> empty;
 			return empty;
 		}
-		virtual const Eigen::RowVectorXd& GetBiases() const
+		virtual const Eigen::Tensor<double, 1>& GetBiases() const
 		{
-			static const Eigen::RowVectorXd empty;
+			static const Eigen::Tensor<double, 1> empty;
 			return empty;
 		}
 

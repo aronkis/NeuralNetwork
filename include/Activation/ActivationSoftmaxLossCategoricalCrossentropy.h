@@ -15,21 +15,21 @@ namespace NEURAL_NETWORK
         ActivationSoftmaxLossCategoricalCrossEntropy(const ActivationSoftmaxLossCategoricalCrossEntropy&) = delete;
 	    ActivationSoftmaxLossCategoricalCrossEntropy& operator=(const ActivationSoftmaxLossCategoricalCrossEntropy&) = delete;
 
-        void forward(const Eigen::MatrixXd& inputs, bool training) override;
-        void backward(const Eigen::MatrixXd& dvalues) override;
-        Eigen::MatrixXd predictions() const override;
-        void storeTargets(const Eigen::MatrixXi& targets);
+        void forward(const Eigen::Tensor<double, 2>& inputs, bool training) override;
+        void backward(const Eigen::Tensor<double, 2>& dvalues) override;
+        Eigen::Tensor<double, 2> predictions() const override;
+        void storeTargets(const Eigen::Tensor<int, 2>& targets);
 
-        const Eigen::MatrixXd& GetOutput() const override;
-        const Eigen::MatrixXd& GetDInput() const override;
-        
-		void SetDInput(const Eigen::MatrixXd& dinput) override;
+        const Eigen::Tensor<double, 2>& GetOutput() const override;
+        const Eigen::Tensor<double, 2>& GetDInput() const override;
+
+		void SetDInput(const Eigen::Tensor<double, 2>& dinput) override;
     private:
         ActivationSoftmax softmax_;
 
-        Eigen::MatrixXd output_;
-        Eigen::MatrixXd d_inputs_;
-        Eigen::MatrixXi targets_;
+        Eigen::Tensor<double, 2> output_;
+        Eigen::Tensor<double, 2> d_inputs_;
+        Eigen::Tensor<int, 2> targets_;
     };
 } // namespace NEURAL_NETWORK
 

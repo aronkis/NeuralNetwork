@@ -2,9 +2,10 @@
 #define __LAYER_DROPOUT_H__
 
 #include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include "LayerBase.h"
 
-namespace NEURAL_NETWORK 
+namespace NEURAL_NETWORK
 {
 	class LayerDropout : public LayerBase
 	{
@@ -12,25 +13,25 @@ namespace NEURAL_NETWORK
 		LayerDropout(double rate);
 		~LayerDropout() = default;
 
-		void forward(const Eigen::MatrixXd& inputs, bool training) override;
-		void backward(const Eigen::MatrixXd& dvalues) override;
-		Eigen::MatrixXd predictions() const override;
+		void forward(const Eigen::Tensor<double, 2>& inputs, bool training) override;
+		void backward(const Eigen::Tensor<double, 2>& dvalues) override;
+		Eigen::Tensor<double, 2> predictions() const override;
 
-		const Eigen::MatrixXd& GetOutput() const override;
-		const Eigen::MatrixXd& GetDInput() const override;
+		const Eigen::Tensor<double, 2>& GetOutput() const override;
+		const Eigen::Tensor<double, 2>& GetDInput() const override;
 		double GetRate() const;
-		
-		void SetDInput(const Eigen::MatrixXd& dinput) override;
-	
-	private:
-		Eigen::MatrixXd inputs_;
-		
-		Eigen::MatrixXd output_;
-		
-		Eigen::MatrixXd d_inputs_;
 
-		Eigen::MatrixXd mask_;
-		
+		void SetDInput(const Eigen::Tensor<double, 2>& dinput) override;
+
+	private:
+		Eigen::Tensor<double, 2> inputs_;
+
+		Eigen::Tensor<double, 2> output_;
+
+		Eigen::Tensor<double, 2> d_inputs_;
+
+		Eigen::Tensor<double, 2> mask_;
+
 		double rate_;
 	};
 } // namespace NEURAL_NETWORK
