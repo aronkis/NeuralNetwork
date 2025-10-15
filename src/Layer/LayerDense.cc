@@ -42,19 +42,14 @@ void NEURAL_NETWORK::LayerDense::forward(const Eigen::Tensor<double, 2>& inputs,
 
 	output_ = Eigen::Tensor<double, 2>(batch_size, output_size);
 
-	// Perform matrix multiplication: output = inputs * weights
-	for (int batch = 0; batch < batch_size; batch++)
-	{
-		for (int out = 0; out < output_size; out++)
-		{
-			double sum = 0.0;
-			for (int in = 0; in < inputs.dimension(1); in++)
-			{
-				sum += inputs(batch, in) * weights_(in, out);
-			}
-			output_(batch, out) = sum + biases_(out);
-		}
-	}
+	// Use tensor contraction for matrix multiplication: output = inputs * weights
+	Eigen::array<Eigen::IndexPair<int>, 1> contraction_dims = {Eigen::IndexPair<int>(1, 0)};
+	output_ = inputs.contract(weights_, contraction_dims);
+
+	// Add biases using broadcasting (vectorized)
+	Eigen::array<int, 2> broadcast_dims = {batch_size, 1};
+	Eigen::Tensor<double, 2> biases_broadcasted = biases_.reshape(Eigen::array<int, 2>{1, output_size}).broadcast(broadcast_dims);
+	output_ += biases_broadcasted;
 }
 
 void NEURAL_NETWORK::LayerDense::backward(const Eigen::Tensor<double, 2>& d_values)
@@ -68,83 +63,38 @@ void NEURAL_NETWORK::LayerDense::backward(const Eigen::Tensor<double, 2>& d_valu
 	d_biases_ = Eigen::Tensor<double, 1>(output_size);
 	d_inputs_ = Eigen::Tensor<double, 2>(batch_size, input_size);
 
-	// Compute d_weights = inputs.transpose() * d_values
-	for (int in = 0; in < input_size; in++)
-	{
-		for (int out = 0; out < output_size; out++)
-		{
-			double sum = 0.0;
-			for (int batch = 0; batch < batch_size; batch++)
-			{
-				sum += inputs_(batch, in) * d_values(batch, out);
-			}
-			d_weights_(in, out) = sum;
-		}
-	}
+	// Compute d_weights = inputs.transpose() * d_values using tensor contraction
+	Eigen::array<Eigen::IndexPair<int>, 1> weights_contraction = {Eigen::IndexPair<int>(0, 0)};
+	d_weights_ = inputs_.contract(d_values, weights_contraction);
 
-	// Compute d_biases = sum of d_values across batch dimension
-	for (int out = 0; out < output_size; out++)
-	{
-		double sum = 0.0;
-		for (int batch = 0; batch < batch_size; batch++)
-		{
-			sum += d_values(batch, out);
-		}
-		d_biases_(out) = sum;
-	}
+	// Compute d_biases = sum of d_values across batch dimension using reduction
+	Eigen::array<int, 1> reduction_dims = {0};
+	d_biases_ = d_values.sum(reduction_dims);
 
-	// Add regularization gradients
+	// Add regularization gradients using vectorized operations
 	if (weight_regularizer_l1_ > 0)
 	{
-		for (int i = 0; i < input_size; i++)
-		{
-			for (int j = 0; j < output_size; j++)
-			{
-				d_weights_(i, j) += weight_regularizer_l1_ * (weights_(i, j) > 0 ? 1.0 : -1.0);
-			}
-		}
+		d_weights_ += weights_.sign() * weight_regularizer_l1_;
 	}
 
 	if (weight_regularizer_l2_ > 0)
 	{
-		for (int i = 0; i < input_size; i++)
-		{
-			for (int j = 0; j < output_size; j++)
-			{
-				d_weights_(i, j) += 2 * weight_regularizer_l2_ * weights_(i, j);
-			}
-		}
+		d_weights_ += weights_ * (2 * weight_regularizer_l2_);
 	}
 
 	if (bias_regularizer_l1_ > 0)
 	{
-		for (int i = 0; i < output_size; i++)
-		{
-			d_biases_(i) += bias_regularizer_l1_ * (biases_(i) > 0 ? 1.0 : -1.0);
-		}
+		d_biases_ += biases_.sign() * bias_regularizer_l1_;
 	}
 
 	if (bias_regularizer_l2_ > 0)
 	{
-		for (int i = 0; i < output_size; i++)
-		{
-			d_biases_(i) += 2 * bias_regularizer_l2_ * biases_(i);
-		}
+		d_biases_ += biases_ * (2 * bias_regularizer_l2_);
 	}
 
-	// Compute d_inputs = d_values * weights.transpose()
-	for (int batch = 0; batch < batch_size; batch++)
-	{
-		for (int in = 0; in < input_size; in++)
-		{
-			double sum = 0.0;
-			for (int out = 0; out < output_size; out++)
-			{
-				sum += d_values(batch, out) * weights_(in, out);
-			}
-			d_inputs_(batch, in) = sum;
-		}
-	}
+	// Compute d_inputs = d_values * weights.transpose() using tensor contraction
+	Eigen::array<Eigen::IndexPair<int>, 1> inputs_contraction = {Eigen::IndexPair<int>(1, 1)};
+	d_inputs_ = d_values.contract(weights_, inputs_contraction);
 }
 
 const Eigen::Tensor<double, 2>& NEURAL_NETWORK::LayerDense::GetWeights() const
