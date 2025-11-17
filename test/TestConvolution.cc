@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <Eigen/Dense>
 #include <cmath>
-#include "Convolution.h"
+#include "Convolution2D.h"
 
 class ConvolutionTest : public ::testing::Test
 {
@@ -27,7 +27,7 @@ protected:
 
 TEST_F(ConvolutionTest, ConstructorInitialization)
 {
-	NEURAL_NETWORK::Convolution conv(2, 3, 3, 4, 4, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(2, 3, 3, 4, 4, 1, false, 1, 1);
 
 	const auto &weights = conv.GetWeightsTensor();
 	const auto &biases = conv.GetBiasesVector();
@@ -47,7 +47,7 @@ TEST_F(ConvolutionTest, ConstructorInitialization)
 
 TEST_F(ConvolutionTest, OutputDimensionsValidConvolution)
 {
-	NEURAL_NETWORK::Convolution conv(2, 3, 3, 4, 4, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(2, 3, 3, 4, 4, 1, false, 1, 1);
 
 	conv.forward(test_input_4x4, false);
 	const auto &output = conv.GetOutput();
@@ -58,7 +58,7 @@ TEST_F(ConvolutionTest, OutputDimensionsValidConvolution)
 
 TEST_F(ConvolutionTest, OutputDimensionsWithPadding)
 {
-	NEURAL_NETWORK::Convolution conv(2, 3, 3, 4, 4, 1, true, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(2, 3, 3, 4, 4, 1, true, 1, 1);
 
 	conv.forward(test_input_4x4, false);
 	const auto &output = conv.GetOutput();
@@ -69,7 +69,7 @@ TEST_F(ConvolutionTest, OutputDimensionsWithPadding)
 
 TEST_F(ConvolutionTest, OutputDimensionsWithStride)
 {
-	NEURAL_NETWORK::Convolution conv(1, 2, 2, 4, 4, 1, false, 2, 2);
+	NEURAL_NETWORK::Convolution2D conv(1, 2, 2, 4, 4, 1, false, 2, 2);
 
 	conv.forward(test_input_4x4, false);
 	const auto &output = conv.GetOutput();
@@ -80,7 +80,7 @@ TEST_F(ConvolutionTest, OutputDimensionsWithStride)
 
 TEST_F(ConvolutionTest, BatchProcessing)
 {
-	NEURAL_NETWORK::Convolution conv(1, 2, 2, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(1, 2, 2, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_batch2, false);
 	const auto &output = conv.GetOutput();
@@ -102,7 +102,7 @@ TEST_F(ConvolutionTest, BatchProcessing)
 
 TEST_F(ConvolutionTest, SinglePixelFilter)
 {
-	NEURAL_NETWORK::Convolution conv(1, 1, 1, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(1, 1, 1, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_3x3, false);
 	const auto &output = conv.GetOutput();
@@ -113,7 +113,7 @@ TEST_F(ConvolutionTest, SinglePixelFilter)
 
 TEST_F(ConvolutionTest, MultipleFilters)
 {
-	NEURAL_NETWORK::Convolution conv(3, 2, 2, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(3, 2, 2, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_3x3, false);
 	const auto &output = conv.GetOutput();
@@ -124,7 +124,7 @@ TEST_F(ConvolutionTest, MultipleFilters)
 
 TEST_F(ConvolutionTest, AsymmetricFilter)
 {
-	NEURAL_NETWORK::Convolution conv(1, 2, 3, 4, 4, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(1, 2, 3, 4, 4, 1, false, 1, 1);
 
 	conv.forward(test_input_4x4, false);
 	const auto &output = conv.GetOutput();
@@ -135,7 +135,7 @@ TEST_F(ConvolutionTest, AsymmetricFilter)
 
 TEST_F(ConvolutionTest, OutputIsNotNaN)
 {
-	NEURAL_NETWORK::Convolution conv(2, 2, 2, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(2, 2, 2, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_3x3, false);
 	const auto &output = conv.GetOutput();
@@ -152,7 +152,7 @@ TEST_F(ConvolutionTest, OutputIsNotNaN)
 
 TEST_F(ConvolutionTest, BiasInfluencesOutput)
 {
-	NEURAL_NETWORK::Convolution conv(1, 2, 2, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(1, 2, 2, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_3x3, false);
 	const auto &output1 = conv.GetOutput();
@@ -171,7 +171,7 @@ TEST_F(ConvolutionTest, BiasInfluencesOutput)
 
 TEST_F(ConvolutionTest, PredictionsMatchOutput)
 {
-	NEURAL_NETWORK::Convolution conv(2, 2, 2, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(2, 2, 2, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_3x3, false);
 	const auto &output = conv.GetOutput();
@@ -191,7 +191,7 @@ TEST_F(ConvolutionTest, PredictionsMatchOutput)
 
 TEST_F(ConvolutionTest, BackwardPassGradientShapes)
 {
-	NEURAL_NETWORK::Convolution conv(2, 2, 2, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(2, 2, 2, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_3x3, false);
 	const auto &output = conv.GetOutput();
@@ -223,7 +223,7 @@ TEST_F(ConvolutionTest, BackwardPassGradientShapes)
 
 TEST_F(ConvolutionTest, BackwardPassNumericalStability)
 {
-	NEURAL_NETWORK::Convolution conv(1, 2, 2, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(1, 2, 2, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_3x3, false);
 	const auto &output = conv.GetOutput();
@@ -246,7 +246,7 @@ TEST_F(ConvolutionTest, BackwardPassNumericalStability)
 
 TEST_F(ConvolutionTest, BackwardPassWithBatches)
 {
-	NEURAL_NETWORK::Convolution conv(1, 2, 2, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(1, 2, 2, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_batch2, false);
 	const auto &output = conv.GetOutput();
@@ -276,7 +276,7 @@ TEST_F(ConvolutionTest, BackwardPassWithBatches)
 
 TEST_F(ConvolutionTest, BackwardPassConsistency)
 {
-	NEURAL_NETWORK::Convolution conv(1, 2, 2, 3, 3, 1, false, 1, 1);
+	NEURAL_NETWORK::Convolution2D conv(1, 2, 2, 3, 3, 1, false, 1, 1);
 
 	conv.forward(test_input_3x3, false);
 	const auto &output = conv.GetOutput();
@@ -298,11 +298,11 @@ TEST_F(ConvolutionTest, BackwardPassConsistency)
 	}
 }
 
-// Simplified tests for Convolution regularization
+// Simplified tests for Convolution2D regularization
 TEST_F(ConvolutionTest, RegularizationParametersStored)
 {
 	// Test that regularization parameters are stored correctly
-	NEURAL_NETWORK::Convolution conv(2, 3, 3, 4, 4, 1, false, 1, 1, 0.1, 0.2);
+	NEURAL_NETWORK::Convolution2D conv(2, 3, 3, 4, 4, 1, false, 1, 1, 0.1, 0.2);
 	
 	EXPECT_NEAR(conv.GetWeightRegularizerL1(), 0.1, tolerance);
 	EXPECT_NEAR(conv.GetWeightRegularizerL2(), 0.2, tolerance);
@@ -311,7 +311,7 @@ TEST_F(ConvolutionTest, RegularizationParametersStored)
 TEST_F(ConvolutionTest, RegularizationInBackwardPass)
 {
 	// Test that backward pass works with regularization (basic functionality)
-	NEURAL_NETWORK::Convolution conv(2, 3, 3, 4, 4, 1, false, 1, 1, 0.01, 0.01);
+	NEURAL_NETWORK::Convolution2D conv(2, 3, 3, 4, 4, 1, false, 1, 1, 0.01, 0.01);
 	
 	// Forward and backward pass should work
 	EXPECT_NO_THROW(conv.forward(test_input_4x4, true));

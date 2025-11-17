@@ -216,6 +216,128 @@ void NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(const std::string& filename,
     }
 }
 
+void NEURAL_NETWORK::Helpers::ReadCSVMatrix(const std::string& filename,
+											 Eigen::MatrixXd& matrix,
+											 char delimiter)
+{
+    std::ifstream input_file(filename);
+
+    if (!input_file.is_open())
+    {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        matrix.resize(0, 0);
+        return;
+    }
+
+    std::string line;
+    std::vector<std::vector<double>> data;
+    int line_num = 0;
+
+    while (std::getline(input_file, line))
+    {
+        line_num++;
+        std::stringstream ss(line);
+        std::string cell;
+        std::vector<double> row;
+
+        while (std::getline(ss, cell, delimiter))
+        {
+            try
+            {
+                row.push_back(std::stod(cell));
+            }
+            catch (const std::invalid_argument&)
+            {
+                std::cerr << "Warning: Invalid number in line " << line_num
+                          << ": '" << cell << "'" << std::endl;
+                continue;
+            }
+        }
+
+        if (!row.empty())
+        {
+            data.push_back(row);
+        }
+    }
+
+    input_file.close();
+
+    if (data.empty())
+    {
+        std::cout << "No valid data found in " << filename << std::endl;
+        matrix.resize(0, 0);
+        return;
+    }
+
+    // Convert to Eigen matrix
+    long num_rows = data.size();
+    long num_cols = data[0].size();
+
+    matrix.resize(num_rows, num_cols);
+    for (long i = 0; i < num_rows; i++)
+    {
+        for (long j = 0; j < num_cols; j++)
+        {
+            matrix(i, j) = data[i][j];
+        }
+    }
+
+    std::cout << "Loaded " << filename << ": " << matrix.rows()
+              << " samples, " << matrix.cols() << " features" << std::endl;
+}
+
+void NEURAL_NETWORK::Helpers::ReadCSVLabels(const std::string& filename,
+											 Eigen::VectorXi& labels)
+{
+    std::ifstream input_file(filename);
+
+    if (!input_file.is_open())
+    {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        labels.resize(0);
+        return;
+    }
+
+    std::string line;
+    std::vector<int> label_data;
+    int line_num = 0;
+
+    while (std::getline(input_file, line))
+    {
+        line_num++;
+        try
+        {
+            label_data.push_back(std::stoi(line));
+        }
+        catch (const std::invalid_argument&)
+        {
+            std::cerr << "Warning: Invalid label in line " << line_num
+                      << ": '" << line << "'" << std::endl;
+        }
+    }
+
+    input_file.close();
+
+    if (label_data.empty())
+    {
+        std::cout << "No valid labels found in " << filename << std::endl;
+        labels.resize(0);
+        return;
+    }
+
+    // Convert to Eigen vector
+    long num_labels = label_data.size();
+    labels.resize(num_labels);
+
+    for (long i = 0; i < num_labels; i++)
+    {
+        labels(i) = label_data[i];
+    }
+
+    std::cout << "Loaded " << filename << ": " << labels.size()
+              << " labels" << std::endl;
+}
+
 void NEURAL_NETWORK::Helpers::DownloadData(const std::string url,
 					   					   const std::string output_dir,
 					   					   const std::string filename)

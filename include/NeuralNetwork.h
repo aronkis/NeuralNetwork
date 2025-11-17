@@ -6,7 +6,10 @@
 #include "LayerInput.h"
 #include "LayerDense.h"
 #include "LayerDropout.h"
-#include "Convolution.h"
+#include "Convolution1D.h"
+#include "Convolution2D.h"
+#include "Pooling1D.h"
+#include "MaxPooling1D.h"
 #include "MaxPooling.h"
 #include "BatchNormalization.h"
 

@@ -2,7 +2,7 @@
 #include <Eigen/Dense>
 #include "Model.h"
 #include "LayerInput.h"
-#include "Convolution.h"
+#include "Convolution2D.h"
 #include "MaxPooling.h"
 #include "LayerDense.h"
 #include "LayerDropout.h"
@@ -65,7 +65,7 @@ TEST_F(CNNIntegrationTest, SimpleCNNConstruction)
         model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
         
         // Conv layer: 8x8x1 -> 6x6x4 (no padding, 3x3 kernel)
-        model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+        model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
             4, 3, 3, 8, 8, 1, false, 1, 1));
         model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
         
@@ -94,7 +94,7 @@ TEST_F(CNNIntegrationTest, CNNForwardPass)
     NEURAL_NETWORK::Model model;
     
     model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
         2, 3, 3, 8, 8, 1, true, 1, 1)); // with padding
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
     model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
@@ -135,7 +135,7 @@ TEST_F(CNNIntegrationTest, CNNTraining)
     NEURAL_NETWORK::Model model;
     
     model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
         4, 3, 3, 8, 8, 1, true, 1, 1));
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
     model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
@@ -182,7 +182,7 @@ TEST_F(CNNIntegrationTest, CNNWithDropout)
     NEURAL_NETWORK::Model model;
     
     model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
         4, 3, 3, 8, 8, 1, true, 1, 1));
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
     model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.25)); // Dropout after conv
@@ -228,7 +228,7 @@ TEST_F(CNNIntegrationTest, CNNWithRegularization)
     NEURAL_NETWORK::Model model;
     
     model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
         4, 3, 3, 8, 8, 1, true, 1, 1, 0.01, 0.01)); // L1=0.01, L2=0.01
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
     model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
@@ -260,14 +260,14 @@ TEST_F(CNNIntegrationTest, DeepCNNArchitecture)
     model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
     
     // First conv block
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
         8, 3, 3, 8, 8, 1, true, 1, 1));
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
     model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
         16, 2, 8, 8, 8, 2)); // 8x8x8 -> 4x4x8
     
     // Second conv block
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
         16, 3, 3, 4, 4, 8, true, 1, 1));
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
     model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
@@ -300,7 +300,7 @@ TEST_F(CNNIntegrationTest, CNNSaveLoad)
     NEURAL_NETWORK::Model model;
     
     model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
         4, 3, 3, 8, 8, 1, true, 1, 1));
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
     model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
@@ -354,7 +354,7 @@ TEST_F(CNNIntegrationTest, DifferentOptimizers)
         NEURAL_NETWORK::Model model;
         
         model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-        model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+        model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
             4, 3, 3, 8, 8, 1, true, 1, 1));
         model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
         model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
@@ -398,7 +398,7 @@ TEST_F(CNNIntegrationTest, BatchSizeVariations)
     NEURAL_NETWORK::Model model;
     
     model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
         4, 3, 3, 8, 8, 1, true, 1, 1));
     model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
     model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(

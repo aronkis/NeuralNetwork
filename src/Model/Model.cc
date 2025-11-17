@@ -85,7 +85,7 @@ void NEURAL_NETWORK::Model::Finalize()
 		{
 			trainable_layers_.emplace_back(layer);
 		}
-		else if (auto layer = std::dynamic_pointer_cast<Convolution>(layers_[i]))
+		else if (auto layer = std::dynamic_pointer_cast<Convolution2D>(layers_[i]))
 		{
 			trainable_layers_.emplace_back(layer);
 		}
@@ -326,7 +326,7 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 					{
 						optimizer_->UpdateParameters(*dense_layer);
 					}
-					else if (auto conv_layer = std::dynamic_pointer_cast<Convolution>(layer_sp))
+					else if (auto conv_layer = std::dynamic_pointer_cast<Convolution2D>(layer_sp))
 					{
 						optimizer_->UpdateParameters(*conv_layer);
 					}
@@ -513,9 +513,9 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             };
             config.layer_params.push_back(params);
         } 
-		else if (auto* conv = dynamic_cast<Convolution*>(layer.get()))
+		else if (auto* conv = dynamic_cast<Convolution2D*>(layer.get()))
 		{
-			config.layer_types.push_back("Convolution");
+			config.layer_types.push_back("Convolution2D");
 			std::vector<double> params = {
 				static_cast<double>(conv->GetNumberOfFilters()),
 				static_cast<double>(conv->GetFilterHeight()),
@@ -862,11 +862,11 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
             int num_features = static_cast<int>(params[0]);
             Add(std::make_shared<BatchNormalization>(num_features));
         }
-		else if (type == "Convolution")
+		else if (type == "Convolution2D")
 		{
 			if (params.size() < 9)
 			{
-				std::cerr << "Model::LoadModel warning: Convolution entry missing parameters; aborting load." << std::endl;
+				std::cerr << "Model::LoadModel warning: Convolution2D entry missing parameters; aborting load." << std::endl;
 				return;
 			}
 			int number_of_filters = static_cast<int>(params[0]);
@@ -884,7 +884,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 			double bias_l1 = (params.size() > 11) ? params[11] : 0.0;
 			double bias_l2 = (params.size() > 12) ? params[12] : 0.0;
 
-			Add(std::make_shared<Convolution>(number_of_filters, filter_height, filter_width,
+			Add(std::make_shared<Convolution2D>(number_of_filters, filter_height, filter_width,
 											  input_height, input_width, input_channels,
 											  padding, stride_height, stride_width,
 											  weight_l1, weight_l2, bias_l1, bias_l2));

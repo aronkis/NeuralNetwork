@@ -27,6 +27,9 @@ set(TEST_SOURCES
 	TestHelpers.cc
 	TestConvolution.cc
 	TestPooling.cc
+	TestConvolution1D.cc
+	TestConvolution1DGradients.cc
+	TestMaxPooling1D.cc
 )
 
 add_executable(neural_network_tests ${TEST_SOURCES} ${NEURAL_NETWORK_SOURCES})

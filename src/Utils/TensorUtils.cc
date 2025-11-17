@@ -177,4 +177,4 @@ void NEURAL_NETWORK::TensorUtils::col2im(const Eigen::MatrixXd &col_matrix,
 			}
 		}
 	} 
-}                                         
+}

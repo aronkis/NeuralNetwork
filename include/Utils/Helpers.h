@@ -21,6 +21,15 @@ namespace NEURAL_NETWORK
 								  Eigen::MatrixXd& output,
 								  char delimiter = ',');
 
+		// General CSV loader for matrices with many features
+		void ReadCSVMatrix(const std::string& filename,
+						   Eigen::MatrixXd& matrix,
+						   char delimiter = ',');
+
+		// Load integer labels from CSV (one label per line)
+		void ReadCSVLabels(const std::string& filename,
+						   Eigen::VectorXi& labels);
+
 		void DownloadData(const std::string url,
 						  const std::string output_dir,
 						  const std::string filename);

@@ -1,23 +1,22 @@
-#ifndef __CONVOLUTION_H__
-#define __CONVOLUTION_H__
+#ifndef __CONVOLUTION_2D_H__
+#define __CONVOLUTION_2D_H__
 
 // #define EIGEN_USE_BLAS -- to be tested
-#include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include "LayerBase.h"
 
 namespace NEURAL_NETWORK
 {
-	class Convolution : public LayerBase
+	class Convolution2D : public LayerBase
 	{
 	public:
-		Convolution(int number_of_filters, int filter_height, int filter_width,
+		Convolution2D(int number_of_filters, int filter_height, int filter_width,
 					int input_height, int input_width, int input_channels,
 					int padding, int stride_height, int stride_width,
 					double weight_regularizer_l1 = 0.0, double weight_regularizer_l2 = 0.0,
 					double bias_regularizer_l1 = 0.0, double bias_regularizer_l2 = 0.0);
 
-		~Convolution() = default;
+		~Convolution2D() = default;
 
 		void forward(const Eigen::MatrixXd& inputs, bool training) override;
 		void backward(const Eigen::MatrixXd& dvalues) override;
@@ -51,11 +50,9 @@ namespace NEURAL_NETWORK
 
 		void SetDInput(const Eigen::MatrixXd& dinput) override;
 
-		// LayerBase virtual method overrides for gradients
 		const Eigen::MatrixXd& GetDWeights() const override;
 		const Eigen::RowVectorXd& GetDBiases() const override;
 
-		// LayerBase virtual method overrides for momentums/caches (Matrix/RowVector interface)
 		const Eigen::MatrixXd& GetWeightMomentums() const override;
 		const Eigen::RowVectorXd& GetBiasMomentums() const override;
 		const Eigen::MatrixXd& GetWeightCaches() const override;
@@ -119,8 +116,8 @@ namespace NEURAL_NETWORK
 
 
 		void InputMatrixToTensor(const Eigen::MatrixXd& matrix,
-							int batch_size, int height,
-							int width, int channels);
+								 int batch_size, int height,
+								 int width, int channels);
 		Eigen::MatrixXd InputTensorToMatrix(const Eigen::Tensor<double, 4>& tensor);
 
 		void WeightsToTensor(const Eigen::MatrixXd& weights_matrix);
@@ -139,7 +136,8 @@ namespace NEURAL_NETWORK
 
 		// Helper methods for tensor-matrix conversions
 		Eigen::MatrixXd WeightsToMatrixFromTensor(const Eigen::Tensor<double, 4>& tensor) const;
-		void MatrixToWeightsTensor(const Eigen::MatrixXd& matrix, Eigen::Tensor<double, 4>& tensor) const;
+		void MatrixToWeightsTensor(const Eigen::MatrixXd& matrix, 
+								   Eigen::Tensor<double, 4>& tensor) const;
 
 		// Tensor-specific methods for internal use
 		void SetWeightMomentumsTensor(const Eigen::Tensor<double, 4>& weight_momentums);
@@ -154,4 +152,4 @@ namespace NEURAL_NETWORK
 	};
 } // namespace NEURAL_NETWORK
 
-#endif // __CONVOLUTION_H__
+#endif // __CONVOLUTION_2D_H__

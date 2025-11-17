@@ -491,8 +491,8 @@ TEST_F(ModelTest, SaveLoadModelWithMaxPooling)
 	auto model = std::make_unique<NEURAL_NETWORK::Model>();
 	model->Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
 	
-	// Add Convolution layer
-	model->Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+	// Add Convolution2D layer
+	model->Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
 		8, 3, 3, 28, 28, 1, true, 1, 1, 0.0, 1e-4));
 	model->Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 	
@@ -536,7 +536,7 @@ TEST_F(ModelTest, MaxPoolingParametersSavedCorrectly)
 	// Create model with specific MaxPooling parameters
 	auto model = std::make_unique<NEURAL_NETWORK::Model>();
 	model->Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-	model->Add(std::make_shared<NEURAL_NETWORK::Convolution>(
+	model->Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
 		4, 5, 5, 16, 16, 1, false, 2, 2)); // stride 2 conv
 	model->Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 	
