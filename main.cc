@@ -42,92 +42,92 @@ int main()
 	NEURAL_NETWORK::Model model;
 	model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
 
-    // ===== COMPLETE CNN WITH MAXPOOLING + BATCH NORMALIZATION =====
-    std::cout << "\n=== Testing Complete CNN with MaxPooling + BatchNormalization ===" << std::endl;
-    std::cout << "Architecture: Conv -> BatchNorm -> ReLU -> MaxPool -> Conv -> BatchNorm -> ReLU -> MaxPool -> Dense -> ReLU -> Dropout -> Dense -> Softmax" << std::endl;
+	// ===== COMPLETE CNN WITH MAXPOOLING + BATCH NORMALIZATION =====
+	std::cout << "\n=== Testing Complete CNN with MaxPooling + BatchNormalization ===" << std::endl;
+	std::cout << "Architecture: Conv -> BatchNorm -> ReLU -> MaxPool -> Conv -> BatchNorm -> ReLU -> MaxPool -> Dense -> ReLU -> Dropout -> Dense -> Softmax" << std::endl;
 
-    // First Convolution2D Block
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
-        32,        // 32 filters
-        3, 3,      // 3x3 filters
-        28, 28, 1, // 28x28x1 input (Fashion-MNIST)
-        true,      // padding
-        1, 1,      // stride 1x1
-        0.0, 1e-4  // L2 regularization
-    ));
+	// First Convolution2D Block
+	model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
+		32,        // 32 filters
+		3, 3,      // 3x3 filters
+		28, 28, 1, // 28x28x1 input (Fashion-MNIST)
+		true,      // padding
+		1, 1,      // stride 1x1
+		0.0, 1e-4  // L2 regularization
+	));
 
-    // BatchNormalization after first Convolution2D
-    model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(
-        32         // number of channels (filters)
-    ));
+	// BatchNormalization after first Convolution2D
+	model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(
+		32         // number of channels (filters)
+	));
 
-    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 
-    // MaxPooling: 28x28 -> 14x14
-    model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
-        64,        // batch_size (will be adjusted dynamically)
-        2,         // pool_size 2x2
-        28, 28, 32, // input dimensions
-        2          // stride = 2 (non-overlapping)
-    ));
+	// MaxPooling: 28x28 -> 14x14
+	model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
+		64,        // batch_size (will be adjusted dynamically)
+		2,         // pool_size 2x2
+		28, 28, 32, // input dimensions
+		2          // stride = 2 (non-overlapping)
+	));
 
-    // Second Convolution2D Block
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
-        64,        // 64 filters
-        3, 3,      // 3x3 filters
-        14, 14, 32, // 14x14x32 input from pooling
-        true,      // padding
-        1, 1,      // stride 1x1
-        0.0, 1e-4  // L2 regularization
-    ));
+	// Second Convolution2D Block
+	model.Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
+		64,        // 64 filters
+		3, 3,      // 3x3 filters
+		14, 14, 32, // 14x14x32 input from pooling
+		true,      // padding
+		1, 1,      // stride 1x1
+		0.0, 1e-4  // L2 regularization
+	));
 
-    // BatchNormalization after second Convolution2D
-    model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(
-        64         // number of channels (filters)
-    ));
+	// BatchNormalization after second Convolution2D
+	model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(
+		64         // number of channels (filters)
+	));
 
-    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 
-    // MaxPooling: 14x14 -> 7x7
-    model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
-        64,        // batch_size (will be adjusted dynamically)
-        2,         // pool_size 2x2
-        14, 14, 64, // input dimensions
-        2          // stride = 2 (non-overlapping)
-    ));
+	// MaxPooling: 14x14 -> 7x7
+	model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
+		64,        // batch_size (will be adjusted dynamically)
+		2,         // pool_size 2x2
+		14, 14, 64, // input dimensions
+		2          // stride = 2 (non-overlapping)
+	));
 
-    // Dense Layers - Transition from 7x7x64 = 3136 features
-    model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
-        7*7*64,    // Flattened size: 7×7×64 = 3136
-        128,       // Hidden layer with 128 neurons
-        0.0, 1e-4  // L2 regularization
-    ));
-    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+	// Dense Layers - Transition from 7x7x64 = 3136 features
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
+		7*7*64,    // Flattened size: 7×7×64 = 3136
+		128,       // Hidden layer with 128 neurons
+		0.0, 1e-4  // L2 regularization
+	));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 
-    // Dropout for regularization in dense layers
-    model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.5));
+	// Dropout for regularization in dense layers
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.5));
 
-    // Output layer
-    model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
-        128, 10,   // 128 -> 10 classes
-        0.0, 1e-4  // L2 regularization
-    ));
-    model.Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
+	// Output layer
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
+		128, 10,   // 128 -> 10 classes
+		0.0, 1e-4  // L2 regularization
+	));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
 
-    std::cout << "Expected data flow:" << std::endl;
-    std::cout << "Input: 28x28x1 -> Conv1: 28x28x32 -> BatchNorm -> ReLU -> Pool: 14x14x32 -> Conv2: 14x14x64 -> BatchNorm -> ReLU -> Pool: 7x7x64 -> Dense: 128 -> ReLU -> Dropout(0.5) -> Output: 10" << std::endl;
-    
-    model.Set(
-        std::make_unique<NEURAL_NETWORK::LossCategoricalCrossEntropy>(),
-        std::make_unique<NEURAL_NETWORK::AccuracyCategorical>(),
-        std::make_unique<NEURAL_NETWORK::Adam>(0.0005, 1e-7) // Lower learning rate for stability
-    );
+	std::cout << "Expected data flow:" << std::endl;
+	std::cout << "Input: 28x28x1 -> Conv1: 28x28x32 -> BatchNorm -> ReLU -> Pool: 14x14x32 -> Conv2: 14x14x64 -> BatchNorm -> ReLU -> Pool: 7x7x64 -> Dense: 128 -> ReLU -> Dropout(0.5) -> Output: 10" << std::endl;
+	
+	model.Set(
+		std::make_unique<NEURAL_NETWORK::LossCategoricalCrossEntropy>(),
+		std::make_unique<NEURAL_NETWORK::AccuracyCategorical>(),
+		std::make_unique<NEURAL_NETWORK::Adam>(0.0005, 1e-7) // Lower learning rate for stability
+	);
 
-    model.Finalize();
+	model.Finalize();
 
-    model.Train(X, y, BATCH_SIZE, 2, NN_PRINT_EVERY, X_test, y_test);
-    
-    model.SaveModel("data/fashion_mnist_CNN_complete_model.bin");
+	model.Train(X, y, BATCH_SIZE, 2, NN_PRINT_EVERY, X_test, y_test);
+	
+	model.SaveModel("data/fashion_mnist_CNN_complete_model.bin");
 }
 
 #endif
@@ -141,168 +141,171 @@ int main()
 
 int main()
 {
-    std::cout << "=== Radio Modulation Classification with 1D CNN ===" << std::endl;
-    std::cout << "NN_EPOCHS: " << NN_EPOCHS << std::endl;
-    std::cout << "BATCH_SIZE: " << BATCH_SIZE << std::endl;
-    std::cout << "NN_PRINT_EVERY: " << NN_PRINT_EVERY << std::endl;
+	std::cout << "=== Radio Modulation Classification with 1D CNN ===" << std::endl;
+	std::cout << "NN_EPOCHS: " << NN_EPOCHS << std::endl;
+	std::cout << "BATCH_SIZE: " << BATCH_SIZE << std::endl;
+	std::cout << "NN_PRINT_EVERY: " << NN_PRINT_EVERY << std::endl;
 
-    // Load radio modulation dataset
-    std::cout << "Loading radio modulation dataset..." << std::endl;
+	// Load radio modulation dataset
+	std::cout << "Loading radio modulation dataset..." << std::endl;
 
-    Eigen::MatrixXd train_data, test_data;
-    Eigen::VectorXi train_labels, test_labels;
+	Eigen::MatrixXd train_data, test_data;
+	Eigen::VectorXi train_labels, test_labels;
 
-    // Load the CSV files generated by generate_radio_dataset.py
-    NEURAL_NETWORK::Helpers::ReadCSVMatrix("../data/RF/radio_dataset_realistic_train_data.csv", train_data);
-    NEURAL_NETWORK::Helpers::ReadCSVLabels("../data/RF/radio_dataset_realistic_train_labels.csv", train_labels);
-    NEURAL_NETWORK::Helpers::ReadCSVMatrix("../data/RF/radio_dataset_realistic_test_data.csv", test_data);
-    NEURAL_NETWORK::Helpers::ReadCSVLabels("../data/RF/radio_dataset_realistic_test_labels.csv", test_labels);
+	// Load the CSV files generated by generate_radio_dataset.py
+	NEURAL_NETWORK::Helpers::ReadCSVMatrix("../data/RF/radio_dataset_extreme_train_data.csv", train_data);
+	NEURAL_NETWORK::Helpers::ReadCSVLabels("../data/RF/radio_dataset_extreme_train_labels.csv", train_labels);
+	NEURAL_NETWORK::Helpers::ReadCSVMatrix("../data/RF/radio_dataset_extreme_test_data.csv", test_data);
+	NEURAL_NETWORK::Helpers::ReadCSVLabels("../data/RF/radio_dataset_extreme_test_labels.csv", test_labels);
 
-    // Convert labels to double matrix for framework compatibility
-    Eigen::MatrixXd y_train(train_labels.size(), 1);
-    Eigen::MatrixXd y_test(test_labels.size(), 1);
-    for (int i = 0; i < train_labels.size(); i++) {
-        y_train(i, 0) = static_cast<double>(train_labels(i));
-    }
-    for (int i = 0; i < test_labels.size(); i++) {
-        y_test(i, 0) = static_cast<double>(test_labels(i));
-    }
+	// Convert labels to double matrix for framework compatibility
+	Eigen::MatrixXd y_train(train_labels.size(), 1);
+	Eigen::MatrixXd y_test(test_labels.size(), 1);
+	for (int i = 0; i < train_labels.size(); i++) 
+	{
+		y_train(i, 0) = static_cast<double>(train_labels(i));
+	}
+	for (int i = 0; i < test_labels.size(); i++) 
+	{
+		y_test(i, 0) = static_cast<double>(test_labels(i));
+	}
 
-    std::cout << "Dataset loaded successfully!" << std::endl;
-    std::cout << "Training samples: " << train_data.rows() << std::endl;
-    std::cout << "Test samples: " << test_data.rows() << std::endl;
-    std::cout << "Features per sample: " << train_data.cols() << " (I/Q interleaved)" << std::endl;
-    std::cout << "Classes: 4 (0=BPSK, 1=QPSK, 2=8PSK, 3=16PSK)" << std::endl;
+	std::cout << "Dataset loaded successfully!" << std::endl;
+	std::cout << "Training samples: " << train_data.rows() << std::endl;
+	std::cout << "Test samples: " << test_data.rows() << std::endl;
+	std::cout << "Features per sample: " << train_data.cols() << " (I/Q interleaved)" << std::endl;
+	std::cout << "Classes: 4 (0=BPSK, 1=QPSK, 2=8PSK, 3=16PSK)" << std::endl;
 
-    if (train_data.cols() != 2048) {
-        std::cerr << "ERROR: Expected 2048 features but got " << train_data.cols() << std::endl;
-        return -1;
-    }
+	if (train_data.cols() != 2048)
+	 {
+		std::cerr << "ERROR: Expected 2048 features but got " << train_data.cols() << std::endl;
+		return -1;
+	}
 
-    // Data preprocessing - already normalized by Python script, but shuffle for training
-    NEURAL_NETWORK::Helpers::ShuffleData(train_data, y_train);
+	// Data preprocessing - already normalized by Python script, but shuffle for training
+	NEURAL_NETWORK::Helpers::ShuffleData(train_data, y_train);
 
-    // Build 1D CNN model for radio signal classification
-    std::cout << "\nBuilding 1D CNN architecture..." << std::endl;
+	// Build 1D CNN model for radio signal classification
+	std::cout << "\nBuilding 1D CNN architecture..." << std::endl;
 
-    NEURAL_NETWORK::Model model;
-    model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
+	NEURAL_NETWORK::Model model;
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
 
-    // ===== FULL 1D CNN ARCHITECTURE FOR RADIO SIGNALS =====
-    std::cout << "Architecture: Input(2048) -> Conv1D -> ReLU -> MaxPool1D -> Conv1D -> ReLU -> MaxPool1D -> Dense -> ReLU -> Dense -> Softmax" << std::endl;
+	// ===== FULL 1D CNN ARCHITECTURE FOR RADIO SIGNALS =====
+	std::cout << "Architecture: Input(2048) -> Conv1D -> ReLU -> MaxPool1D -> Conv1D -> ReLU -> MaxPool1D -> Dense -> ReLU -> Dense -> Softmax" << std::endl;
 
-    // First 1D Convolution Block
-    // Input: 2048 features (1024 time steps × 2 channels I/Q)
-    // Output: temporal features extracted from radio signals
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution1D>(
-        32,        // 32 filters
-        7,         // filter length 7
-        1024,      // input_length (time steps)
-        2,         // input_channels (I/Q)
-        1,         // stride
-        1,         // padding
-        0.0, 1e-4  // L2 regularization
-    ));
-    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+	// First 1D Convolution Block
+	// Input: 2048 features (1024 time steps × 2 channels I/Q)
+	// Output: temporal features extracted from radio signals
+	model.Add(std::make_shared<NEURAL_NETWORK::Convolution1D>(
+		32,        // 32 filters
+		7,         // filter length 7
+		1024,      // input_length (time steps)
+		2,         // input_channels (I/Q)
+		1,         // stride
+		1,         // padding
+		0.0, 1e-4  // L2 regularization
+	));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 
-    // First MaxPooling1D: reduce temporal dimension by 2
-    // Input: 1024 time steps (with padding), 32 channels
-    // Output: 512 time steps, 32 channels
-    model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling1D>(
-        32,         // batch_size (will be adjusted dynamically)
-        2,          // pool_size
-        1024,       // input_length
-        32,         // input_channels
-        2           // stride
-    ));
+	// First MaxPooling1D: reduce temporal dimension by 2
+	// Input: 1024 time steps (with padding), 32 channels
+	// Output: 512 time steps, 32 channels
+	model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling1D>(
+		32,         // batch_size (will be adjusted dynamically)
+		2,          // pool_size
+		1024,       // input_length
+		32,         // input_channels
+		2           // stride
+	));
 
-    // Second 1D Convolution Block
-    // Input: 512 time steps, 32 channels
-    // Output: deeper temporal features
-    model.Add(std::make_shared<NEURAL_NETWORK::Convolution1D>(
-        64,        // 64 filters
-        5,         // filter length 5
-        512,       // input_length (from pooling)
-        32,        // input_channels
-        1,         // stride
-        1,         // padding
-        0.0, 1e-4  // L2 regularization
-    ));
-    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+	// Second 1D Convolution Block
+	// Input: 512 time steps, 32 channels
+	// Output: deeper temporal features
+	model.Add(std::make_shared<NEURAL_NETWORK::Convolution1D>(
+		64,        // 64 filters
+		5,         // filter length 5
+		512,       // input_length (from pooling)
+		32,        // input_channels
+		1,         // stride
+		1,         // padding
+		0.0, 1e-4  // L2 regularization
+	));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 
-    // Second MaxPooling1D: further temporal downsampling
-    // Input: 512 time steps (with padding), 64 channels
-    // Output: 256 time steps, 64 channels
-    model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling1D>(
-        32,         // batch_size (will be adjusted dynamically)
-        2,          // pool_size
-        512,        // input_length
-        64,         // input_channels
-        2           // stride
-    ));
+	// Second MaxPooling1D: further temporal downsampling
+	// Input: 512 time steps (with padding), 64 channels
+	// Output: 256 time steps, 64 channels
+	model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling1D>(
+		32,         // batch_size (will be adjusted dynamically)
+		2,          // pool_size
+		512,        // input_length
+		64,         // input_channels
+		2           // stride
+	));
 
-    // Transition to Dense layers for final classification
-    // Input: 256 time steps, 64 channels = 16,384 features
-    int dense_input_size = 256 * 64;
+	// Transition to Dense layers for final classification
+	// Input: 256 time steps, 64 channels = 16,384 features
+	int dense_input_size = 256 * 64;
 
-    model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
-        dense_input_size, // Flattened size: 256×64 = 16,384
-        128,              // Hidden layer with 128 neurons
-        0.0, 1e-4         // L2 regularization
-    ));
-    model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
+		dense_input_size, // Flattened size: 256×64 = 16,384
+		128,              // Hidden layer with 128 neurons
+		0.0, 1e-4         // L2 regularization
+	));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 
-    // Output layer for 4-class modulation classification
-    model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
-        128, 4,    // 128 -> 4 classes (BPSK, QPSK, 16QAM, ASK)
-        0.0, 1e-4  // L2 regularization
-    ));
-    model.Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
+	// Output layer for 4-class modulation classification
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
+		128, 4,    // 128 -> 4 classes (BPSK, QPSK, 16QAM, ASK)
+		0.0, 1e-4  // L2 regularization
+	));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
 
-    std::cout << "Expected data flow:" << std::endl;
-    std::cout << "Input: 2048 -> Conv1D: 1024×32 -> Pool: 512×32 -> Conv1D: 512×64 -> Pool: 256×64 -> Dense: 128 -> Output: 4" << std::endl;
+	std::cout << "Expected data flow:" << std::endl;
+	std::cout << "Input: 2048 -> Conv1D: 1024×32 -> Pool: 512×32 -> Conv1D: 512×64 -> Pool: 256×64 -> Dense: 128 -> Output: 4" << std::endl;
 
-    // Set up loss, accuracy, and optimizer
-    model.Set(
-        std::make_unique<NEURAL_NETWORK::LossCategoricalCrossEntropy>(),
-        std::make_unique<NEURAL_NETWORK::AccuracyCategorical>(),
-        std::make_unique<NEURAL_NETWORK::Adam>(0.001, 1e-7) // Learning rate suitable for radio signals
-    );
+	// Set up loss, accuracy, and optimizer
+	model.Set(
+		std::make_unique<NEURAL_NETWORK::LossCategoricalCrossEntropy>(),
+		std::make_unique<NEURAL_NETWORK::AccuracyCategorical>(),
+		std::make_unique<NEURAL_NETWORK::Adam>(0.001, 1e-7) // Learning rate suitable for radio signals
+	);
 
-    model.Finalize();
+	model.Finalize();
 
-    std::cout << "\nStarting training..." << std::endl;
-    // Train the model
-    model.Train(train_data, y_train, BATCH_SIZE, NN_EPOCHS, NN_PRINT_EVERY, test_data, y_test);
+	std::cout << "\nStarting training..." << std::endl;
+	// Train the model
+	model.Train(train_data, y_train, BATCH_SIZE, 1, NN_PRINT_EVERY, test_data, y_test);
 
-    // Save the trained model
-    std::cout << "\nSaving trained radio modulation model..." << std::endl;
-    model.SaveModel("data/radio_modulation_1d_cnn_model.bin");
+	// Save the trained model
+	std::cout << "\nSaving trained radio modulation model..." << std::endl;
+	model.SaveModel("data/radio_modulation_1d_cnn_model.bin");
 
-    std::cout << "\nEvaluating final model on test data:" << std::endl;
-    model.Evaluate(test_data, y_test, BATCH_SIZE);
+	std::cout << "\nEvaluating final model on test data:" << std::endl;
+	model.Evaluate(test_data, y_test, BATCH_SIZE);
 
-    // Example predictions on a few test samples
-    std::cout << "\nExample predictions:" << std::endl;
-    int num_examples = 10;
-    Eigen::MatrixXd sample_data = test_data.topRows(num_examples);
-    Eigen::MatrixXd sample_labels = y_test.topRows(num_examples);
-    Eigen::MatrixXd predictions = model.Predict(sample_data, 1);
+	// Example predictions on a few test samples
+	std::cout << "\nExample predictions:" << std::endl;
+	int num_examples = 10;
+	Eigen::MatrixXd sample_data = test_data.topRows(num_examples);
+	Eigen::MatrixXd sample_labels = y_test.topRows(num_examples);
+	Eigen::MatrixXd predictions = model.Predict(sample_data, 1);
 
-    std::vector<std::string> class_names = {"BPSK", "QPSK", "8PSK", "16PSK"};
-    std::cout << "Predictions vs Actual for first " << num_examples << " test samples:" << std::endl;
-    for (int i = 0; i < num_examples; i++) {
-        int predicted_class = static_cast<int>(predictions(i, 0));
-        int actual_class = static_cast<int>(sample_labels(i, 0));
-        std::cout << "Sample " << i << ": Predicted = " << class_names[predicted_class]
-                  << ", Actual = " << class_names[actual_class]
-                  << (predicted_class == actual_class ? " ✓" : " ✗") << std::endl;
-    }
+	std::vector<std::string> class_names = {"BPSK", "QPSK", "8PSK", "16PSK"};
+	std::cout << "Predictions vs Actual for first " << num_examples << " test samples:" << std::endl;
+	for (int i = 0; i < num_examples; i++) 
+	{
+		int predicted_class = static_cast<int>(predictions(i, 0));
+		int actual_class = static_cast<int>(sample_labels(i, 0));
+		std::cout << "Sample " << i << ": Predicted = " << class_names[predicted_class]
+				  << ", Actual = " << class_names[actual_class]
+				  << (predicted_class == actual_class ? " ✓" : " ✗") << std::endl;
+	}
 
-    std::cout << "\n🎉 Radio modulation classification training complete!" << std::endl;
-    std::cout << "Model saved to: data/radio_modulation_1d_cnn_model.bin" << std::endl;
+	std::cout << "Model saved to: data/radio_modulation_1d_cnn_model.bin" << std::endl;
 
-    return 0;
+	return 0;
 }
 
 #endif

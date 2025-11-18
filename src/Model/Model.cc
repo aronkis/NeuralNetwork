@@ -533,6 +533,23 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
 			};
 			config.layer_params.push_back(params);
 		} 
+		else if (auto* conv1d = dynamic_cast<Convolution1D*>(layer.get()))
+		{
+			config.layer_types.push_back("Convolution1D");
+			std::vector<double> params = {
+				static_cast<double>(conv1d->GetNumberOfFilters()),
+				static_cast<double>(conv1d->GetFilterLength()),
+				static_cast<double>(conv1d->GetInputLength()),
+				static_cast<double>(conv1d->GetInputChannels()),
+				static_cast<double>(conv1d->GetPadding()),
+				static_cast<double>(conv1d->GetStride()),
+				conv1d->GetWeightRegularizerL1(),
+				conv1d->GetWeightRegularizerL2(),
+				conv1d->GetBiasRegularizerL1(),
+				conv1d->GetBiasRegularizerL2()
+			};
+			config.layer_params.push_back(params);
+		}
 		else if (auto* dropout = dynamic_cast<LayerDropout*>(layer.get())) 
 		{
             config.layer_types.push_back("LayerDropout");
@@ -550,6 +567,17 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             };
             config.layer_params.push_back(params);
         }
+		else if (auto* maxpool1d = dynamic_cast<MaxPooling1D*>(layer.get()))
+		{
+			config.layer_types.push_back("MaxPooling1D");
+			std::vector<double> params = {
+				static_cast<double>(maxpool1d->GetPoolSize()),
+				static_cast<double>(maxpool1d->GetStride()),
+				static_cast<double>(maxpool1d->GetInputLength()),
+				static_cast<double>(maxpool1d->GetInputChannels())
+			};
+			config.layer_params.push_back(params);
+		}
 		else if (auto* batchnorm = dynamic_cast<BatchNormalization*>(layer.get()))
 		{
             config.layer_types.push_back("BatchNormalization");
@@ -852,6 +880,21 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
             Add(std::make_shared<MaxPooling>(batch_size, pool_size, input_height,
                                            input_width, input_channels, stride));
         }
+		else if (type == "MaxPooling1D")
+		{
+			if (params.size() < 4)
+			{
+				std::cerr << "Model::LoadModel warning: MaxPooling1D entry missing parameters; aborting load." << std::endl;
+				return;
+			}
+			int pool_size = static_cast<int>(params[0]);
+			int stride = static_cast<int>(params[1]);
+			int input_length = static_cast<int>(params[2]);
+			int input_channels = static_cast<int>(params[3]);
+			int batch_size = 1;
+			Add(std::make_shared<MaxPooling1D>(batch_size, pool_size, input_length,
+												input_channels, stride));
+		}
 		else if (type == "BatchNormalization")
 		{
             if (params.size() < 1)
@@ -888,6 +931,31 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 											  input_height, input_width, input_channels,
 											  padding, stride_height, stride_width,
 											  weight_l1, weight_l2, bias_l1, bias_l2));
+		}
+		else if (type == "Convolution1D")
+		{
+			if (params.size() < 6)
+			{
+				std::cerr << "Model::LoadModel warning: Convolution1D entry missing parameters; aborting load." << std::endl;
+				return;
+			}
+			int number_of_filters = static_cast<int>(params[0]);
+			int filter_length = static_cast<int>(params[1]);
+			int input_length = static_cast<int>(params[2]);
+			int input_channels = static_cast<int>(params[3]);
+			int padding = static_cast<int>(params[4]);
+			int stride = static_cast<int>(params[5]);
+
+			double weight_l1 = (params.size() > 6) ? params[6] : 0.0;
+			double weight_l2 = (params.size() > 7) ? params[7] : 0.0;
+			double bias_l1 = (params.size() > 8) ? params[8] : 0.0;
+			double bias_l2 = (params.size() > 9) ? params[9] : 0.0;
+
+			Add(std::make_shared<Convolution1D>(number_of_filters, filter_length,
+											 input_length, input_channels,
+											 padding, stride,
+											 weight_l1, weight_l2,
+											 bias_l1, bias_l2));
 		}
 		else if (type == "ActivationReLU") 
 		{
