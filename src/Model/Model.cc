@@ -1,6 +1,7 @@
 #include "Model.h"
 #include "LayerDense.h"
 #include "BatchNormalization.h"
+#include "Convolution1D.h"
 #include "Helpers.h"
 
 #include <iostream>
@@ -11,7 +12,7 @@
 #include <sstream>
 #include <filesystem>
 
-struct ModelConfig 
+struct ModelConfig
 {
     std::vector<std::string> layer_types;
     std::vector<std::vector<double>> layer_params;
@@ -23,6 +24,11 @@ struct ModelConfig
     std::vector<double> accuracy_params;
     std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> parameters;
     bool softmax_classifier_;
+
+    // Optimizer state (only saved when for_training = true)
+    bool has_optimizer_state = false;
+    std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> weight_momentums;
+    std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> weight_caches;
 };
 
 void NEURAL_NETWORK::Model::Add(std::shared_ptr<LayerBase> layer)
@@ -217,11 +223,9 @@ void NEURAL_NETWORK::Model::Evaluate(const Eigen::MatrixXd& X,
 			<< ", Validation Loss: " << val_loss << '\n';
 }
 
-void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X, 
-								  const Eigen::MatrixXd& y,
-				   				  int batch_size, int epochs, int print_every, 
-				   				  const Eigen::MatrixXd& X_val, 
-								  const Eigen::MatrixXd& y_val)
+void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X, const Eigen::MatrixXd& y,
+				   				  int batch_size, int epochs, int print_every, int save_every, 
+				   				  const Eigen::MatrixXd& X_val, const Eigen::MatrixXd& y_val)
 {
 	if (!optimizer_)
 	{
@@ -259,7 +263,6 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 	{
 		std::cout << "\n========== Epoch " << (epoch + 1) << "/" << epochs << " ==========\n";
 		
-		// Reset loss and accuracy accumulators for new epoch
 		loss_->NewPass();
 		accuracy_->NewPass();
 		
@@ -368,6 +371,11 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X,
 				<< " | Regularization loss: " << epoch_reg_loss
 				<< "), Learning Rate: " << optimizer_->GetLearningRate()
 				<< '\n';
+		if ((save_every) && (epoch + 1) % save_every == 0 && epoch != epochs - 1)
+		{
+			std::string file_name = "SaveFile_Epoch" + std::to_string(epoch + 1) + ".bin";
+			SaveModel(file_name, true);  // Save with training state
+		}
 	}
 
 	if (X_val.size() > 0 && y_val.size() > 0)
@@ -492,7 +500,7 @@ void NEURAL_NETWORK::Model::LoadParameters(const std::string& path)
     ifs.close();
 }
 
-void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
+void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training) const
 {
 	ModelConfig config;
     config.softmax_classifier_ = softmax_classifier_;
@@ -649,7 +657,7 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
         config.loss_type = "";
     }
 
-    if (auto* adam = dynamic_cast<Adam*>(optimizer_.get())) 
+    if (auto* adam = dynamic_cast<Adam*>(optimizer_.get()))
 	{
         config.optimizer_type = "Adam";
         config.optimizer_params = {
@@ -659,8 +667,12 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             adam->GetBeta2(),
             adam->GetEpsilon()
         };
+        // Save iterations counter if saving for training continuation
+        if (for_training) {
+            config.optimizer_params.push_back(static_cast<double>(adam->GetIterations()));
+        }
     } 
-	else if (auto* sgd = dynamic_cast<StochasticGradientDescent*>(optimizer_.get())) 
+	else if (auto* sgd = dynamic_cast<StochasticGradientDescent*>(optimizer_.get()))
 	{
         config.optimizer_type = "StochasticGradientDescent";
         config.optimizer_params = {
@@ -668,8 +680,11 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             sgd->GetDecay(),
             sgd->GetMomentum()
         };
+        if (for_training) {
+            config.optimizer_params.push_back(static_cast<double>(sgd->GetIterations()));
+        }
     } 
-	else if (auto* adagrad = dynamic_cast<AdaGrad*>(optimizer_.get())) 
+	else if (auto* adagrad = dynamic_cast<AdaGrad*>(optimizer_.get()))
 	{
         config.optimizer_type = "AdaGrad";
         config.optimizer_params = {
@@ -677,8 +692,11 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             adagrad->GetDecay(),
             adagrad->GetEpsilon()
         };
+        if (for_training) {
+            config.optimizer_params.push_back(static_cast<double>(adagrad->GetIterations()));
+        }
     } 
-	else if (auto* rmsprop = dynamic_cast<RMSProp*>(optimizer_.get())) 
+	else if (auto* rmsprop = dynamic_cast<RMSProp*>(optimizer_.get()))
 	{
         config.optimizer_type = "RMSProp";
         config.optimizer_params = {
@@ -687,6 +705,9 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
             rmsprop->GetRho(),
             rmsprop->GetEpsilon()
         };
+        if (for_training) {
+            config.optimizer_params.push_back(static_cast<double>(rmsprop->GetIterations()));
+        }
     } 
 	else 
 	{
@@ -702,10 +723,82 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
 	{
         config.accuracy_type = "AccuracyRegression";
         config.accuracy_params = {reg->GetEpsilon()};
-    } 
-	else 
+    }
+	else
 	{
         config.accuracy_type = "";
+    }
+
+    // Save optimizer state if for_training is true
+    if (for_training && optimizer_)
+    {
+        config.has_optimizer_state = true;
+
+        // Collect momentum and cache buffers from trainable layers
+        for (const auto& layer_sp : trainable_layers_)
+        {
+            if (layer_sp)
+            {
+                if (auto dense_layer = std::dynamic_pointer_cast<LayerDense>(layer_sp))
+                {
+                    config.weight_momentums.push_back({
+                        dense_layer->GetWeightMomentums(),
+                        dense_layer->GetBiasMomentums()
+                    });
+                    config.weight_caches.push_back({
+                        dense_layer->GetWeightCaches(),
+                        dense_layer->GetBiasCaches()
+                    });
+                }
+                else if (auto conv_layer = std::dynamic_pointer_cast<Convolution2D>(layer_sp))
+                {
+                    config.weight_momentums.push_back({
+                        conv_layer->GetWeightMomentums(),
+                        conv_layer->GetBiasMomentums()
+                    });
+                    config.weight_caches.push_back({
+                        conv_layer->GetWeightCaches(),
+                        conv_layer->GetBiasCaches()
+                    });
+                }
+                else if (auto conv1d_layer = std::dynamic_pointer_cast<Convolution1D>(layer_sp))
+                {
+                    config.weight_momentums.push_back({
+                        conv1d_layer->GetWeightMomentums(),
+                        conv1d_layer->GetBiasMomentums()
+                    });
+                    config.weight_caches.push_back({
+                        conv1d_layer->GetWeightCaches(),
+                        conv1d_layer->GetBiasCaches()
+                    });
+                }
+                else if (auto batchnorm_layer = std::dynamic_pointer_cast<BatchNormalization>(layer_sp))
+                {
+                    // BatchNorm doesn't use the same momentum/cache pattern, skip for now
+                    // Its running_mean and running_var are already saved as parameters
+                    config.weight_momentums.push_back({
+                        Eigen::MatrixXd(),
+                        Eigen::RowVectorXd()
+                    });
+                    config.weight_caches.push_back({
+                        Eigen::MatrixXd(),
+                        Eigen::RowVectorXd()
+                    });
+                }
+                else
+                {
+                    // For layers without momentum/cache, add empty entries
+                    config.weight_momentums.push_back({
+                        Eigen::MatrixXd(),
+                        Eigen::RowVectorXd()
+                    });
+                    config.weight_caches.push_back({
+                        Eigen::MatrixXd(),
+                        Eigen::RowVectorXd()
+                    });
+                }
+            }
+        }
     }
 
 	std::filesystem::path target_path = std::filesystem::path(path).lexically_normal();
@@ -757,9 +850,30 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path) const
         NEURAL_NETWORK::Serialization::WriteRowVector(ofs, param.second);
     }
 
-    NEURAL_NETWORK::Serialization::WriteRaw(ofs, 
-											&config.softmax_classifier_, 
+    NEURAL_NETWORK::Serialization::WriteRaw(ofs,
+											&config.softmax_classifier_,
 											sizeof(config.softmax_classifier_));
+
+    // Write optimizer state if present
+    NEURAL_NETWORK::Serialization::WriteRaw(ofs, &config.has_optimizer_state, sizeof(config.has_optimizer_state));
+
+    if (config.has_optimizer_state)
+    {
+        size_t numMomentums = config.weight_momentums.size();
+        NEURAL_NETWORK::Serialization::WriteRaw(ofs, &numMomentums, sizeof(numMomentums));
+
+        for (const auto& momentum : config.weight_momentums)
+        {
+            NEURAL_NETWORK::Serialization::WriteMatrix(ofs, momentum.first);
+            NEURAL_NETWORK::Serialization::WriteRowVector(ofs, momentum.second);
+        }
+
+        for (const auto& cache : config.weight_caches)
+        {
+            NEURAL_NETWORK::Serialization::WriteMatrix(ofs, cache.first);
+            NEURAL_NETWORK::Serialization::WriteRowVector(ofs, cache.second);
+        }
+    }
 
 	ofs.close();
 	std::cout << "Model saved to " << target_path << std::endl;
@@ -806,9 +920,36 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         param.second = NEURAL_NETWORK::Serialization::ReadRowVector(ifs);
     }
 
-    NEURAL_NETWORK::Serialization::ReadRaw(ifs, 
-										   &config.softmax_classifier_, 
+    NEURAL_NETWORK::Serialization::ReadRaw(ifs,
+										   &config.softmax_classifier_,
 										   sizeof(config.softmax_classifier_));
+
+    // Read optimizer state if present
+    if (ifs.peek() != EOF)  // Check if there's more data (for backward compatibility)
+    {
+        NEURAL_NETWORK::Serialization::ReadRaw(ifs, &config.has_optimizer_state, sizeof(config.has_optimizer_state));
+
+        if (config.has_optimizer_state)
+        {
+            size_t numMomentums;
+            NEURAL_NETWORK::Serialization::ReadRaw(ifs, &numMomentums, sizeof(numMomentums));
+
+            config.weight_momentums.resize(numMomentums);
+            config.weight_caches.resize(numMomentums);
+
+            for (auto& momentum : config.weight_momentums)
+            {
+                momentum.first = NEURAL_NETWORK::Serialization::ReadMatrix(ifs);
+                momentum.second = NEURAL_NETWORK::Serialization::ReadRowVector(ifs);
+            }
+
+            for (auto& cache : config.weight_caches)
+            {
+                cache.first = NEURAL_NETWORK::Serialization::ReadMatrix(ifs);
+                cache.second = NEURAL_NETWORK::Serialization::ReadRowVector(ifs);
+            }
+        }
+    }
 
 	ifs.close();
 	
@@ -875,7 +1016,6 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
             int input_height = static_cast<int>(params[2]);
             int input_width = static_cast<int>(params[3]);
             int input_channels = static_cast<int>(params[4]);
-            // Use batch_size = 1 as default, it will resize automatically in forward()
             int batch_size = 1;
             Add(std::make_shared<MaxPooling>(batch_size, pool_size, input_height,
                                            input_width, input_channels, stride));
@@ -996,7 +1136,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         loss_ = std::make_unique<LossMeanAbsoluteError>();
     }
 
-	if (config.optimizer_type == "Adam") 
+	if (config.optimizer_type == "Adam")
 	{
 		if (config.optimizer_params.size() < 5)
 		{
@@ -1009,8 +1149,12 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         double b2 = config.optimizer_params[3];
         double eps = config.optimizer_params[4];
         optimizer_ = std::make_unique<Adam>(lr, decay, b1, b2, eps);
+        // Restore iterations if saved (for training continuation)
+        if (config.optimizer_params.size() >= 6) {
+            optimizer_->SetIterations(static_cast<int>(config.optimizer_params[5]));
+        }
     } 
-	else if (config.optimizer_type == "StochasticGradientDescent") 
+	else if (config.optimizer_type == "StochasticGradientDescent")
 	{
 		if (config.optimizer_params.size() < 3)
 		{
@@ -1021,8 +1165,12 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         double decay = config.optimizer_params[1];
         double momentum = config.optimizer_params[2];
         optimizer_ = std::make_unique<StochasticGradientDescent>(lr, decay, momentum);
+        // Restore iterations if saved (for training continuation)
+        if (config.optimizer_params.size() >= 4) {
+            optimizer_->SetIterations(static_cast<int>(config.optimizer_params[3]));
+        }
     } 
-	else if (config.optimizer_type == "AdaGrad") 
+	else if (config.optimizer_type == "AdaGrad")
 	{
 		if (config.optimizer_params.size() < 3)
 		{
@@ -1033,8 +1181,12 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         double decay = config.optimizer_params[1];
         double eps = config.optimizer_params[2];
         optimizer_ = std::make_unique<AdaGrad>(lr, decay, eps);
+        // Restore iterations if saved (for training continuation)
+        if (config.optimizer_params.size() >= 4) {
+            optimizer_->SetIterations(static_cast<int>(config.optimizer_params[3]));
+        }
     } 
-	else if (config.optimizer_type == "RMSProp") 
+	else if (config.optimizer_type == "RMSProp")
 	{
 		if (config.optimizer_params.size() < 4)
 		{
@@ -1046,6 +1198,10 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         double rho = config.optimizer_params[2];
         double eps = config.optimizer_params[3];
         optimizer_ = std::make_unique<RMSProp>(lr, decay, eps, rho);
+        // Restore iterations if saved (for training continuation)
+        if (config.optimizer_params.size() >= 5) {
+            optimizer_->SetIterations(static_cast<int>(config.optimizer_params[4]));
+        }
     }
 
     if (config.accuracy_type == "AccuracyCategorical") 
@@ -1075,6 +1231,58 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 	}
 
 	SetParameters(config.parameters);
+
+	// Restore optimizer state if present
+	if (config.has_optimizer_state && config.weight_momentums.size() == trainable_layers_.size())
+	{
+		for (size_t i = 0; i < trainable_layers_.size(); ++i)
+		{
+			if (trainable_layers_[i])
+			{
+				if (auto dense_layer = std::dynamic_pointer_cast<LayerDense>(trainable_layers_[i]))
+				{
+					if (config.weight_momentums[i].first.size() > 0)
+					{
+						dense_layer->SetWeightMomentums(config.weight_momentums[i].first);
+						dense_layer->SetBiasMomentums(config.weight_momentums[i].second);
+					}
+					if (config.weight_caches[i].first.size() > 0)
+					{
+						dense_layer->SetWeightCaches(config.weight_caches[i].first);
+						dense_layer->SetBiasCaches(config.weight_caches[i].second);
+					}
+				}
+				else if (auto conv_layer = std::dynamic_pointer_cast<Convolution2D>(trainable_layers_[i]))
+				{
+					if (config.weight_momentums[i].first.size() > 0)
+					{
+						conv_layer->SetWeightMomentums(config.weight_momentums[i].first);
+						conv_layer->SetBiasMomentums(config.weight_momentums[i].second);
+					}
+					if (config.weight_caches[i].first.size() > 0)
+					{
+						conv_layer->SetWeightCaches(config.weight_caches[i].first);
+						conv_layer->SetBiasCaches(config.weight_caches[i].second);
+					}
+				}
+				else if (auto conv1d_layer = std::dynamic_pointer_cast<Convolution1D>(trainable_layers_[i]))
+				{
+					if (config.weight_momentums[i].first.size() > 0)
+					{
+						conv1d_layer->SetWeightMomentums(config.weight_momentums[i].first);
+						conv1d_layer->SetBiasMomentums(config.weight_momentums[i].second);
+					}
+					if (config.weight_caches[i].first.size() > 0)
+					{
+						conv1d_layer->SetWeightCaches(config.weight_caches[i].first);
+						conv1d_layer->SetBiasCaches(config.weight_caches[i].second);
+					}
+				}
+				// BatchNormalization doesn't use momentum/cache in the same way, skip
+			}
+		}
+		std::cout << "Optimizer state restored for training continuation." << std::endl;
+	}
 }
 
 void NEURAL_NETWORK::Model::forward(const Eigen::MatrixXd& inputs, bool training)

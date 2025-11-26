@@ -134,12 +134,10 @@ namespace NEURAL_NETWORK
 					int pad_h, int pad_w,
 					int stride_h, int stride_w);
 
-		// Helper methods for tensor-matrix conversions
 		Eigen::MatrixXd WeightsToMatrixFromTensor(const Eigen::Tensor<double, 4>& tensor) const;
 		void MatrixToWeightsTensor(const Eigen::MatrixXd& matrix, 
 								   Eigen::Tensor<double, 4>& tensor) const;
 
-		// Tensor-specific methods for internal use
 		void SetWeightMomentumsTensor(const Eigen::Tensor<double, 4>& weight_momentums);
 		void SetBiasMomentumsTensor(const Eigen::VectorXd& bias_momentums);
 		void SetWeightCachesTensor(const Eigen::Tensor<double, 4>& weight_caches);

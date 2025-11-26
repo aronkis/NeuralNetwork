@@ -32,7 +32,12 @@ double NEURAL_NETWORK::Optimizer::GetDecay() const
 	return decay_; 
 }
 
-int NEURAL_NETWORK::Optimizer::GetIterations() const 
-{ 
-	return iterations_; 
+int NEURAL_NETWORK::Optimizer::GetIterations() const
+{
+	return iterations_;
+}
+
+void NEURAL_NETWORK::Optimizer::SetIterations(int iterations)
+{
+	iterations_ = iterations;
 }

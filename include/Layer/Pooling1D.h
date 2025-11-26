@@ -20,14 +20,12 @@ namespace NEURAL_NETWORK
         void SetDInput(const Eigen::MatrixXd& dinput) override;
         Eigen::MatrixXd predictions() const override;
 
-        // 1D-specific getters
         int GetPoolSize() const;
         int GetStride() const;
         int GetInputLength() const;
         int GetInputChannels() const;
         int GetOutputLength() const;
 
-        // LayerBase required methods (no weights/biases in pooling)
         double GetWeightRegularizerL1() const override { return 0.0; }
         double GetWeightRegularizerL2() const override { return 0.0; }
         double GetBiasRegularizerL1() const override { return 0.0; }

@@ -36,7 +36,6 @@ void NEURAL_NETWORK::MaxPooling::forward(const Eigen::MatrixXd& inputs, bool tra
     {
         Eigen::VectorXd window_col = col.col(w);
         
-        // Convert flat window index to 4D coordinates
         int b = w / (output_height_ * output_width_);
         int remaining = w % (output_height_ * output_width_);
         int h = remaining / output_width_;

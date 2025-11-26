@@ -22,6 +22,7 @@ namespace NEURAL_NETWORK
 
 		double GetDecay() const;
 		int GetIterations() const;
+		void SetIterations(int iterations);
 
 	protected:
 		double learning_rate_;

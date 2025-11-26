@@ -58,7 +58,7 @@ void NEURAL_NETWORK::Convolution2D::forward(const Eigen::MatrixXd& inputs, bool 
 
 	const Eigen::MatrixXd filter_matrix = WeightsToMatrix();
 
-	Eigen::MatrixXd result = filter_matrix * im2col_input_; // Convolution2D
+	Eigen::MatrixXd result = filter_matrix * im2col_input_;
 
 	result.colwise() += biases_; 
 
@@ -76,7 +76,6 @@ void NEURAL_NETWORK::Convolution2D::forward(const Eigen::MatrixXd& inputs, bool 
 		tensor_output_ = Eigen::Tensor<double, 4>(batch_size, output_height, output_width, num_filters);
 	}
 
-	// Convert Convolution2D result to output tensor using row-major ordering
 	for (int b = 0; b < batch_size; b++) {
 		for (int h = 0; h < output_height; h++) 
 		{
@@ -118,7 +117,6 @@ void NEURAL_NETWORK::Convolution2D::backward(const Eigen::MatrixXd &d_values)
 	
 	WeightsToTensor(d_weights_matrix);
 
-	// Add regularization to d_weights_ tensor
 	if (weight_regularizer_l1_ > 0)
 	{
 		d_weights_ = d_weights_ + weight_regularizer_l1_ * weights_.sign();
@@ -129,7 +127,6 @@ void NEURAL_NETWORK::Convolution2D::backward(const Eigen::MatrixXd &d_values)
 		d_weights_ = d_weights_ + 2 * weight_regularizer_l2_ * weights_;
 	}
 
-	// Add regularization to d_biases_
 	if (bias_regularizer_l1_ > 0)
 	{
 		d_biases_.array() += bias_regularizer_l1_ * biases_.array().sign();
@@ -174,7 +171,7 @@ Eigen::MatrixXd NEURAL_NETWORK::Convolution2D::WeightsToMatrix() const
 	{
 		Eigen::Map<const Eigen::MatrixXd> weights_map(weights_.data(),
 													  num_filters,
-													  filter_height * filter_width * input_channels); // Transposed tensor map
+													  filter_height * filter_width * input_channels);
 		return weights_map;
 	}
 	else
@@ -263,7 +260,6 @@ void NEURAL_NETWORK::Convolution2D::col2im(const Eigen::MatrixXd &col_matrix,
 						pad_h, pad_w, stride_h, stride_w);
 }
 
-// Helper methods for tensor-matrix conversions
 Eigen::MatrixXd NEURAL_NETWORK::Convolution2D::WeightsToMatrixFromTensor(const Eigen::Tensor<double, 4>& tensor) const
 {
 	int filter_height = tensor.dimension(0);
@@ -467,7 +463,6 @@ void NEURAL_NETWORK::Convolution2D::SetParameters(const Eigen::MatrixXd& weights
 	biases_ = biases.transpose();
 }
 
-//maybe weights in the n-th filter? GetWeight(int n)
 const Eigen::Tensor<double, 4>& NEURAL_NETWORK::Convolution2D::GetWeightsTensor() const
 {
 	return weights_;
@@ -498,7 +493,6 @@ void NEURAL_NETWORK::Convolution2D::SetDInput(const Eigen::MatrixXd& dinput)
 	d_input_ = dinput;
 }
 
-// LayerBase virtual method implementations for gradients
 const Eigen::MatrixXd& NEURAL_NETWORK::Convolution2D::GetDWeights() const
 {
 	d_weights_matrix_cache_ = WeightsToMatrixFromTensor(d_weights_);
@@ -511,7 +505,6 @@ const Eigen::RowVectorXd& NEURAL_NETWORK::Convolution2D::GetDBiases() const
 	return d_biases_cache_;
 }
 
-// LayerBase virtual method implementations for momentums/caches (Matrix/RowVector interface)
 const Eigen::MatrixXd& NEURAL_NETWORK::Convolution2D::GetWeightMomentums() const
 {
 	weight_momentums_matrix_cache_ = WeightsToMatrixFromTensor(weight_momentums_);

@@ -22,10 +22,6 @@ option(NN_ENABLE_FAST_MATH "Enable fast math optimizations" OFF)
 option(NN_BUILD_TESTS "Build unit tests" OFF)
 option(NN_USE_BLAS "Use BLAS for matrix operations" ON)
 
-set(NN_EPOCHS 20 CACHE STRING "Number of training epochs")
-set(NN_PRINT_EVERY 10 CACHE STRING "Print interval")
-set(BATCH_SIZE 64 CACHE STRING "Batch size")
-
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 	add_compile_options(-O3 -march=native)
 endif()
@@ -116,9 +112,6 @@ add_executable(neural_network main.cc ${SOURCES})
 
 # Now set compile definitions AFTER the target exists
 target_compile_definitions(neural_network PRIVATE
-	NN_EPOCHS=${NN_EPOCHS}
-	NN_PRINT_EVERY=${NN_PRINT_EVERY}
-	BATCH_SIZE=${BATCH_SIZE}
 	WITHOUT_NUMPY
 )
 

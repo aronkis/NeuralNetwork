@@ -77,42 +77,42 @@ namespace NEURAL_NETWORK
 		
 		virtual void SetWeightMomentums(const Eigen::MatrixXd& weight_momentums) 
 		{
-			(void)weight_momentums; // Suppress unused parameter warning
+			(void)weight_momentums; // TODO
 		}
 		
 		virtual void SetBiasMomentums(const Eigen::RowVectorXd& bias_momentums) 
 		{
-			(void)bias_momentums; // Suppress unused parameter warning
+			(void)bias_momentums;
 		}
 		
 		virtual void SetWeightCaches(const Eigen::MatrixXd& weight_caches) 
 		{
-			(void)weight_caches; // Suppress unused parameter warning
+			(void)weight_caches;
 		}
 		
 		virtual void SetBiasCaches(const Eigen::RowVectorXd& bias_caches) 
 		{
-			(void)bias_caches; // Suppress unused parameter warning
+			(void)bias_caches;
 		}
 		
 		virtual void UpdateWeights(Eigen::MatrixXd& weight_update) 
 		{
-			(void)weight_update; // Suppress unused parameter warning
+			(void)weight_update;
 		}
 		
 		virtual void UpdateWeightsCache(Eigen::MatrixXd& weight_update) 
 		{
-			(void)weight_update; // Suppress unused parameter warning
+			(void)weight_update;
 		}
 		
 		virtual void UpdateBiases(Eigen::RowVectorXd& bias_update) 
 		{
-			(void)bias_update; // Suppress unused parameter warning
+			(void)bias_update;
 		}
 		
 		virtual void UpdateBiasesCache(Eigen::RowVectorXd& bias_update) 
 		{
-			(void)bias_update; // Suppress unused parameter warning
+			(void)bias_update;
 		}
 		
 		virtual const Eigen::MatrixXd& GetWeights() const

@@ -63,7 +63,6 @@ int NEURAL_NETWORK::Pooling1D::GetOutputLength() const
 void NEURAL_NETWORK::Pooling1D::InputMatrixToTensor(const Eigen::MatrixXd& matrix,
                                                      int batch_size, int length, int channels)
 {
-    // Resize tensors if batch size changed
     if (inputs_.dimension(0) != batch_size)
     {
         inputs_.resize(batch_size, length, channels);
@@ -72,7 +71,6 @@ void NEURAL_NETWORK::Pooling1D::InputMatrixToTensor(const Eigen::MatrixXd& matri
         batch_size_ = batch_size;
     }
 
-    // Convert matrix to tensor: (batch_size, length * channels) -> (batch_size, length, channels)
     for (int b = 0; b < batch_size; b++)
     {
         for (int t = 0; t < length; t++)
@@ -92,7 +90,6 @@ Eigen::MatrixXd NEURAL_NETWORK::Pooling1D::InputTensorToMatrix(const Eigen::Tens
     int length = static_cast<int>(tensor.dimension(1));
     int channels = static_cast<int>(tensor.dimension(2));
 
-    // Convert tensor to matrix: (batch_size, length, channels) -> (batch_size, length * channels)
     Eigen::MatrixXd matrix(batch_size, length * channels);
     for (int b = 0; b < batch_size; b++)
     {

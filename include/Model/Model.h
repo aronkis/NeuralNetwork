@@ -21,11 +21,9 @@ namespace NEURAL_NETWORK
 				 std::unique_ptr<Accuracy> accuracy, 
 				 std::unique_ptr<Optimizer> optimizer = nullptr);
         void Finalize();
-        void Train(const Eigen::MatrixXd& X, 
-				   const Eigen::MatrixXd& y,
-				   int batch_size, int epochs, int print_every, 
-				   const Eigen::MatrixXd& X_val, 
-				   const Eigen::MatrixXd& y_val);
+        void Train(const Eigen::MatrixXd& X, const Eigen::MatrixXd& y,
+				   int batch_size, int epochs, int print_every, int save_every,
+				   const Eigen::MatrixXd& X_val, const Eigen::MatrixXd& y_val);
 		void Evaluate(const Eigen::MatrixXd& X, 
 					  const Eigen::MatrixXd& y, 
 					  int batch_size);
@@ -33,7 +31,7 @@ namespace NEURAL_NETWORK
 
 		std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> GetParameters() const;
 		void SaveParameters(const std::string& path) const;
-		void SaveModel(const std::string& path) const;
+		void SaveModel(const std::string& path, bool for_training = false) const;
 
 		void SetParameters(const std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>>& params);
 		void LoadParameters(const std::string& path);

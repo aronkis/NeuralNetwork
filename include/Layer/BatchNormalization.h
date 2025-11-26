@@ -28,11 +28,9 @@ namespace NEURAL_NETWORK
 		void UpdateWeights(Eigen::MatrixXd& weight_update) override;
 		void UpdateBiases(Eigen::RowVectorXd& bias_update) override;
 
-		// Parameter management for model serialization
 		std::pair<Eigen::MatrixXd, Eigen::RowVectorXd> GetParameters() const override;
 		void SetParameters(const Eigen::MatrixXd& weights, const Eigen::RowVectorXd& biases) override;
 
-		// Getter for num_features (needed for model serialization)
 		int GetNumFeatures() const;
 
 	private:

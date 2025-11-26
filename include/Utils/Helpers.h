@@ -21,12 +21,10 @@ namespace NEURAL_NETWORK
 								  Eigen::MatrixXd& output,
 								  char delimiter = ',');
 
-		// General CSV loader for matrices with many features
 		void ReadCSVMatrix(const std::string& filename,
 						   Eigen::MatrixXd& matrix,
 						   char delimiter = ',');
 
-		// Load integer labels from CSV (one label per line)
 		void ReadCSVLabels(const std::string& filename,
 						   Eigen::VectorXi& labels);
 
@@ -62,7 +60,6 @@ namespace NEURAL_NETWORK
 		void ReadSingleImage(const std::string& filename,
 							 Eigen::MatrixXd& image);
 
-		// Flatten spatial data for transition from CNN to Dense layers
 		Eigen::MatrixXd Flatten(const Eigen::MatrixXd& spatial_data);
 	};
 } // namespace NEURAL_NETWORK

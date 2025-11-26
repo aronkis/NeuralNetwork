@@ -12,7 +12,6 @@ void NEURAL_NETWORK::TensorUtils::MatrixToTensor4D(const Eigen::MatrixXd& matrix
 
     auto expected_size = batch_size * height * width * channels;
 
-    // Use explicit loop to ensure correct row-major ordering for spatial data
     {
         for (int b = 0; b < batch_size && b < matrix.rows(); b++)
         {
@@ -22,7 +21,6 @@ void NEURAL_NETWORK::TensorUtils::MatrixToTensor4D(const Eigen::MatrixXd& matrix
                 {
                     for (int c = 0; c < channels; c++)
                     {
-                        // Row-major spatial ordering: (H*W + W)*C + C
                         int matrix_idx = (h * width + w) * channels + c;
                         if (matrix_idx < matrix.cols())
                         {
@@ -43,7 +41,6 @@ Eigen::MatrixXd NEURAL_NETWORK::TensorUtils::Tensor4DToMatrix(const Eigen::Tenso
     int channels = tensor.dimension(3);
     auto expected_size = batch_size * height * width * channels;
 
-    // Use explicit loop to ensure correct row-major ordering for spatial data
     {
         Eigen::MatrixXd matrix(batch_size, height * width * channels);
 
@@ -55,7 +52,6 @@ Eigen::MatrixXd NEURAL_NETWORK::TensorUtils::Tensor4DToMatrix(const Eigen::Tenso
                 {
                     for (int c = 0; c < channels; c++)
                     {
-                        // Row-major spatial ordering: (H*W + W)*C + C
                         int matrix_idx = (h * width + w) * channels + c;
                         if (matrix_idx < matrix.cols())
                         {

@@ -269,7 +269,6 @@ void NEURAL_NETWORK::Helpers::ReadCSVMatrix(const std::string& filename,
         return;
     }
 
-    // Convert to Eigen matrix
     long num_rows = data.size();
     long num_cols = data[0].size();
 
@@ -325,7 +324,6 @@ void NEURAL_NETWORK::Helpers::ReadCSVLabels(const std::string& filename,
         return;
     }
 
-    // Convert to Eigen vector
     long num_labels = label_data.size();
     labels.resize(num_labels);
 
@@ -469,15 +467,15 @@ void NEURAL_NETWORK::Helpers::UnzipFile(const std::string& directory,
 
 	std::cout << "Successfully extracted " << filesExtracted 
 			  << " files" << std::endl;
-	// if (!std::filesystem::remove(zipPath)) 
-	// {
-	// 		std::cerr << "Warning: Failed to remove zip file: " 
-	// 				  << zipPath.string() << std::endl;
-	// }
-	// else
-	// {
-	// 	std::cout << "Deleted zipfile" << zipPath.string() << std::endl;
-	// }
+	if (!std::filesystem::remove(zipPath)) 
+	{
+			std::cerr << "Warning: Failed to remove zip file: " 
+					  << zipPath.string() << std::endl;
+	}
+	else
+	{
+		std::cout << "Deleted zipfile" << zipPath.string() << std::endl;
+	}
 }
 
 void NEURAL_NETWORK::Helpers::FetchData(const std::string url,
@@ -633,7 +631,6 @@ void NEURAL_NETWORK::Helpers::LoadData(const std::string& path,
 				continue;
 			}
 
-			// Use row-major flattening to preserve spatial structure
 			Eigen::RowVectorXd correct_flattened(img.size());
 			int idx = 0;
 			for (int y = 0; y < img.rows(); y++)

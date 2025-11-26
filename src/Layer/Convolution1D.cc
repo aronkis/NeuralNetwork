@@ -86,9 +86,6 @@ void NEURAL_NETWORK::Convolution1D::backward(const Eigen::MatrixXd& dvalues)
 
 	int output_length = ((input_length_ + (2 * pad_length_) - filter_length) / stride_) + 1;
 
-	// Convert dvalues back to result format: (num_filters, batch_size * output_length)
-	// dvalues format: (batch_size, output_length * num_filters)
-	// result format: (num_filters, batch_size * output_length)
 	Eigen::MatrixXd d_result(num_filters, batch_size * output_length);
 
 	for (int b = 0; b < batch_size; b++)
@@ -104,15 +101,10 @@ void NEURAL_NETWORK::Convolution1D::backward(const Eigen::MatrixXd& dvalues)
 		}
 	}
 
-	// Compute d_biases: sum over all temporal locations
 	d_biases_ = d_result.rowwise().sum();
 
-	// Compute d_weights: im2col_input * d_result.transpose()
-	// This gives format: (filter_length * channels, num_filters)
 	Eigen::MatrixXd d_weights_raw = im2col_input_ * d_result.transpose();
 
-	// Convert to GetWeights() format: (num_filters, filter_length * channels)
-	// to match numerical gradient indexing
 	Eigen::MatrixXd d_weights_matrix = d_weights_raw.transpose();
 
 	WeightsToTensor(d_weights_matrix);
@@ -137,7 +129,6 @@ void NEURAL_NETWORK::Convolution1D::backward(const Eigen::MatrixXd& dvalues)
 		d_biases_.array() += 2 * bias_regularizer_l2_ * biases_.array();
 	}
 
-	// Compute d_input using col2im
 	Eigen::MatrixXd weights_matrix = WeightsToMatrix();
 	Eigen::MatrixXd d_input_col = weights_matrix.transpose() * d_result;
 
@@ -424,7 +415,6 @@ void NEURAL_NETWORK::Convolution1D::WeightsToTensor(const Eigen::MatrixXd& weigh
 		weights_matrix.rows() == num_filters &&
 		weights_matrix.cols() == filter_length * input_channels)
 	{
-		// Fast path: use memory mapping for correct format
 		Eigen::Map<Eigen::MatrixXd> weights_as_matrix(d_weights_.data(),
 													  num_filters,
 													  filter_length * input_channels);
@@ -432,7 +422,6 @@ void NEURAL_NETWORK::Convolution1D::WeightsToTensor(const Eigen::MatrixXd& weigh
 	}
 	else
 	{
-		// Slow path: convert from (num_filters, filter_length * channels) format
 		for (int f = 0; f < num_filters; f++)
 		{
 			int col = 0;
