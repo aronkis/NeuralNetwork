@@ -4,7 +4,7 @@
 #include "Model.h"
 
 #ifndef NN_EPOCHS
-#define NN_EPOCHS 2
+#define NN_EPOCHS 5
 #endif
 
 #ifndef NN_PRINT_EVERY
@@ -12,7 +12,7 @@
 #endif
 
 #ifndef BATCH_SIZE
-#define BATCH_SIZE 128
+#define BATCH_SIZE 32
 #endif
 
 #endif // __COMMON_H__

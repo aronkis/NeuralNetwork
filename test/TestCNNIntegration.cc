@@ -156,7 +156,7 @@ TEST_F(CNNIntegrationTest, CNNTraining)
     Eigen::MatrixXd initial_predictions = model.Predict(X_test, 4);
     
     // Train for a few epochs
-    EXPECT_NO_THROW(model.Train(X_train, y_train, 4, 3, 1, X_test, y_test));
+    EXPECT_NO_THROW(model.Train(X_train, y_train, 4, 3, 1, 0, X_test, y_test));
     
     // Get final predictions
     Eigen::MatrixXd final_predictions = model.Predict(X_test, 4);
@@ -205,7 +205,7 @@ TEST_F(CNNIntegrationTest, CNNWithDropout)
     model.Finalize();
     
     // Test that training and inference work
-    EXPECT_NO_THROW(model.Train(X_train, y_train, 4, 2, 1));
+    EXPECT_NO_THROW(model.Train(X_train, y_train, 4, 2, 1, 0));
     
     // Test that inference works (dropout should be disabled)
     Eigen::MatrixXd predictions;
@@ -246,7 +246,7 @@ TEST_F(CNNIntegrationTest, CNNWithRegularization)
     model.Finalize();
     
     // Test training with regularization
-    EXPECT_NO_THROW(model.Train(X_train, y_train, 8, 3, 1));
+    EXPECT_NO_THROW(model.Train(X_train, y_train, 8, 3, 1, 0));
     
     // Test evaluation
     EXPECT_NO_THROW(model.Evaluate(X_test, y_test, 4));
@@ -287,7 +287,7 @@ TEST_F(CNNIntegrationTest, DeepCNNArchitecture)
     model.Finalize();
     
     // Test that deep architecture works
-    EXPECT_NO_THROW(model.Train(X_train, y_train, 4, 2, 1));
+    EXPECT_NO_THROW(model.Train(X_train, y_train, 4, 2, 1, 0));
     EXPECT_NO_THROW(model.Predict(X_test, 4));
 }
 
@@ -316,7 +316,7 @@ TEST_F(CNNIntegrationTest, CNNSaveLoad)
     model.Finalize();
     
     // Train briefly
-    model.Train(X_train, y_train, 8, 2, 1);
+    model.Train(X_train, y_train, 8, 2, 1, 0);
     
     // Get predictions before saving
     Eigen::MatrixXd original_predictions = model.Predict(X_test, 4);
@@ -378,7 +378,7 @@ TEST_F(CNNIntegrationTest, DifferentOptimizers)
         model.Finalize();
         
         // Test training with different optimizers
-        EXPECT_NO_THROW(model.Train(X_train, y_train, 8, 2, 1))
+        EXPECT_NO_THROW(model.Train(X_train, y_train, 8, 2, 1, 0))
             << "Training failed with " << opt_name << " optimizer";
         
         // Test inference
@@ -417,7 +417,7 @@ TEST_F(CNNIntegrationTest, BatchSizeVariations)
     std::vector<int> batch_sizes = {1, 2, 4, 8};
     
     for (int batch_size : batch_sizes) {
-        EXPECT_NO_THROW(model.Train(X_train, y_train, batch_size, 1, 1))
+        EXPECT_NO_THROW(model.Train(X_train, y_train, batch_size, 1, 1, 0))
             << "Training failed with batch size " << batch_size;
         
         // Test inference with different batch sizes

@@ -76,4 +76,6 @@ int pluto_train_main()
 
 	std::cout << "\nEvaluating final model on test data:\n";
 	model.Evaluate(X_test, y_test, BATCH_SIZE);
+
+	return 0;
 }

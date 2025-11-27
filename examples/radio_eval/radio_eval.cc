@@ -10,8 +10,8 @@ int radio_eval_main()
 	Eigen::VectorXi test_labels;
 
 	// Load the test CSV files
-	NEURAL_NETWORK::Helpers::ReadCSVMatrix("../../../data/RF/radio_dataset_medium_test_data.csv", test_data);
-	NEURAL_NETWORK::Helpers::ReadCSVLabels("../../../data/RF/radio_dataset_medium_test_labels.csv", test_labels);
+	NEURAL_NETWORK::Helpers::ReadCSVMatrix("../data/RF/Mod4/rf_modulation_test_data.csv", test_data);
+	NEURAL_NETWORK::Helpers::ReadCSVLabels("../data/RF/Mod4/rf_modulation_test_labels.csv", test_labels);
 
 	// Convert labels to double matrix for framework compatibility
 	Eigen::MatrixXd y_test(test_labels.size(), 1);
@@ -26,7 +26,7 @@ int radio_eval_main()
 	// Load the trained model
 	std::cout << "\nLoading trained model..." << std::endl;
 	NEURAL_NETWORK::Model model;
-	model.LoadModel("data/radio_modulation_1d_cnn_model.bin");
+	model.LoadModel("../data/rf_modulation_classifier.bin");
 	std::cout << "Model loaded successfully!" << std::endl;
 
 	// Define modulation class names

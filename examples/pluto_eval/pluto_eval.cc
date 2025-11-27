@@ -72,4 +72,6 @@ int pluto_eval_main()
 	plt::legend();
 	plt::grid(true);
 	plt::show();
+
+	return 0;
 }

@@ -5,7 +5,7 @@
 #include "Model.h"
 #include "Common.h"
 
-#define SAVE_EVERY 5
+#define SAVE_EVERY 0
 
 int radio_train_main();
 

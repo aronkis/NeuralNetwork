@@ -17,10 +17,11 @@ project(NeuralNetwork
 	LANGUAGES CXX
 	DESCRIPTION "Neural Network from Scratch in C++")
 
-option(NN_DISABLE_EIGEN_PARALLELISM "Disable Eigen parallelism" OFF)
-option(NN_ENABLE_FAST_MATH "Enable fast math optimizations" OFF)
-option(NN_BUILD_TESTS "Build unit tests" OFF)
+option(NN_DISABLE_EIGEN_PARALLELISM "Disable Eigen parallelism" ON)
+option(NN_BUILD_TESTS "Build unit tests" ON)
+option(NN_ENABLE_FAST_MATH "Enable fast math optimizations" ON)
 option(NN_USE_BLAS "Use BLAS for matrix operations" ON)
+option(NN_ENABLE_OPENMP "Enable OpenMP support" ON)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 	add_compile_options(-O3 -march=native)
@@ -49,6 +50,15 @@ if(NN_USE_BLAS)
 		set(BLAS_TARGET_NAME "BLAS::BLAS")
 	else()
 		message(STATUS "System BLAS not found, please install it to your system.")
+	endif()
+endif()
+
+if(NN_ENABLE_OPENMP)
+	find_package(OpenMP)
+	if(OpenMP_CXX_FOUND)
+		message(STATUS "OpenMP support enabled: ${OpenMP_CXX_FLAGS}")
+	else()
+		message(WARNING "NN_ENABLE_OPENMP is ON but OpenMP was not found on this system.")
 	endif()
 endif()
 
@@ -105,10 +115,24 @@ if(NOT cereal_POPULATED)
 	FetchContent_Populate(cereal)
 endif()
 
+set(WITH_PERF_TOOL OFF CACHE BOOL "" FORCE)
+set(ZMQ_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(ENABLE_CPACK OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Build as static library
+
+FetchContent_Declare(
+    libzmq
+    GIT_REPOSITORY https://github.com/zeromq/libzmq.git
+    GIT_TAG        b91a6201307b72beb522300366aad763d19b1456 # Post-v4.3.5 commit that fixes cmake_minimum_required for CMake 3.31+
+)
+FetchContent_MakeAvailable(libzmq)
+
 file(GLOB_RECURSE SOURCES "src/*.cc")
+file(GLOB_RECURSE EXAMPLE_SOURCES "examples/*.cc")
 
 # Create the executable FIRST
-add_executable(neural_network main.cc ${SOURCES})
+add_executable(neural_network main.cc ${SOURCES} ${EXAMPLE_SOURCES})
 
 # Now set compile definitions AFTER the target exists
 target_compile_definitions(neural_network PRIVATE
@@ -130,11 +154,19 @@ target_include_directories(neural_network PRIVATE
 	include/Model
 	include/Optimizer
 	include/Utils
+	examples
 	${minizip-ng_SOURCE_DIR}
 	${cereal_SOURCE_DIR}/include
 	${stb_SOURCE_DIR}
 	${Python3_INCLUDE_DIRS}
 )
+
+file(GLOB EXAMPLE_SUBDIRS RELATIVE ${CMAKE_SOURCE_DIR} "examples/*")
+foreach(_ex_dir ${EXAMPLE_SUBDIRS})
+	if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/${_ex_dir})
+		target_include_directories(neural_network PRIVATE ${CMAKE_SOURCE_DIR}/${_ex_dir})
+	endif()
+endforeach()
 
 target_link_libraries(neural_network PRIVATE
 	Eigen3::Eigen
@@ -142,7 +174,14 @@ target_link_libraries(neural_network PRIVATE
 	cpr::cpr
 	minizip
 	Python3::Python
+	libzmq
 )
+
+if(NN_ENABLE_OPENMP AND OpenMP_CXX_FOUND)
+	target_link_libraries(neural_network PRIVATE OpenMP::OpenMP_CXX)
+	target_compile_definitions(neural_network PRIVATE USE_OPENMP)
+	message(STATUS "Linked neural_network with OpenMP")
+endif()
 
 if(NN_USE_BLAS)
 	if(BLAS_FOUND)

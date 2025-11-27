@@ -5,6 +5,7 @@
 // #define CNN
 // #define CNN_MODEL
 // #define RADIO_1D_CNN
+// #define GNU_MODEL
 #define RADIO_1D_CNN_MODEL
 
 #if defined(FASHION_MNIST)
@@ -39,6 +40,10 @@
 #include "radio_eval.h"
 #endif
 
+#if defined(GNU_MODEL)
+#include "gnu_eval.h"
+#endif
+
 int main(int argc, char **argv)
 {
 #if defined(FASHION_MNIST)
@@ -71,5 +76,9 @@ int main(int argc, char **argv)
 
 #if defined(RADIO_1D_CNN_MODEL)
 	return radio_eval_main();
+#endif
+
+#if defined(GNU_MODEL)
+	return gnu_eval_main();
 #endif
 }

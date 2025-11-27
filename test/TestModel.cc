@@ -145,7 +145,7 @@ TEST_F(ModelTest, ModelCanTrain)
 
 	auto before = model->GetParameters();
 
-	model->Train(X_train, y_train_multiclass, 2, 2, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 2, 1, 0, X_test, y_test_multiclass);
 
 	auto after = model->GetParameters();
 	bool changed = false;
@@ -165,7 +165,7 @@ TEST_F(ModelTest, TrainingWithDifferentBatchSizes)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 1, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 1, 1, 1, 0, X_test, y_test_multiclass);
 	Eigen::MatrixXd preds_batch1 = model->Predict(X_test, 1);
 	EXPECT_EQ(preds_batch1.rows(), X_test.rows());
 	EXPECT_EQ(preds_batch1.cols(), 1);
@@ -173,7 +173,7 @@ TEST_F(ModelTest, TrainingWithDifferentBatchSizes)
 	model = std::make_unique<NEURAL_NETWORK::Model>();
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 4, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 4, 1, 1, 0, X_test, y_test_multiclass);
 	Eigen::MatrixXd preds_batch4 = model->Predict(X_test, 1);
 	EXPECT_EQ(preds_batch4.rows(), X_test.rows());
 	EXPECT_EQ(preds_batch4.cols(), 1);
@@ -183,7 +183,7 @@ TEST_F(ModelTest, TrainingWithLargeBatchSize)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 10, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 10, 1, 1, 0, X_test, y_test_multiclass);
 	Eigen::MatrixXd preds = model->Predict(X_test, 1);
 	EXPECT_EQ(preds.rows(), X_test.rows());
 	EXPECT_EQ(preds.cols(), 1);
@@ -193,7 +193,7 @@ TEST_F(ModelTest, ModelCanPredict)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 2, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 1, 1, 0, X_test, y_test_multiclass);
 
 	Eigen::MatrixXd predictions = model->Predict(X_test, 1);
 
@@ -212,7 +212,7 @@ TEST_F(ModelTest, PredictionWithDifferentBatchSizes)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 2, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 1, 1, 0, X_test, y_test_multiclass);
 
 	Eigen::MatrixXd pred1 = model->Predict(X_test, 1);
 	Eigen::MatrixXd pred2 = model->Predict(X_test, 2);
@@ -224,7 +224,7 @@ TEST_F(ModelTest, PredictionOnSingleSample)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 2, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 1, 1, 0, X_test, y_test_multiclass);
 
 	Eigen::MatrixXd single_sample = X_test.row(0);
 	Eigen::MatrixXd single_pred = model->Predict(single_sample, 1);
@@ -237,7 +237,7 @@ TEST_F(ModelTest, ModelCanEvaluate)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 2, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 1, 1, 0, X_test, y_test_multiclass);
 
 	EXPECT_NO_THROW(model->Evaluate(X_test, y_test_multiclass, 1));
 }
@@ -246,7 +246,7 @@ TEST_F(ModelTest, EvaluationWithDifferentBatchSizes)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 2, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 1, 1, 0, X_test, y_test_multiclass);
 
 	EXPECT_NO_THROW(model->Evaluate(X_test, y_test_multiclass, 1));
 	EXPECT_NO_THROW(model->Evaluate(X_test, y_test_multiclass, 2));
@@ -302,7 +302,7 @@ TEST_F(ModelTest, ModelCanBeSaved)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 2, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 1, 1, 0, X_test, y_test_multiclass);
 
 	EXPECT_NO_THROW(model->SaveModel(temp_model_file));
 
@@ -313,7 +313,7 @@ TEST_F(ModelTest, ModelCanBeLoaded)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 2, 2, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 2, 1, 0, X_test, y_test_multiclass);
 	model->SaveModel(temp_model_file);
 
 	Eigen::MatrixXd original_predictions = model->Predict(X_test, 1);
@@ -330,7 +330,7 @@ TEST_F(ModelTest, SaveParametersOnly)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 2, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 1, 1, 0, X_test, y_test_multiclass);
 
 	std::string param_file = "/tmp/test_params.bin";
 
@@ -348,7 +348,7 @@ TEST_F(ModelTest, LoadParametersOnly)
 {
 	BuildSimpleClassificationModel();
 
-	model->Train(X_train, y_train_multiclass, 2, 2, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 2, 1, 0, X_test, y_test_multiclass);
 
 	std::string param_file = "/tmp/test_params.bin";
 	model->SaveParameters(param_file);
@@ -400,7 +400,7 @@ TEST_F(ModelTest, ModelWithDifferentArchitectures)
 			   std::make_unique<NEURAL_NETWORK::Adam>(0.01));
 
 	EXPECT_NO_THROW(model->Finalize());
-	model->Train(X_train, y_train_multiclass, 2, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 1, 1, 0, X_test, y_test_multiclass);
 	Eigen::MatrixXd preds = model->Predict(X_test, 1);
 	EXPECT_EQ(preds.rows(), X_test.rows());
 	EXPECT_EQ(preds.cols(), 1);
@@ -417,7 +417,7 @@ TEST_F(ModelTest, SingleLayerModel)
 			   std::make_unique<NEURAL_NETWORK::Adam>(0.01));
 
 	EXPECT_NO_THROW(model->Finalize());
-	model->Train(X_train, y_train_multiclass, 2, 1, 1, X_test, y_test_multiclass);
+	model->Train(X_train, y_train_multiclass, 2, 1, 1, 0, X_test, y_test_multiclass);
 	Eigen::MatrixXd preds = model->Predict(X_test, 1);
 	EXPECT_EQ(preds.rows(), X_test.rows());
 	EXPECT_EQ(preds.cols(), 1);
@@ -431,7 +431,7 @@ TEST_F(ModelTest, EmptyDataHandling)
 	Eigen::MatrixXd empty_y(0, 1);
 	auto before = model->GetParameters();
 
-	EXPECT_NO_THROW(model->Train(empty_X, empty_y, 1, 1, 1, empty_X, empty_y));
+	EXPECT_NO_THROW(model->Train(empty_X, empty_y, 1, 1, 1, 0, empty_X, empty_y));
 
 	auto after = model->GetParameters();
 	for (size_t i = 0; i < before.size(); i++)
@@ -454,7 +454,7 @@ TEST_F(ModelTest, LoadModelGracefullyHandlesCorruptedFile)
 	}
 
 	BuildSimpleClassificationModel();
-	EXPECT_NO_THROW(model->Train(X_train, y_train_multiclass, 1, 1, 1, X_test, y_test_multiclass));
+	EXPECT_NO_THROW(model->Train(X_train, y_train_multiclass, 1, 1, 1, 0, X_test, y_test_multiclass));
 }
 
 TEST_F(ModelTest, SingleSampleTraining) 
@@ -466,7 +466,7 @@ TEST_F(ModelTest, SingleSampleTraining)
 
 	auto before = model->GetParameters();
 
-	model->Train(single_X, single_y, 1, 1, 1, single_X, single_y);
+	model->Train(single_X, single_y, 1, 1, 1, 0, single_X, single_y);
 
 	auto after = model->GetParameters();
 	bool changed = false;
