@@ -31,10 +31,11 @@ int gnu_eval_main()
     
     try 
     {
-        model.LoadModel("../data/rf_modulation_classifier.bin");
+        model.LoadModel("../data/rf_modulation_classifier_old.bin");
         std::cout << "Model loaded successfully!" << std::endl;
     } 
-    catch (const std::exception& e) {
+    catch (const std::exception& e) 
+    {
         std::cerr << "Failed to load model: " << e.what() << std::endl;
         std::cerr << "  Make sure to train the model first with radio_train" << std::endl;
         return 1;

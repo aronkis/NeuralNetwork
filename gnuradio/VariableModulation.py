@@ -27,6 +27,7 @@ from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
 from gnuradio import iio
 from gnuradio import zeromq
+import VariableModulation_epy_block_0 as epy_block_0  # embedded python block
 import configparser
 import math
 import numpy as np
@@ -145,7 +146,7 @@ class VariableModulation(gr.top_block, Qt.QWidget):
                 self.set_rnd_mod_fnc(val)
             except AttributeError:
               pass
-            time.sleep(1.0 / (0.2))
+            time.sleep(1.0 / (1))
         _rnd_mod_fnc_thread = threading.Thread(target=_rnd_mod_fnc_probe)
         _rnd_mod_fnc_thread.daemon = True
         _rnd_mod_fnc_thread.start()
@@ -177,7 +178,7 @@ class VariableModulation(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(1, 2):
             self.top_grid_layout.setColumnStretch(c, 1)
-        self.zeromq_pub_sink_0 = zeromq.pub_sink(gr.sizeof_gr_complex, 2048, 'tcp://127.0.0.1:5555', 100, False, 1000, '', True, True)
+        self.zeromq_pub_sink_0 = zeromq.pub_sink(gr.sizeof_float, 4097, 'tcp://127.0.0.1:5555', 100, False, 1000, '', True, True)
         self.qtgui_time_sink_x_1 = qtgui.time_sink_c(
             200, #size
             samp_rate, #samp_rate
@@ -495,6 +496,7 @@ class VariableModulation(gr.top_block, Qt.QWidget):
         self.iio_pluto_sink_0.set_samplerate(samp_rate)
         self.iio_pluto_sink_0.set_attenuation(0, tx_attenuation)
         self.iio_pluto_sink_0.set_filter_params('Auto', '', 0, 0)
+        self.epy_block_0 = epy_block_0.labeled_iq_block(label_var=rnd_mod_fnc)
         self.digital_symbol_sync_xx_0 = digital.symbol_sync_cc(
             digital.TED_GARDNER,
             sps,
@@ -637,7 +639,7 @@ class VariableModulation(gr.top_block, Qt.QWidget):
         self.connect((self.blocks_selector_0_1, 2), (self.digital_linear_equalizer_0, 0))
         self.connect((self.blocks_selector_0_1, 3), (self.digital_linear_equalizer_0_0, 0))
         self.connect((self.blocks_skiphead_0, 0), (self.digital_symbol_sync_xx_0, 0))
-        self.connect((self.blocks_stream_to_vector_0, 0), (self.zeromq_pub_sink_0, 0))
+        self.connect((self.blocks_stream_to_vector_0, 0), (self.epy_block_0, 0))
         self.connect((self.digital_constellation_modulator_0, 0), (self.blocks_selector_0_0, 0))
         self.connect((self.digital_constellation_modulator_0_0, 0), (self.blocks_selector_0_0, 1))
         self.connect((self.digital_constellation_modulator_0_0_0, 0), (self.blocks_selector_0_0, 2))
@@ -651,6 +653,7 @@ class VariableModulation(gr.top_block, Qt.QWidget):
         self.connect((self.digital_linear_equalizer_0_0, 0), (self.blocks_selector_0_0_0, 3))
         self.connect((self.digital_symbol_sync_xx_0, 0), (self.blocks_selector_0_1, 0))
         self.connect((self.digital_symbol_sync_xx_0, 0), (self.qtgui_const_sink_x_0, 0))
+        self.connect((self.epy_block_0, 0), (self.zeromq_pub_sink_0, 0))
         self.connect((self.iio_pluto_source_0, 0), (self.blocks_multiply_xx_0_0, 0))
 
 
@@ -741,6 +744,7 @@ class VariableModulation(gr.top_block, Qt.QWidget):
         self.blocks_selector_0_0.set_input_index(self.rnd_mod_fnc)
         self.blocks_selector_0_0_0.set_input_index(self.rnd_mod_fnc)
         self.blocks_selector_0_1.set_output_index(self.rnd_mod_fnc)
+        self.epy_block_0.label_var = self.rnd_mod_fnc
 
     def get_qpsk(self):
         return self.qpsk

@@ -378,7 +378,7 @@ blocks:
     comment: ''
     function_args: ''
     function_name: level
-    poll_rate: '0.2'
+    poll_rate: '1'
     value: '0'
   states:
     bus_sink: false
@@ -898,7 +898,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [696, 1320.0]
+    coordinate: [296, 1416.0]
     rotation: 0
     state: enabled
 - name: digital_constellation_modulator_0
@@ -1114,6 +1114,39 @@ blocks:
     coordinate: [1096, 964.0]
     rotation: 0
     state: enabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\n\nclass labeled_iq_block(gr.sync_block):\n\
+      \    \"\"\"Appends modulation label to I/Q vector\"\"\"\n    \n    def __init__(self,\
+      \ label_var=0):\n        gr.sync_block.__init__(\n            self,\n      \
+      \      name='Labeled IQ',\n            in_sig=[(np.complex64, 2048)],  # Input:\
+      \ 2048 complex samples\n            out_sig=[(np.float32, 4097)]    # Output:\
+      \ 4096 floats + 1 label\n        )\n        self.label_var = label_var\n   \
+      \ \n    def set_label_var(self, label_var):\n        self.label_var = label_var\n\
+      \    \n    def work(self, input_items, output_items):\n        # Get label -\
+      \ handle both callable and direct value\n        if callable(self.label_var):\n\
+      \            label = float(self.label_var())\n        else:\n            label\
+      \ = float(self.label_var)\n        \n        for i in range(len(input_items[0])):\n\
+      \            iq = input_items[0][i]\n            # Interleave I/Q: [I0, Q0,\
+      \ I1, Q1, ...]\n            output_items[0][i][:4096:2] = iq.real\n        \
+      \    output_items[0][i][1:4096:2] = iq.imag\n            # Append label as last\
+      \ element\n            output_items[0][i][4096] = label\n        return len(input_items[0])\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    label_var: rnd_mod_fnc
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('Labeled IQ', 'labeled_iq_block', [('label_var', '0')], [('0', 'complex',
+      2048)], [('0', 'float', 4097)], 'Appends modulation label to I/Q vector', ['label_var'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [512, 1412.0]
+    rotation: 0
+    state: enabled
 - name: iio_pluto_sink_0
   id: iio_pluto_sink
   parameters:
@@ -1207,7 +1240,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [888, 1220.0]
+    coordinate: [728, 1300.0]
     rotation: 0
     state: enabled
 - name: qtgui_const_sink_x_0
@@ -1854,7 +1887,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [456, 1316.0]
+    coordinate: [56, 1412.0]
     rotation: 0
     state: enabled
 - name: virtual_source_0_1
@@ -1935,13 +1968,13 @@ blocks:
     key: ''
     pass_tags: 'False'
     timeout: '100'
-    type: complex
-    vlen: '2048'
+    type: float
+    vlen: '4097'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [888, 1268.0]
+    coordinate: [728, 1364.0]
     rotation: 0
     state: enabled
 
@@ -1975,7 +2008,7 @@ connections:
 - [blocks_selector_0_1, '2', digital_linear_equalizer_0, '0']
 - [blocks_selector_0_1, '3', digital_linear_equalizer_0_0, '0']
 - [blocks_skiphead_0, '0', digital_symbol_sync_xx_0, '0']
-- [blocks_stream_to_vector_0, '0', zeromq_pub_sink_0, '0']
+- [blocks_stream_to_vector_0, '0', epy_block_0, '0']
 - [digital_constellation_modulator_0, '0', blocks_selector_0_0, '0']
 - [digital_constellation_modulator_0_0, '0', blocks_selector_0_0, '1']
 - [digital_constellation_modulator_0_0_0, '0', blocks_selector_0_0, '2']
@@ -1988,6 +2021,7 @@ connections:
 - [digital_linear_equalizer_0_0, '0', blocks_selector_0_0_0, '3']
 - [digital_symbol_sync_xx_0, '0', blocks_selector_0_1, '0']
 - [digital_symbol_sync_xx_0, '0', virtual_sink_0_1, '0']
+- [epy_block_0, '0', zeromq_pub_sink_0, '0']
 - [iio_pluto_source_0, '0', blocks_multiply_xx_0_0, '0']
 - [virtual_source_0, '0', qtgui_freq_sink_x_0_0, '1']
 - [virtual_source_0_0, '0', blocks_stream_to_vector_0, '0']
