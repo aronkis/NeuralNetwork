@@ -5,6 +5,7 @@
 
 namespace NEURAL_NETWORK
 {
+	using SignalHandlerFunc = void(*)(int);
 	
 	class ZMQ
 	{
@@ -22,8 +23,11 @@ namespace NEURAL_NETWORK
 		bool Running() const;
 		size_t GetMessageSize();
 		void* GetMessageData();
-
-		static void signal_handler(int signum);
+		void AddOptions(int option, int value);
+		void SetSignalHandler(SignalHandlerFunc handler, int signum = SIGINT);
+		
+		static void Stop();
+		static void SignalHandler(int signum);
 
 	private:
 		void* context_;
@@ -32,7 +36,6 @@ namespace NEURAL_NETWORK
 		void* data_;
 		size_t size_;
 		static volatile sig_atomic_t stop_;
-
 	};
 
 }

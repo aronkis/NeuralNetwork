@@ -894,7 +894,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [320, 1416.0]
+    coordinate: [424, 1416.0]
     rotation: 0
     state: enabled
 - name: digital_constellation_modulator_0
@@ -1236,7 +1236,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [728, 1300.0]
+    coordinate: [728, 1316.0]
     rotation: 0
     state: enabled
 - name: qtgui_const_sink_x_0

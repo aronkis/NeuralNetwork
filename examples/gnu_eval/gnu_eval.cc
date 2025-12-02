@@ -3,19 +3,15 @@
 #include <iomanip>
 #include <cmath>
 
-constexpr int IQ_PAIRS = 2048;           // Complex samples per frame
-constexpr int SAMPLES_PER_FRAME = 4096;  // Total floats (I/Q interleaved)
-
-// Class names for display
-const std::vector<std::string> CLASS_NAMES = {"BPSK", "QPSK", "16-QAM", "32-QAM"};
-
-// Display update interval (milliseconds) - only affects display, not consumption
-constexpr int DISPLAY_UPDATE_MS = 500;
-
-
-
 int gnu_eval_main() 
 {
+	constexpr int IQ_PAIRS = 2048;
+	constexpr int SAMPLES_PER_FRAME = 4096;
+
+	const std::vector<std::string> CLASS_NAMES = {"BPSK", "QPSK", "16-QAM", "32-QAM"};
+
+
+	constexpr int DISPLAY_UPDATE_MS = 500;
 	std::cout << "Loading trained model..." << std::endl;
 	NEURAL_NETWORK::Model model;
 	
@@ -35,63 +31,66 @@ int gnu_eval_main()
 	NEURAL_NETWORK::ZMQ zmq;
 	zmq.CreateSubscriber();
 
+	zmq.AddOptions(ZMQ_CONFLATE, 1);
+	zmq.AddOptions(ZMQ_RCVHWM, 2);
+
 	const char* zmq_address = "tcp://127.0.0.1:5555";
 	zmq.Connect(zmq_address);
 	zmq.SubscribeToAllMessages();
 
 	std::cout << "Connected to " << zmq_address << std::endl;
-	std::cout << "Expecting " << IQ_PAIRS << " complex samples per frame (" << SAMPLES_PER_FRAME << " floats)" << std::endl;
 	std::cout << "Waiting for data from GNU Radio..." << std::endl;
 	std::cout << "Press Ctrl+C to stop." << std::endl;
 
-	// zmq.Run(DISPLAY_UPDATE_MS);
-
 	auto start_time = std::chrono::steady_clock::now();
-	auto last_display_time = start_time - std::chrono::milliseconds(DISPLAY_UPDATE_MS); // Force immediate first display
+	auto last_display_time = start_time;
 
 	while (zmq.Running()) 
 	{
+		if (!zmq.ReceiveMessage(ZMQ_DONTWAIT))
+		{
+			std::this_thread::sleep_for(std::chrono::microseconds(100));
+			continue;
+		}
+
 		auto now = std::chrono::steady_clock::now();
 		auto time_since_display = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_display_time).count();
 		
 		if (time_since_display < DISPLAY_UPDATE_MS)
 		{
-		    // zmq_msg_close(&message);
-		    continue;
+			continue;
 		}
 
 		last_display_time = now;
-		if (zmq.ReceiveMessage(ZMQ_DONTWAIT))
+
+		size_t num_complex_samples = zmq.GetMessageSize() / sizeof(std::complex<float>);
+		
+		if (num_complex_samples < IQ_PAIRS)
 		{
-			size_t num_complex_samples = zmq.GetMessageSize() / sizeof(std::complex<float>);
-			if (num_complex_samples < IQ_PAIRS)
-			{
-				continue;
-			}
-			std::complex<float>* samples = static_cast<std::complex<float>*>(zmq.GetMessageData());
-
-			Eigen::MatrixXd input_frame(1, SAMPLES_PER_FRAME);
-
-			for (size_t i = 0; i < IQ_PAIRS; i++) 
-			{
-				input_frame(0, i * 2)     = static_cast<double>(samples[i].real());
-				input_frame(0, i * 2 + 1) = static_cast<double>(samples[i].imag());
-			}
-
-			double max_abs = input_frame.cwiseAbs().maxCoeff();
-			if (max_abs > 1e-10)  // Avoid division by zero
-			{
-				input_frame /= max_abs;
-			}
-
-			Eigen::MatrixXd prediction = model.Predict(input_frame, 1);
-			int predicted_class = static_cast<int>(prediction(0, 0));
-
-			std::cout << "Predicted: " << std::setw(8) << CLASS_NAMES[predicted_class] << std::endl;
-			std::cout << std::flush;
-			// zmq.CloseMessage();
+			continue;
 		}
 
+		std::complex<float>* samples = static_cast<std::complex<float>*>(zmq.GetMessageData());
+
+		Eigen::MatrixXd input_frame(1, SAMPLES_PER_FRAME);
+
+		for (size_t i = 0; i < IQ_PAIRS; i++) 
+		{
+			input_frame(0, i * 2)     = static_cast<double>(samples[i].real());
+			input_frame(0, i * 2 + 1) = static_cast<double>(samples[i].imag());
+		}
+
+		double max_abs = input_frame.cwiseAbs().maxCoeff();
+		if (max_abs > 1e-10)
+		{
+			input_frame /= max_abs;
+		}
+
+		Eigen::MatrixXd prediction = model.Predict(input_frame, 1);
+		int predicted_class = static_cast<int>(prediction(0, 0));
+
+		std::cout << "Predicted: " << std::setw(8) << CLASS_NAMES[predicted_class] << std::endl;
+		std::cout << std::flush;
 	}
 
 	return 0;
