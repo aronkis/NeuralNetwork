@@ -5,8 +5,8 @@
 // #define CNN
 // #define CNN_MODEL
 // #define RADIO_1D_CNN
-// #define GNU_MODEL
-#define RADIO_1D_CNN_MODEL
+#define GNU_MODEL
+// #define RADIO_1D_CNN_MODEL
 
 #if defined(FASHION_MNIST)
 #include "neural_train.h"

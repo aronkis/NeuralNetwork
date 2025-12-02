@@ -18,7 +18,7 @@ project(NeuralNetwork
 	DESCRIPTION "Neural Network from Scratch in C++")
 
 option(NN_DISABLE_EIGEN_PARALLELISM "Disable Eigen parallelism" ON)
-option(NN_BUILD_TESTS "Build unit tests" ON)
+option(NN_BUILD_TESTS "Build unit tests" OFF)
 option(NN_ENABLE_FAST_MATH "Enable fast math optimizations" ON)
 option(NN_USE_BLAS "Use BLAS for matrix operations" ON)
 option(NN_ENABLE_OPENMP "Enable OpenMP support" ON)

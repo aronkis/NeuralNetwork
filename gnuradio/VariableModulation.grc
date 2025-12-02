@@ -1,29 +1,25 @@
 options:
   parameters:
+    alias: ''
     author: ''
     catch_exceptions: 'True'
-    category: '[GRC Hier Blocks]'
-    cmake_opt: ''
     comment: ''
     copyright: ''
     description: ''
-    gen_cmake: 'On'
     gen_linking: dynamic
     generate_options: qt_gui
+    generator_class_name: PythonQtGuiGenerator
+    generator_module: gnuradio.grc.workflows.python_qt_gui
     hier_block_src_path: '.:'
     id: VariableModulation
     max_nouts: '0'
     output_language: python
-    placement: (0,0)
     qt_qss_theme: ''
     realtime_scheduling: ''
     run: 'True'
     run_command: '{python} -u {filename}'
-    run_options: prompt
-    sizing_mode: fixed
     thread_safe_setters: ''
     title: Variable Modulations
-    window_size: (1000,1000)
   states:
     bus_sink: false
     bus_source: false
@@ -803,7 +799,7 @@ blocks:
     alias: ''
     comment: ''
     enabled: 'True'
-    input_index: rnd_mod_fnc
+    input_index: const_chooser
     maxoutbuf: '0'
     minoutbuf: '0'
     num_inputs: '4'
@@ -826,7 +822,7 @@ blocks:
     alias: ''
     comment: ''
     enabled: 'True'
-    input_index: rnd_mod_fnc
+    input_index: const_chooser
     maxoutbuf: '0'
     minoutbuf: '0'
     num_inputs: '4'
@@ -854,7 +850,7 @@ blocks:
     minoutbuf: '0'
     num_inputs: '1'
     num_outputs: '4'
-    output_index: rnd_mod_fnc
+    output_index: const_chooser
     showports: 'True'
     type: complex
     vlen: '1'
@@ -898,7 +894,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [296, 1416.0]
+    coordinate: [320, 1416.0]
     rotation: 0
     state: enabled
 - name: digital_constellation_modulator_0
@@ -920,7 +916,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [472, 228.0]
+    coordinate: [528, 228.0]
     rotation: 0
     state: enabled
 - name: digital_constellation_modulator_0_0
@@ -942,7 +938,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [472, 324.0]
+    coordinate: [528, 324.0]
     rotation: 0
     state: enabled
 - name: digital_constellation_modulator_0_0_0
@@ -964,7 +960,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [472, 420.0]
+    coordinate: [528, 420.0]
     rotation: 0
     state: enabled
 - name: digital_constellation_modulator_0_0_0_0
@@ -986,7 +982,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [472, 516.0]
+    coordinate: [528, 516.0]
     rotation: 0
     state: enabled
 - name: digital_costas_loop_cc_0
@@ -1135,7 +1131,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    label_var: rnd_mod_fnc
+    label_var: const_chooser
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
@@ -1146,7 +1142,7 @@ blocks:
     bus_structure: null
     coordinate: [512, 1412.0]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: iio_pluto_sink_0
   id: iio_pluto_sink
   parameters:
@@ -1968,8 +1964,8 @@ blocks:
     key: ''
     pass_tags: 'False'
     timeout: '100'
-    type: float
-    vlen: '4097'
+    type: complex
+    vlen: '2048'
   states:
     bus_sink: false
     bus_source: false
@@ -2009,6 +2005,7 @@ connections:
 - [blocks_selector_0_1, '3', digital_linear_equalizer_0_0, '0']
 - [blocks_skiphead_0, '0', digital_symbol_sync_xx_0, '0']
 - [blocks_stream_to_vector_0, '0', epy_block_0, '0']
+- [blocks_stream_to_vector_0, '0', zeromq_pub_sink_0, '0']
 - [digital_constellation_modulator_0, '0', blocks_selector_0_0, '0']
 - [digital_constellation_modulator_0_0, '0', blocks_selector_0_0, '1']
 - [digital_constellation_modulator_0_0_0, '0', blocks_selector_0_0, '2']

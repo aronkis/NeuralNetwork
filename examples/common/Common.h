@@ -4,7 +4,7 @@
 #include "Model.h"
 
 #ifndef NN_EPOCHS
-#define NN_EPOCHS 5
+#define NN_EPOCHS 3
 #endif
 
 #ifndef NN_PRINT_EVERY

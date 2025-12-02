@@ -58,12 +58,12 @@ int radio_train_main()
 	Eigen::VectorXi train_labels, test_labels;
 
 	// Load training data
-	NEURAL_NETWORK::Helpers::ReadCSVMatrix("../data/RF/Mod4/rf_modulation_train_data.csv", train_data);
-	NEURAL_NETWORK::Helpers::ReadCSVLabels("../data/RF/Mod4/rf_modulation_train_labels.csv", train_labels);
+	NEURAL_NETWORK::Helpers::ReadCSVMatrix("../data/RF/Mod4/pluto_train_data.csv", train_data);
+	NEURAL_NETWORK::Helpers::ReadCSVLabels("../data/RF/Mod4/pluto_train_labels.csv", train_labels);
 
 	// Load test/validation data
-	NEURAL_NETWORK::Helpers::ReadCSVMatrix("../data/RF/Mod4/rf_modulation_test_data.csv", test_data);
-	NEURAL_NETWORK::Helpers::ReadCSVLabels("../data/RF/Mod4/rf_modulation_test_labels.csv", test_labels);
+	NEURAL_NETWORK::Helpers::ReadCSVMatrix("../data/RF/Mod4/pluto_test_data.csv", test_data);
+	NEURAL_NETWORK::Helpers::ReadCSVLabels("../data/RF/Mod4/pluto_test_labels.csv", test_labels);
 
 	// Convert labels to double matrix for framework compatibility
 	Eigen::MatrixXd y_train(train_labels.size(), 1);
@@ -128,103 +128,108 @@ int radio_train_main()
 	// Conv Block 1: Extract low-level I/Q statistics
 	// Input: 2048 time steps × 2 channels (I/Q)
 	model.Add(std::make_shared<NEURAL_NETWORK::Convolution1D>(
-		16,          // Reduced: 16 filters (was 32)
-		7,           // kernel size 7 - captures local I/Q relationships
+		32,          // Reduced: 16 filters (was 32)
+		15,           // kernel size 7 - captures local I/Q relationships
 		IQ_PAIRS,    // input_length = 2048
 		IQ_CHANNELS, // input_channels = 2 (I/Q)
 		1,           // stride
 		1,           // padding (same)
-		0.0, 5e-4    // Increased L2 regularization
+		0.0, 1e-4    // Increased L2 regularization
 	));
-	model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(16));
+	model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(32));
 	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 
 	// MaxPool 1: Downsample 2048 → 512
 	model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling1D>(
 		BATCH_SIZE,
-		4,          // pool_size
+		2,          // pool_size
 		IQ_PAIRS,   // input_length = 2048
-		16,         // input_channels
-		4           // stride
+		32,         // input_channels
+		2           // stride
 	));
-
-	// Dropout early to prevent co-adaptation
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.2));
 
 	// Conv Block 2: Extract mid-level modulation features
 	// Input: 512 time steps × 16 channels
 	model.Add(std::make_shared<NEURAL_NETWORK::Convolution1D>(
-		32,        // Reduced: 32 filters (was 64)
-		5,         // kernel size 5
-		512,       // input_length (after pool: 2048/4 = 512)
-		16,        // input_channels
+		64,        // Reduced: 32 filters (was 64)
+		9,         // kernel size 5
+		1024,       // input_length (after pool: 2048/4 = 512)
+		32,        // input_channels
 		1,         // stride
 		1,         // padding
-		0.0, 5e-4  // Increased L2 regularization
+		0.0, 1e-4  // Increased L2 regularization
 	));
-	model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(32));
+	model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(64));
 	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 
 	// MaxPool 2: Downsample 512 → 128
 	model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling1D>(
 		BATCH_SIZE,
 		4,          // pool_size
-		512,        // input_length
-		32,         // input_channels
+		1024,        // input_length
+		64,         // input_channels
 		4           // stride
 	));
 
 	// Dropout after second conv block
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.3));
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.2));
 
 	// Conv Block 3: Extract high-level modulation signatures
 	// Input: 128 time steps × 32 channels
 	model.Add(std::make_shared<NEURAL_NETWORK::Convolution1D>(
-		64,        // Reduced: 64 filters (was 128)
-		3,         // kernel size 3
-		128,       // input_length (after pool: 512/4 = 128)
-		32,        // input_channels
+		128,        // Reduced: 64 filters (was 128)
+		5,         // kernel size 3
+		256,       // input_length (after pool: 512/4 = 128)
+		64,        // input_channels
 		1,         // stride
 		1,         // padding
-		0.0, 5e-4  // Increased L2 regularization
+		0.0, 1e-4  // Increased L2 regularization
 	));
-	model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(64));
+	model.Add(std::make_shared<NEURAL_NETWORK::BatchNormalization>(128));
 	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 
 	// MaxPool 3: Downsample 128 → 64
 	model.Add(std::make_shared<NEURAL_NETWORK::MaxPooling1D>(
 		BATCH_SIZE,
-		2,          // pool_size
-		128,        // input_length
-		64,         // input_channels
-		2           // stride
+		4,          // pool_size
+		256,        // input_length
+		128,         // input_channels
+		4           // stride
 	));
 
 	// Strong dropout for regularization
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.4));
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.3));
 
 	// -------------------------------------------------------------------------
 	// Dense Classification Head (Simplified)
 	// -------------------------------------------------------------------------
 	// Flattened size: 64 time steps × 64 channels = 4,096 features
 	// (2048 -> /4 -> 512 -> /4 -> 128 -> /2 -> 64)
-	constexpr int DENSE_INPUT_SIZE = 64 * 64;
+	constexpr int DENSE_INPUT_SIZE = 64 * 128;
 
 	// Dense 1: Compress features (smaller than before)
 	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
 		DENSE_INPUT_SIZE,
-		128,       // Reduced: 128 neurons (was 256)
-		0.0, 5e-4  // Increased L2 regularization
+		256,       // Reduced: 128 neurons (was 256)
+		0.0, 1e-4  // Increased L2 regularization
 	));
 	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.5));  // Increased dropout
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.4));  // Increased dropout
 
 	// Output layer: 4-class softmax for modulation classification
 	// Removed intermediate dense layer to reduce overfitting
 	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
-		128,
+		256,
+		64,  // 4 modulation classes
+		0.0, 1e-4     // Increased L2 regularization
+	));
+	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDropout>(0.3));  // Increased dropout
+
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(
+		64,
 		NUM_CLASSES,  // 4 modulation classes
-		0.0, 5e-4     // Increased L2 regularization
+		0.0, 0.0     // Increased L2 regularization
 	));
 	model.Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
 
