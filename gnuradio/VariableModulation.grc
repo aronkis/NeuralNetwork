@@ -1,29 +1,25 @@
 options:
   parameters:
+    alias: ''
     author: ''
     catch_exceptions: 'True'
-    category: '[GRC Hier Blocks]'
-    cmake_opt: ''
     comment: ''
     copyright: ''
     description: ''
-    gen_cmake: 'On'
     gen_linking: dynamic
     generate_options: qt_gui
+    generator_class_name: PythonQtGuiGenerator
+    generator_module: gnuradio.grc.workflows.python_qt_gui
     hier_block_src_path: '.:'
     id: VariableModulation
     max_nouts: '0'
     output_language: python
-    placement: (0,0)
     qt_qss_theme: ''
     realtime_scheduling: ''
     run: 'True'
     run_command: '{python} -u {filename}'
-    run_options: prompt
-    sizing_mode: fixed
     thread_safe_setters: ''
     title: Variable Modulations
-    window_size: (1000,1000)
   states:
     bus_sink: false
     bus_source: false
@@ -384,7 +380,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [960, 796.0]
+    coordinate: [936, 812.0]
     rotation: 0
     state: enabled
 - name: rrc_taps
@@ -803,7 +799,7 @@ blocks:
     alias: ''
     comment: ''
     enabled: 'True'
-    input_index: rnd_mod_fnc
+    input_index: const_chooser
     maxoutbuf: '0'
     minoutbuf: '0'
     num_inputs: '4'
@@ -826,7 +822,7 @@ blocks:
     alias: ''
     comment: ''
     enabled: 'True'
-    input_index: rnd_mod_fnc
+    input_index: const_chooser
     maxoutbuf: '0'
     minoutbuf: '0'
     num_inputs: '4'
@@ -854,7 +850,7 @@ blocks:
     minoutbuf: '0'
     num_inputs: '1'
     num_outputs: '4'
-    output_index: rnd_mod_fnc
+    output_index: const_chooser
     showports: 'True'
     type: complex
     vlen: '1'
@@ -898,7 +894,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [296, 1416.0]
+    coordinate: [312, 1416.0]
     rotation: 0
     state: enabled
 - name: digital_constellation_modulator_0
@@ -1114,39 +1110,6 @@ blocks:
     coordinate: [1096, 964.0]
     rotation: 0
     state: enabled
-- name: epy_block_0
-  id: epy_block
-  parameters:
-    _source_code: "import numpy as np\nfrom gnuradio import gr\n\nclass labeled_iq_block(gr.sync_block):\n\
-      \    \"\"\"Appends modulation label to I/Q vector\"\"\"\n    \n    def __init__(self,\
-      \ label_var=0):\n        gr.sync_block.__init__(\n            self,\n      \
-      \      name='Labeled IQ',\n            in_sig=[(np.complex64, 2048)],  # Input:\
-      \ 2048 complex samples\n            out_sig=[(np.float32, 4097)]    # Output:\
-      \ 4096 floats + 1 label\n        )\n        self.label_var = label_var\n   \
-      \ \n    def set_label_var(self, label_var):\n        self.label_var = label_var\n\
-      \    \n    def work(self, input_items, output_items):\n        # Get label -\
-      \ handle both callable and direct value\n        if callable(self.label_var):\n\
-      \            label = float(self.label_var())\n        else:\n            label\
-      \ = float(self.label_var)\n        \n        for i in range(len(input_items[0])):\n\
-      \            iq = input_items[0][i]\n            # Interleave I/Q: [I0, Q0,\
-      \ I1, Q1, ...]\n            output_items[0][i][:4096:2] = iq.real\n        \
-      \    output_items[0][i][1:4096:2] = iq.imag\n            # Append label as last\
-      \ element\n            output_items[0][i][4096] = label\n        return len(input_items[0])\n"
-    affinity: ''
-    alias: ''
-    comment: ''
-    label_var: rnd_mod_fnc
-    maxoutbuf: '0'
-    minoutbuf: '0'
-  states:
-    _io_cache: ('Labeled IQ', 'labeled_iq_block', [('label_var', '0')], [('0', 'complex',
-      2048)], [('0', 'float', 4097)], 'Appends modulation label to I/Q vector', ['label_var'])
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [512, 1412.0]
-    rotation: 0
-    state: enabled
 - name: iio_pluto_sink_0
   id: iio_pluto_sink
   parameters:
@@ -1240,7 +1203,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [728, 1300.0]
+    coordinate: [520, 1316.0]
     rotation: 0
     state: enabled
 - name: qtgui_const_sink_x_0
@@ -1968,13 +1931,13 @@ blocks:
     key: ''
     pass_tags: 'False'
     timeout: '100'
-    type: float
-    vlen: '4097'
+    type: complex
+    vlen: '2048'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [728, 1364.0]
+    coordinate: [520, 1364.0]
     rotation: 0
     state: enabled
 
@@ -2008,7 +1971,7 @@ connections:
 - [blocks_selector_0_1, '2', digital_linear_equalizer_0, '0']
 - [blocks_selector_0_1, '3', digital_linear_equalizer_0_0, '0']
 - [blocks_skiphead_0, '0', digital_symbol_sync_xx_0, '0']
-- [blocks_stream_to_vector_0, '0', epy_block_0, '0']
+- [blocks_stream_to_vector_0, '0', zeromq_pub_sink_0, '0']
 - [digital_constellation_modulator_0, '0', blocks_selector_0_0, '0']
 - [digital_constellation_modulator_0_0, '0', blocks_selector_0_0, '1']
 - [digital_constellation_modulator_0_0_0, '0', blocks_selector_0_0, '2']
@@ -2021,7 +1984,6 @@ connections:
 - [digital_linear_equalizer_0_0, '0', blocks_selector_0_0_0, '3']
 - [digital_symbol_sync_xx_0, '0', blocks_selector_0_1, '0']
 - [digital_symbol_sync_xx_0, '0', virtual_sink_0_1, '0']
-- [epy_block_0, '0', zeromq_pub_sink_0, '0']
 - [iio_pluto_source_0, '0', blocks_multiply_xx_0_0, '0']
 - [virtual_source_0, '0', qtgui_freq_sink_x_0_0, '1']
 - [virtual_source_0_0, '0', blocks_stream_to_vector_0, '0']

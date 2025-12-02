@@ -16,24 +16,24 @@ from gnuradio import analog
 from gnuradio import blocks
 from gnuradio import digital
 from gnuradio import filter
-from gnuradio import gr
-from gnuradio.filter import firdes
-from gnuradio.fft import window
-import sys
-import signal
-from PyQt5 import Qt
-from argparse import ArgumentParser
-from gnuradio.eng_arg import eng_float, intx
-from gnuradio import eng_notation
 from gnuradio import iio
 from gnuradio import zeromq
-import VariableModulation_epy_block_0 as epy_block_0  # embedded python block
+from gnuradio.filter import firdes
 import configparser
 import math
 import numpy as np
 import sip
 import threading
 import time
+from gnuradio import gr
+from gnuradio.filter import firdes
+from gnuradio.fft import window
+import sys
+import signal
+from argparse import ArgumentParser
+from gnuradio.eng_arg import eng_float, intx
+from gnuradio import eng_notation
+
 
 
 
@@ -119,7 +119,6 @@ class VariableModulation(gr.top_block, Qt.QWidget):
         # Blocks
         ##################################################
 
-        self.rnd_mod = blocks.probe_signal_b()
         self._tx_attenuation_range = qtgui.Range(0, 89, 1, 10, 200)
         self._tx_attenuation_win = qtgui.RangeWidget(self._tx_attenuation_range, self.set_tx_attenuation, "'tx_attenuation'", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_grid_layout.addWidget(self._tx_attenuation_win, 2, 0, 1, 1)
@@ -134,22 +133,7 @@ class VariableModulation(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(1, 2):
             self.top_grid_layout.setColumnStretch(c, 1)
-        def _rnd_mod_fnc_probe():
-          self.flowgraph_started.wait()
-          while True:
-
-            val = self.rnd_mod.level()
-            try:
-              try:
-                self.doc.add_next_tick_callback(functools.partial(self.set_rnd_mod_fnc,val))
-              except AttributeError:
-                self.set_rnd_mod_fnc(val)
-            except AttributeError:
-              pass
-            time.sleep(1.0 / (1))
-        _rnd_mod_fnc_thread = threading.Thread(target=_rnd_mod_fnc_probe)
-        _rnd_mod_fnc_thread.daemon = True
-        _rnd_mod_fnc_thread.start()
+        self.rnd_mod = blocks.probe_signal_b()
         self._phase_shift_after_costas_loop_range = qtgui.Range(0, 2*math.pi, 0.01, 0, 200)
         self._phase_shift_after_costas_loop_win = qtgui.RangeWidget(self._phase_shift_after_costas_loop_range, self.set_phase_shift_after_costas_loop, "Ph Shift (after CL) [rad]", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_grid_layout.addWidget(self._phase_shift_after_costas_loop_win, 4, 0, 1, 1)
@@ -178,7 +162,52 @@ class VariableModulation(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(1, 2):
             self.top_grid_layout.setColumnStretch(c, 1)
-        self.zeromq_pub_sink_0 = zeromq.pub_sink(gr.sizeof_float, 4097, 'tcp://127.0.0.1:5555', 100, False, 1000, '', True, True)
+        # Create the options list
+        self._const_chooser_options = [0, 1, 2, 3]
+        # Create the labels list
+        self._const_chooser_labels = ['bpsk', 'qpsk', 'qam16', 'qam32']
+        # Create the combo box
+        # Create the radio buttons
+        self._const_chooser_group_box = Qt.QGroupBox("'const_chooser'" + ": ")
+        self._const_chooser_box = Qt.QHBoxLayout()
+        class variable_chooser_button_group(Qt.QButtonGroup):
+            def __init__(self, parent=None):
+                Qt.QButtonGroup.__init__(self, parent)
+            @pyqtSlot(int)
+            def updateButtonChecked(self, button_id):
+                self.button(button_id).setChecked(True)
+        self._const_chooser_button_group = variable_chooser_button_group()
+        self._const_chooser_group_box.setLayout(self._const_chooser_box)
+        for i, _label in enumerate(self._const_chooser_labels):
+            radio_button = Qt.QRadioButton(_label)
+            self._const_chooser_box.addWidget(radio_button)
+            self._const_chooser_button_group.addButton(radio_button, i)
+        self._const_chooser_callback = lambda i: Qt.QMetaObject.invokeMethod(self._const_chooser_button_group, "updateButtonChecked", Qt.Q_ARG("int", self._const_chooser_options.index(i)))
+        self._const_chooser_callback(self.const_chooser)
+        self._const_chooser_button_group.buttonClicked[int].connect(
+            lambda i: self.set_const_chooser(self._const_chooser_options[i]))
+        self.top_grid_layout.addWidget(self._const_chooser_group_box, 0, 0, 1, 2)
+        for r in range(0, 1):
+            self.top_grid_layout.setRowStretch(r, 1)
+        for c in range(0, 2):
+            self.top_grid_layout.setColumnStretch(c, 1)
+        self.zeromq_pub_sink_0 = zeromq.pub_sink(gr.sizeof_gr_complex, 2048, 'tcp://127.0.0.1:5555', 100, False, 1000, '', True, True)
+        def _rnd_mod_fnc_probe():
+          self.flowgraph_started.wait()
+          while True:
+
+            val = self.rnd_mod.level()
+            try:
+              try:
+                self.doc.add_next_tick_callback(functools.partial(self.set_rnd_mod_fnc,val))
+              except AttributeError:
+                self.set_rnd_mod_fnc(val)
+            except AttributeError:
+              pass
+            time.sleep(1.0 / (1))
+        _rnd_mod_fnc_thread = threading.Thread(target=_rnd_mod_fnc_probe)
+        _rnd_mod_fnc_thread.daemon = True
+        _rnd_mod_fnc_thread.start()
         self.qtgui_time_sink_x_1 = qtgui.time_sink_c(
             200, #size
             samp_rate, #samp_rate
@@ -496,7 +525,6 @@ class VariableModulation(gr.top_block, Qt.QWidget):
         self.iio_pluto_sink_0.set_samplerate(samp_rate)
         self.iio_pluto_sink_0.set_attenuation(0, tx_attenuation)
         self.iio_pluto_sink_0.set_filter_params('Auto', '', 0, 0)
-        self.epy_block_0 = epy_block_0.labeled_iq_block(label_var=rnd_mod_fnc)
         self.digital_symbol_sync_xx_0 = digital.symbol_sync_cc(
             digital.TED_GARDNER,
             sps,
@@ -550,42 +578,13 @@ class VariableModulation(gr.top_block, Qt.QWidget):
             verbose=False,
             log=False,
             truncate=False)
-        # Create the options list
-        self._const_chooser_options = [0, 1, 2, 3]
-        # Create the labels list
-        self._const_chooser_labels = ['bpsk', 'qpsk', 'qam16', 'qam32']
-        # Create the combo box
-        # Create the radio buttons
-        self._const_chooser_group_box = Qt.QGroupBox("'const_chooser'" + ": ")
-        self._const_chooser_box = Qt.QHBoxLayout()
-        class variable_chooser_button_group(Qt.QButtonGroup):
-            def __init__(self, parent=None):
-                Qt.QButtonGroup.__init__(self, parent)
-            @pyqtSlot(int)
-            def updateButtonChecked(self, button_id):
-                self.button(button_id).setChecked(True)
-        self._const_chooser_button_group = variable_chooser_button_group()
-        self._const_chooser_group_box.setLayout(self._const_chooser_box)
-        for i, _label in enumerate(self._const_chooser_labels):
-            radio_button = Qt.QRadioButton(_label)
-            self._const_chooser_box.addWidget(radio_button)
-            self._const_chooser_button_group.addButton(radio_button, i)
-        self._const_chooser_callback = lambda i: Qt.QMetaObject.invokeMethod(self._const_chooser_button_group, "updateButtonChecked", Qt.Q_ARG("int", self._const_chooser_options.index(i)))
-        self._const_chooser_callback(self.const_chooser)
-        self._const_chooser_button_group.buttonClicked[int].connect(
-            lambda i: self.set_const_chooser(self._const_chooser_options[i]))
-        self.top_grid_layout.addWidget(self._const_chooser_group_box, 0, 0, 1, 2)
-        for r in range(0, 1):
-            self.top_grid_layout.setRowStretch(r, 1)
-        for c in range(0, 2):
-            self.top_grid_layout.setColumnStretch(c, 1)
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, 2048)
         self.blocks_skiphead_0 = blocks.skiphead(gr.sizeof_gr_complex*1, samp_rate)
-        self.blocks_selector_0_1 = blocks.selector(gr.sizeof_gr_complex*1,0,rnd_mod_fnc)
+        self.blocks_selector_0_1 = blocks.selector(gr.sizeof_gr_complex*1,0,const_chooser)
         self.blocks_selector_0_1.set_enabled(True)
-        self.blocks_selector_0_0_0 = blocks.selector(gr.sizeof_gr_complex*1,rnd_mod_fnc,0)
+        self.blocks_selector_0_0_0 = blocks.selector(gr.sizeof_gr_complex*1,const_chooser,0)
         self.blocks_selector_0_0_0.set_enabled(True)
-        self.blocks_selector_0_0 = blocks.selector(gr.sizeof_gr_complex*1,rnd_mod_fnc,0)
+        self.blocks_selector_0_0 = blocks.selector(gr.sizeof_gr_complex*1,const_chooser,0)
         self.blocks_selector_0_0.set_enabled(True)
         self.blocks_phase_shift_0 = blocks.phase_shift(phase_shift_after_costas_loop, True)
         self.blocks_packed_to_unpacked_xx_0_1_0 = blocks.packed_to_unpacked_bb(5, gr.GR_MSB_FIRST)
@@ -639,7 +638,7 @@ class VariableModulation(gr.top_block, Qt.QWidget):
         self.connect((self.blocks_selector_0_1, 2), (self.digital_linear_equalizer_0, 0))
         self.connect((self.blocks_selector_0_1, 3), (self.digital_linear_equalizer_0_0, 0))
         self.connect((self.blocks_skiphead_0, 0), (self.digital_symbol_sync_xx_0, 0))
-        self.connect((self.blocks_stream_to_vector_0, 0), (self.epy_block_0, 0))
+        self.connect((self.blocks_stream_to_vector_0, 0), (self.zeromq_pub_sink_0, 0))
         self.connect((self.digital_constellation_modulator_0, 0), (self.blocks_selector_0_0, 0))
         self.connect((self.digital_constellation_modulator_0_0, 0), (self.blocks_selector_0_0, 1))
         self.connect((self.digital_constellation_modulator_0_0_0, 0), (self.blocks_selector_0_0, 2))
@@ -653,7 +652,6 @@ class VariableModulation(gr.top_block, Qt.QWidget):
         self.connect((self.digital_linear_equalizer_0_0, 0), (self.blocks_selector_0_0_0, 3))
         self.connect((self.digital_symbol_sync_xx_0, 0), (self.blocks_selector_0_1, 0))
         self.connect((self.digital_symbol_sync_xx_0, 0), (self.qtgui_const_sink_x_0, 0))
-        self.connect((self.epy_block_0, 0), (self.zeromq_pub_sink_0, 0))
         self.connect((self.iio_pluto_source_0, 0), (self.blocks_multiply_xx_0_0, 0))
 
 
@@ -741,10 +739,6 @@ class VariableModulation(gr.top_block, Qt.QWidget):
 
     def set_rnd_mod_fnc(self, rnd_mod_fnc):
         self.rnd_mod_fnc = rnd_mod_fnc
-        self.blocks_selector_0_0.set_input_index(self.rnd_mod_fnc)
-        self.blocks_selector_0_0_0.set_input_index(self.rnd_mod_fnc)
-        self.blocks_selector_0_1.set_output_index(self.rnd_mod_fnc)
-        self.epy_block_0.label_var = self.rnd_mod_fnc
 
     def get_qpsk(self):
         return self.qpsk
@@ -832,6 +826,9 @@ class VariableModulation(gr.top_block, Qt.QWidget):
     def set_const_chooser(self, const_chooser):
         self.const_chooser = const_chooser
         self._const_chooser_callback(self.const_chooser)
+        self.blocks_selector_0_0.set_input_index(self.const_chooser)
+        self.blocks_selector_0_0_0.set_input_index(self.const_chooser)
+        self.blocks_selector_0_1.set_output_index(self.const_chooser)
 
     def get_buff_size(self):
         return self.buff_size
