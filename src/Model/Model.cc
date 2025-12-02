@@ -11,6 +11,8 @@
 #include <string>
 #include <sstream>
 #include <filesystem>
+#include <stdexcept>
+#include <typeinfo>
 
 struct ModelConfig
 {
@@ -25,7 +27,6 @@ struct ModelConfig
     std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> parameters;
     bool softmax_classifier_;
 
-    // Optimizer state (only saved when for_training = true)
     bool has_optimizer_state = false;
     std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> weight_momentums;
     std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> weight_caches;
@@ -66,25 +67,25 @@ void NEURAL_NETWORK::Model::Finalize()
 	{
 		if (i == 0)
 		{
-			layers_[i]->setPrev(input_layer_);
+			layers_[i]->SetPrev(input_layer_);
 			if (layer_count > 1)
 			{
-				layers_[i]->setNext(layers_[i+1]);
+				layers_[i]->SetNext(layers_[i+1]);
 			}
 			else
 			{
-				layers_[i]->setNext(std::shared_ptr<LayerBase>());
+				layers_[i]->SetNext(std::shared_ptr<LayerBase>());
 			}
 		}
 		else if (i < layer_count - 1)
 		{
-			layers_[i]->setPrev(layers_[i-1]);
-			layers_[i]->setNext(layers_[i+1]);
+			layers_[i]->SetPrev(layers_[i-1]);
+			layers_[i]->SetNext(layers_[i+1]);
 		}
 		else
 		{
-			layers_[i]->setPrev(layers_[i-1]);
-			layers_[i]->setNext(std::shared_ptr<LayerBase>());
+			layers_[i]->SetPrev(layers_[i-1]);
+			layers_[i]->SetNext(std::shared_ptr<LayerBase>());
 		}
 		
 		if (auto layer = std::dynamic_pointer_cast<LayerDense>(layers_[i]))
@@ -135,9 +136,7 @@ void NEURAL_NETWORK::Model::Evaluate(const Eigen::MatrixXd& X,
 {
     if (!loss_ || !accuracy_)
     {
-        std::cerr << "Model::Evaluate error: model not configured. "
-                  << "Call Set(loss, optimizer, accuracy) before Evaluate().\n";
-        return;
+		throw(std::runtime_error("Model::Evaluate error: model not configured. Call Set(loss, optimizer, accuracy) before Evaluate()."));
     }
 
 	int validation_steps = 1;
@@ -229,10 +228,7 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X, const Eigen::MatrixX
 {
 	if (!optimizer_)
 	{
-		std::cerr << "Model::Train error: model not configured. "
-				  << "Call Set(loss, optimizer, accuracy) before Train(). "
-				  << "Evaluation models cannot use Model::Train().\n";
-		return;
+		throw(std::runtime_error("Model::Train error: model not configured. Call Set(loss, optimizer, accuracy) before Train(). Evaluation models cannot use Model::Train()."));
 	}
 
 	if (X.rows() == 0 || X.cols() == 0 || y.rows() == 0 || y.cols() == 0)
@@ -374,7 +370,7 @@ void NEURAL_NETWORK::Model::Train(const Eigen::MatrixXd& X, const Eigen::MatrixX
 		if ((save_every) && (epoch + 1) % save_every == 0 && epoch != epochs - 1)
 		{
 			std::string file_name = "SaveFile_Epoch" + std::to_string(epoch + 1) + ".bin";
-			SaveModel(file_name, true);  // Save with training state
+			SaveModel(file_name, true);
 		}
 	}
 
@@ -458,9 +454,7 @@ void NEURAL_NETWORK::Model::SaveParameters(const std::string& path) const
     std::ofstream ofs(path, std::ios::binary);
     if (!ofs) 
 	{
-		std::cerr << "Model::SaveParameters error: Failed to open file for writing"
-				  << std::endl;
-		return;
+		throw(std::runtime_error("Model::SaveParameters error: Failed to open file for writing"));
 	}
 
     auto params = GetParameters();
@@ -481,9 +475,7 @@ void NEURAL_NETWORK::Model::LoadParameters(const std::string& path)
     std::ifstream ifs(path, std::ios::binary);
     if (!ifs)
 	{
-		std::cerr << "Model::LoadParameters error: Failed to open file for reading"
-				  << std::endl;
-		return;
+		throw(std::runtime_error("Model::LoadParameters error: Failed to open file for reading"));
 	}
 
     size_t numParams;
@@ -628,7 +620,8 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
         } 
 		else 
 		{
-            std::cerr << "Unknown layer type in SaveModel\n";
+            throw std::runtime_error("Unknown layer type in SaveModel: " + 
+                std::string(typeid(*layer).name()));
         }
     }
 
@@ -667,8 +660,9 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
             adam->GetBeta2(),
             adam->GetEpsilon()
         };
-        // Save iterations counter if saving for training continuation
-        if (for_training) {
+
+        if (for_training)
+		{
             config.optimizer_params.push_back(static_cast<double>(adam->GetIterations()));
         }
     } 
@@ -680,7 +674,8 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
             sgd->GetDecay(),
             sgd->GetMomentum()
         };
-        if (for_training) {
+        if (for_training)
+		{
             config.optimizer_params.push_back(static_cast<double>(sgd->GetIterations()));
         }
     } 
@@ -692,7 +687,8 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
             adagrad->GetDecay(),
             adagrad->GetEpsilon()
         };
-        if (for_training) {
+        if (for_training)
+		{
             config.optimizer_params.push_back(static_cast<double>(adagrad->GetIterations()));
         }
     } 
@@ -705,7 +701,8 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
             rmsprop->GetRho(),
             rmsprop->GetEpsilon()
         };
-        if (for_training) {
+        if (for_training)
+		{
             config.optimizer_params.push_back(static_cast<double>(rmsprop->GetIterations()));
         }
     } 
@@ -729,12 +726,10 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
         config.accuracy_type = "";
     }
 
-    // Save optimizer state if for_training is true
     if (for_training && optimizer_)
     {
         config.has_optimizer_state = true;
 
-        // Collect momentum and cache buffers from trainable layers
         for (const auto& layer_sp : trainable_layers_)
         {
             if (layer_sp)
@@ -774,8 +769,6 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
                 }
                 else if (auto batchnorm_layer = std::dynamic_pointer_cast<BatchNormalization>(layer_sp))
                 {
-                    // BatchNorm doesn't use the same momentum/cache pattern, skip for now
-                    // Its running_mean and running_var are already saved as parameters
                     config.weight_momentums.push_back({
                         Eigen::MatrixXd(),
                         Eigen::RowVectorXd()
@@ -787,7 +780,6 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
                 }
                 else
                 {
-                    // For layers without momentum/cache, add empty entries
                     config.weight_momentums.push_back({
                         Eigen::MatrixXd(),
                         Eigen::RowVectorXd()
@@ -811,18 +803,14 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
 		std::filesystem::create_directories(parent, ec);
 		if (ec)
 		{
-			std::cerr << "Model::SaveModel error: failed to create directories for "
-					  << parent << ": " << ec.message() << '\n';
-			return;
+			throw(std::runtime_error("Model::SaveModel error: failed to create directories."));
 		}
 	}
 
 	std::ofstream ofs(target_path, std::ios::binary);
 	if (!ofs)
 	{
-		std::cerr << "Model::SaveModel error: failed to open file for writing at "
-				  << target_path << '\n';
-		return;
+		throw(std::runtime_error("Model::SaveModel error: failed to open the model file for writing."));
 	}
 
     size_t numLayers = config.layer_types.size();
@@ -854,7 +842,6 @@ void NEURAL_NETWORK::Model::SaveModel(const std::string& path, bool for_training
 											&config.softmax_classifier_,
 											sizeof(config.softmax_classifier_));
 
-    // Write optimizer state if present
     NEURAL_NETWORK::Serialization::WriteRaw(ofs, &config.has_optimizer_state, sizeof(config.has_optimizer_state));
 
     if (config.has_optimizer_state)
@@ -884,8 +871,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
     std::ifstream ifs(path, std::ios::binary);
     if (!ifs)
 	{
-		std::cerr << "Failed to open file for reading.\n";
-		return;
+		throw(std::runtime_error("Model::LoadModel error: Failed to open the model."));
 	}
 
     ModelConfig config;
@@ -924,8 +910,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 										   &config.softmax_classifier_,
 										   sizeof(config.softmax_classifier_));
 
-    // Read optimizer state if present
-    if (ifs.peek() != EOF)  // Check if there's more data (for backward compatibility)
+    if (ifs.peek() != EOF)
     {
         NEURAL_NETWORK::Serialization::ReadRaw(ifs, &config.has_optimizer_state, sizeof(config.has_optimizer_state));
 
@@ -962,8 +947,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 
 	if (config.layer_types.empty())
 	{
-		std::cerr << "Model::LoadModel warning: no layers found in saved model; keeping model empty." << std::endl;
-		return;
+		throw std::runtime_error("Model::LoadModel: no layers found in saved model");
 	}
 
 	softmax_classifier_ = config.softmax_classifier_;
@@ -981,8 +965,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 		{
             if (params.size() < 6)
 			{
-				std::cerr << "Model::LoadModel warning: LayerDense entry missing parameters; aborting load." << std::endl;
-				return;
+				throw(std::runtime_error("Model::LoadModel error: LayerDense entry missing parameters; aborting load."));
 			}
             int n_inputs = static_cast<int>(params[0]);
             int n_neurons = static_cast<int>(params[1]);
@@ -998,8 +981,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 		{
             if (params.size() < 1)
 			{
-				std::cerr << "Model::LoadModel warning: LayerDropout entry missing rate parameter; aborting load." << std::endl;
-				return;
+				throw(std::runtime_error("Model::LoadModel error: LayerDropout entry missing rate parameter; aborting load."));
 			}
             double rate = params[0];
             Add(std::make_shared<LayerDropout>(rate));
@@ -1008,8 +990,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 		{
             if (params.size() < 5)
 			{
-				std::cerr << "Model::LoadModel warning: MaxPooling entry missing parameters; aborting load." << std::endl;
-				return;
+				throw(std::runtime_error("Model::LoadModel error: MaxPooling entry missing parameters; aborting load."));
 			}
             int pool_size = static_cast<int>(params[0]);
             int stride = static_cast<int>(params[1]);
@@ -1024,8 +1005,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 		{
 			if (params.size() < 4)
 			{
-				std::cerr << "Model::LoadModel warning: MaxPooling1D entry missing parameters; aborting load." << std::endl;
-				return;
+				throw(std::runtime_error("Model::LoadModel error: MaxPooling1D entry missing parameters; aborting load."));
 			}
 			int pool_size = static_cast<int>(params[0]);
 			int stride = static_cast<int>(params[1]);
@@ -1039,8 +1019,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 		{
             if (params.size() < 1)
 			{
-				std::cerr << "Model::LoadModel warning: BatchNormalization entry missing parameters; aborting load." << std::endl;
-				return;
+				throw(std::runtime_error("Model::LoadModel error: BatchNormalization entry missing parameters; aborting load."));
 			}
             int num_features = static_cast<int>(params[0]);
             Add(std::make_shared<BatchNormalization>(num_features));
@@ -1049,8 +1028,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 		{
 			if (params.size() < 9)
 			{
-				std::cerr << "Model::LoadModel warning: Convolution2D entry missing parameters; aborting load." << std::endl;
-				return;
+				throw(std::runtime_error("Model::LoadModel error: Convolution2D entry missing parameters; aborting load."));
 			}
 			int number_of_filters = static_cast<int>(params[0]);
 			int filter_height = static_cast<int>(params[1]);
@@ -1076,8 +1054,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 		{
 			if (params.size() < 6)
 			{
-				std::cerr << "Model::LoadModel warning: Convolution1D entry missing parameters; aborting load." << std::endl;
-				return;
+				throw(std::runtime_error("Model::LoadModel error: Convolution1D entry missing parameters; aborting load."));
 			}
 			int number_of_filters = static_cast<int>(params[0]);
 			int filter_length = static_cast<int>(params[1]);
@@ -1140,8 +1117,7 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 	{
 		if (config.optimizer_params.size() < 5)
 		{
-			std::cerr << "Model::LoadModel warning: Adam optimizer entry missing parameters; aborting load." << std::endl;
-			return;
+			throw(std::runtime_error("Model::LoadModel error: Adam optimizer entry missing parameters; aborting load."));
 		}
         double lr = config.optimizer_params[0];
         double decay = config.optimizer_params[1];
@@ -1149,8 +1125,8 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
         double b2 = config.optimizer_params[3];
         double eps = config.optimizer_params[4];
         optimizer_ = std::make_unique<Adam>(lr, decay, b1, b2, eps);
-        // Restore iterations if saved (for training continuation)
-        if (config.optimizer_params.size() >= 6) {
+        if (config.optimizer_params.size() >= 6) 
+		{
             optimizer_->SetIterations(static_cast<int>(config.optimizer_params[5]));
         }
     } 
@@ -1158,15 +1134,14 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 	{
 		if (config.optimizer_params.size() < 3)
 		{
-			std::cerr << "Model::LoadModel warning: SGD optimizer entry missing parameters; aborting load." << std::endl;
-			return;
+			throw(std::runtime_error("Model::LoadModel error: StochasticGradientDescent optimizer entry missing parameters; aborting load."));
 		}
         double lr = config.optimizer_params[0];
         double decay = config.optimizer_params[1];
         double momentum = config.optimizer_params[2];
         optimizer_ = std::make_unique<StochasticGradientDescent>(lr, decay, momentum);
-        // Restore iterations if saved (for training continuation)
-        if (config.optimizer_params.size() >= 4) {
+        if (config.optimizer_params.size() >= 4)
+		{
             optimizer_->SetIterations(static_cast<int>(config.optimizer_params[3]));
         }
     } 
@@ -1174,15 +1149,14 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 	{
 		if (config.optimizer_params.size() < 3)
 		{
-			std::cerr << "Model::LoadModel warning: AdaGrad optimizer entry missing parameters; aborting load." << std::endl;
-			return;
+			throw(std::runtime_error("Model::LoadModel error: AdaGrad optimizer entry missing parameters; aborting load."));
 		}
         double lr = config.optimizer_params[0];
         double decay = config.optimizer_params[1];
         double eps = config.optimizer_params[2];
         optimizer_ = std::make_unique<AdaGrad>(lr, decay, eps);
-        // Restore iterations if saved (for training continuation)
-        if (config.optimizer_params.size() >= 4) {
+        if (config.optimizer_params.size() >= 4) 
+		{
             optimizer_->SetIterations(static_cast<int>(config.optimizer_params[3]));
         }
     } 
@@ -1190,16 +1164,15 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 	{
 		if (config.optimizer_params.size() < 4)
 		{
-			std::cerr << "Model::LoadModel warning: RMSProp optimizer entry missing parameters; aborting load." << std::endl;
-			return;
+			throw(std::runtime_error("Model::LoadModel error: RMSProp optimizer entry missing parameters; aborting load."));
 		}
         double lr = config.optimizer_params[0];
         double decay = config.optimizer_params[1];
         double rho = config.optimizer_params[2];
         double eps = config.optimizer_params[3];
         optimizer_ = std::make_unique<RMSProp>(lr, decay, eps, rho);
-        // Restore iterations if saved (for training continuation)
-        if (config.optimizer_params.size() >= 5) {
+        if (config.optimizer_params.size() >= 5) 
+		{
             optimizer_->SetIterations(static_cast<int>(config.optimizer_params[4]));
         }
     }
@@ -1218,21 +1191,20 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 
 	if (layers_.empty())
 	{
-		std::cerr << "Model::LoadModel warning: no valid layers constructed; keeping model empty." << std::endl;
-		return;
+		throw std::runtime_error("Model::LoadModel: no valid layers constructed from saved model");
 	}
 
 	Finalize();
 
 	if (config.parameters.size() != trainable_layers_.size())
 	{
-		std::cerr << "Model::LoadModel warning: parameter count mismatch; model left uninitialized." << std::endl;
-		return;
+		throw std::runtime_error("Model::LoadModel: parameter count mismatch (expected " + 
+			std::to_string(trainable_layers_.size()) + ", got " + 
+			std::to_string(config.parameters.size()) + ")");
 	}
 
 	SetParameters(config.parameters);
 
-	// Restore optimizer state if present
 	if (config.has_optimizer_state && config.weight_momentums.size() == trainable_layers_.size())
 	{
 		for (size_t i = 0; i < trainable_layers_.size(); ++i)
@@ -1278,7 +1250,6 @@ void NEURAL_NETWORK::Model::LoadModel(const std::string& path)
 						conv1d_layer->SetBiasCaches(config.weight_caches[i].second);
 					}
 				}
-				// BatchNormalization doesn't use momentum/cache in the same way, skip
 			}
 		}
 		std::cout << "Optimizer state restored for training continuation." << std::endl;
@@ -1292,7 +1263,7 @@ void NEURAL_NETWORK::Model::forward(const Eigen::MatrixXd& inputs, bool training
 	
 	for (const auto& layer : layers_)
 	{
-		auto prev = layer->getPrev();
+		auto prev = layer->GetPrev();
 		if (prev)
 		{
 			layer->forward(prev->GetOutput(), training);
@@ -1341,7 +1312,7 @@ void NEURAL_NETWORK::Model::backward(const Eigen::MatrixXd& output,
 	
 	for (auto layer = start_iter; layer != layers_.rend(); layer++)
 	{
-		auto next = (*layer)->getNext();
+		auto next = (*layer)->GetNext();
 		if (next)
 		{
 			(*layer)->backward(next->GetDInput());

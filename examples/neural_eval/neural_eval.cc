@@ -14,14 +14,32 @@ int neural_eval_main(int argc, char **argv)
 													   {9, "Ankle boot"}};
 	Eigen::MatrixXd image, y;
 	NEURAL_NETWORK::Model model;
-	model.LoadModel("data/fashion_mnist_model.bin");
+	try
+	{
+		model.LoadModel("../models/fashion_mnist_model.bin");
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Failed to load model: " << e.what() << std::endl;
+		return 1;
+	}
 	if (argc == 3)
 	{
-		NEURAL_NETWORK::Helpers::LoadData(argv[1], image, y);
+		try
+		{
+			NEURAL_NETWORK::Helpers::LoadData(argv[1], image, y);
+		}
+		catch (const std::runtime_error& e)
+		{
+			std::cerr << e.what() << std::endl;
+			return 1;
+		}
 		Eigen::MatrixXd predictions = model.Predict(image, 1);
 		std::cout << "Predictions for first " << argv[2] << " images:\n";
 		for (int i = 0; i < std::stoi(argv[2]); i++)
+		{
 			std::cout << fashion_mnist_labels[static_cast<int>(predictions(i, 0))] << std::endl;
+		}
 	}
 	else
 	{
@@ -31,7 +49,15 @@ int neural_eval_main(int argc, char **argv)
 			if (path.empty())
 				continue;
 			std::string full_path = "data/extracted/test/" + path;
-			NEURAL_NETWORK::Helpers::ReadSingleImage(full_path.c_str(), image);
+			try
+			{
+				NEURAL_NETWORK::Helpers::ReadSingleImage(full_path.c_str(), image);
+			}
+			catch (const std::runtime_error& e)
+			{
+				std::cerr << e.what() << std::endl;
+				continue;
+			}
 			Eigen::MatrixXd predictions = model.Predict(image, 1);
 			std::cout << fashion_mnist_labels[static_cast<int>(predictions(0, 0))] << std::endl;
 		}

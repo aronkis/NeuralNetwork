@@ -52,8 +52,7 @@ protected:
 	}
 };
 
-class SGDTest : public OptimizerTest 
-{};
+class SGDTest : public OptimizerTest {};
 
 TEST_F(SGDTest, ConstructorSetsLearningRate) 
 {
@@ -222,8 +221,7 @@ TEST_F(AdamTest, ParameterUpdateWorks)
 	EXPECT_GT(adam.GetIterations(), 0);
 }
 
-class AdaGradTest : public OptimizerTest 
-{};
+class AdaGradTest : public OptimizerTest {};
 
 TEST_F(AdaGradTest, ConstructorSetsHyperparameters) 
 {
@@ -270,8 +268,7 @@ TEST_F(AdaGradTest, CacheAccumulation)
 	EXPECT_EQ(updated_weight_cache.cols(), initial_weights.cols());
 }
 
-class RMSPropTest : public OptimizerTest 
-{};
+class RMSPropTest : public OptimizerTest {};
 
 TEST_F(RMSPropTest, ConstructorSetsHyperparameters) 
 {
@@ -297,8 +294,7 @@ TEST_F(RMSPropTest, DefaultConstructorUsesStandardValues)
 	EXPECT_DOUBLE_EQ(rmsprop.GetEpsilon(), 1e-7);
 }
 
-class OptimizerComparisonTest : public OptimizerTest 
-{};
+class OptimizerComparisonTest : public OptimizerTest {};
 
 TEST_F(OptimizerComparisonTest, DifferentOptimizersHaveDifferentProperties) 
 {
@@ -346,8 +342,7 @@ TEST_F(OptimizerComparisonTest, LearningRateEffectiveness)
 	EXPECT_LT(sgd_low.GetLearningRate(), sgd_high.GetLearningRate());
 }
 
-class OptimizerEdgeCaseTest : public OptimizerTest 
-{};
+class OptimizerEdgeCaseTest : public OptimizerTest {};
 
 TEST_F(OptimizerEdgeCaseTest, ZeroLearningRate) 
 {

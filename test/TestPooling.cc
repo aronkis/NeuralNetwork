@@ -10,17 +10,17 @@ protected:
 	{
 		test_input_4x4 = Eigen::MatrixXd(1, 16);
 		test_input_4x4 <<  1,  2,  3,  4, 
-                           5,  6,  7,  8, 
-                           9, 10, 11, 12, 
-                          13, 14, 15, 16;
+						   5,  6,  7,  8, 
+						   9, 10, 11, 12, 
+						  13, 14, 15, 16;
 
 		test_input_6x6 = Eigen::MatrixXd(1, 36);
 		test_input_6x6 <<  1,  2,  3,  4,  5,  6, 
-                           7,  8,  9, 10, 11, 12, 
-                          13, 14, 15, 16, 17, 18, 
-                          19, 20, 21, 22, 23, 24, 
-                          25, 26, 27, 28, 29, 30, 
-                          31, 32, 33, 34, 35, 36;
+						   7,  8,  9, 10, 11, 12, 
+						  13, 14, 15, 16, 17, 18, 
+						  19, 20, 21, 22, 23, 24, 
+						  25, 26, 27, 28, 29, 30, 
+						  31, 32, 33, 34, 35, 36;
 
 		test_input_batch2 = Eigen::MatrixXd(2, 9);
 		test_input_batch2 << 1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -28,9 +28,9 @@ protected:
 
 		test_input_2channels = Eigen::MatrixXd(1, 32);
 		test_input_2channels <<  1,  2,  3,  4,  5,  6,  7,  8, 
-                                 9, 10, 11, 12, 13, 14, 15, 16, 
-                                16, 15, 14, 13, 12, 11, 10,  9, 
-                                 8,  7,  6,  5,  4,  3,  2,  1;
+								 9, 10, 11, 12, 13, 14, 15, 16, 
+								16, 15, 14, 13, 12, 11, 10,  9, 
+								 8,  7,  6,  5,  4,  3,  2,  1;
 	}
 
 	Eigen::MatrixXd test_input_4x4;
@@ -95,12 +95,6 @@ TEST_F(MaxPoolingTest, MaxPoolingCorrectValues2x2)
 
 	pool.forward(test_input_4x4, false);
 	const auto& output = pool.GetOutput();
-
-	// Expected max values:
-	// Top-left 2x2 region (1,2,5,6) -> max = 6
-	// Top-right 2x2 region (3,4,7,8) -> max = 8
-	// Bottom-left 2x2 region (9,10,13,14) -> max = 14
-	// Bottom-right 2x2 region (11,12,15,16) -> max = 16
 	
 	EXPECT_NEAR(output(0, 0), 6.0, tolerance);
 	EXPECT_NEAR(output(0, 1), 8.0, tolerance);
@@ -114,11 +108,6 @@ TEST_F(MaxPoolingTest, MaxPoolingCorrectValues3x3)
 
 	pool.forward(test_input_6x6, false);
 	const auto& output = pool.GetOutput();
-
-	// Top-left 3x3 region (1-9, 7-15, 13-21) -> max = 15
-	// Top-right 3x3 region (4-12, 10-18, 16-24) -> max = 18
-	// Bottom-left 3x3 region (19-27, 25-33, 31-39) -> max = 33
-	// Bottom-right 3x3 region (22-30, 28-36, 34-42) -> max = 36
 	
 	EXPECT_NEAR(output(0, 0), 15.0, tolerance);
 	EXPECT_NEAR(output(0, 1), 18.0, tolerance);
@@ -201,17 +190,12 @@ TEST_F(MaxPoolingTest, OutputMatchesPredictions)
 TEST_F(MaxPoolingTest, MaxPoolingNonOverlapping)
 {
 	NEURAL_NETWORK::MaxPooling pool(1, 2, 4, 4, 1, 2);
-
-	// Input as 4x4 image (row-major order):
-	// [1, 0, 0, 2]
-	// [0, 0, 0, 0]
-	// [0, 0, 3, 0]
-	// [0, 0, 0, 4]
+	
 	Eigen::MatrixXd input(1, 16);
 	input << 1, 0, 0, 2, 
-             0, 0, 0, 0, 
-             0, 0, 3, 0, 
-             0, 0, 0, 4;
+			 0, 0, 0, 0, 
+			 0, 0, 3, 0, 
+			 0, 0, 0, 4;
 
 	pool.forward(input, false);
 	const auto& output = pool.GetOutput();
@@ -245,9 +229,9 @@ TEST_F(MaxPoolingTest, BackwardPassRoutesToMaxIndices)
 
 	Eigen::MatrixXd input(1, 16);
 	input << 1,  0, 0,  1,
-             0, 10, 0, 20, 
-             0,  0, 1,  0, 
-             0, 30, 0, 40;
+			 0, 10, 0, 20, 
+			 0,  0, 1,  0, 
+			 0, 30, 0, 40;
 
 	pool.forward(input, false);
 	const auto& output = pool.GetOutput();
@@ -427,9 +411,9 @@ TEST_F(MaxPoolingTest, NegativeInputHandling)
 
 	Eigen::MatrixXd negative_input(1, 16);
 	negative_input << -16, -15, -14, -13, 
-                      -12, -11, -10,  -9, 
-                       -8,  -7,  -6,  -5, 
-                       -4,  -3,  -2,  -1;
+					  -12, -11, -10,  -9, 
+					   -8,  -7,  -6,  -5, 
+					   -4,  -3,  -2,  -1;
 
 	pool.forward(negative_input, false);
 	const auto& output = pool.GetOutput();

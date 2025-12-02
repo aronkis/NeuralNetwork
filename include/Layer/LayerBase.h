@@ -31,7 +31,8 @@ namespace NEURAL_NETWORK
 			return std::make_pair(Eigen::MatrixXd(), Eigen::RowVectorXd());
 		}
 		
-		virtual void SetParameters(const Eigen::MatrixXd& weights, const Eigen::RowVectorXd& biases)
+		virtual void SetParameters([[maybe_unused]] const Eigen::MatrixXd& weights,
+							       [[maybe_unused]] const Eigen::RowVectorXd& biases)
 		{}
 
 		virtual double GetWeightRegularizerL1() const { return 0.0; }
@@ -75,45 +76,21 @@ namespace NEURAL_NETWORK
 			return empty;
 		}
 		
-		virtual void SetWeightMomentums(const Eigen::MatrixXd& weight_momentums) 
-		{
-			(void)weight_momentums; // TODO
-		}
+		virtual void SetWeightMomentums([[maybe_unused]] const Eigen::MatrixXd& weight_momentums) {}
 		
-		virtual void SetBiasMomentums(const Eigen::RowVectorXd& bias_momentums) 
-		{
-			(void)bias_momentums;
-		}
+		virtual void SetBiasMomentums([[maybe_unused]] const Eigen::RowVectorXd& bias_momentums) {}
 		
-		virtual void SetWeightCaches(const Eigen::MatrixXd& weight_caches) 
-		{
-			(void)weight_caches;
-		}
+		virtual void SetWeightCaches([[maybe_unused]] const Eigen::MatrixXd& weight_caches) {}
 		
-		virtual void SetBiasCaches(const Eigen::RowVectorXd& bias_caches) 
-		{
-			(void)bias_caches;
-		}
+		virtual void SetBiasCaches([[maybe_unused]] const Eigen::RowVectorXd& bias_caches) {}
 		
-		virtual void UpdateWeights(Eigen::MatrixXd& weight_update) 
-		{
-			(void)weight_update;
-		}
+		virtual void UpdateWeights([[maybe_unused]] Eigen::MatrixXd& weight_update) {}
 		
-		virtual void UpdateWeightsCache(Eigen::MatrixXd& weight_update) 
-		{
-			(void)weight_update;
-		}
+		virtual void UpdateWeightsCache([[maybe_unused]] Eigen::MatrixXd& weight_update) {}
 		
-		virtual void UpdateBiases(Eigen::RowVectorXd& bias_update) 
-		{
-			(void)bias_update;
-		}
+		virtual void UpdateBiases([[maybe_unused]] Eigen::RowVectorXd& bias_update) {}
 		
-		virtual void UpdateBiasesCache(Eigen::RowVectorXd& bias_update) 
-		{
-			(void)bias_update;
-		}
+		virtual void UpdateBiasesCache([[maybe_unused]] Eigen::RowVectorXd& bias_update) {}
 		
 		virtual const Eigen::MatrixXd& GetWeights() const
 		{
@@ -126,10 +103,10 @@ namespace NEURAL_NETWORK
 			return empty;
 		}
 
-		void setPrev(const std::shared_ptr<LayerBase>& prev) { prev_ = prev; }
-		void setNext(const std::shared_ptr<LayerBase>& next) { next_ = next; }
-		std::shared_ptr<LayerBase> getPrev() const { return prev_.lock(); }
-		std::shared_ptr<LayerBase> getNext() const { return next_.lock(); }
+		void SetPrev(const std::shared_ptr<LayerBase>& prev) { prev_ = prev; }
+		void SetNext(const std::shared_ptr<LayerBase>& next) { next_ = next; }
+		std::shared_ptr<LayerBase> GetPrev() const { return prev_.lock(); }
+		std::shared_ptr<LayerBase> GetNext() const { return next_.lock(); }
 
 	protected:
 		LayerBase() = default;

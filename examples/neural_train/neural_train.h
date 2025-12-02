@@ -1,6 +1,7 @@
 #ifndef __NEURAL_TRAIN_H__
 #define __NEURAL_TRAIN_H__
 
+#include <iostream>
 #include "Model.h"
 #include "Common.h"
 

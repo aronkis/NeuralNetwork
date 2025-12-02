@@ -16,7 +16,6 @@ namespace NEURAL_NETWORK
         void backward(const Eigen::MatrixXd& dvalues) override;
 
     private:
-        // Store indices of maximum values for backward pass
         Eigen::Tensor<int, 3> max_indices_;
     };
 } // namespace NEURAL_NETWORK

@@ -1,5 +1,5 @@
 #include "gnu_eval.h"
-#include "ZMQ.h"
+#include "ZMQWrapper.h"
 #include <iomanip>
 #include <cmath>
 
@@ -17,7 +17,7 @@ int gnu_eval_main()
 	
 	try 
 	{
-		model.LoadModel("../data/rf_modulation_classifier.bin");
+		model.LoadModel("../models/rf_modulation_classifier.bin");
 		std::cout << "Model loaded successfully!" << std::endl;
 	} 
 	catch (const std::exception& e) 
@@ -28,16 +28,25 @@ int gnu_eval_main()
 	}
 
 	NEURAL_NETWORK::ZMQ zmq;
-	zmq.CreateSubscriber();
+	
+	try
+	{
+		zmq.CreateSubscriber();
+		zmq.AddOptions(ZMQ_CONFLATE, 1);
+		zmq.AddOptions(ZMQ_RCVHWM, 2);
+		
+		const char* zmq_address = "tcp://127.0.0.1:5555";
+		zmq.Connect(zmq_address);
+		zmq.SubscribeToAllMessages();
+		
+		std::cout << "Connected to " << zmq_address << std::endl;
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "ZMQ setup failed: " << e.what() << std::endl;
+		return 1;
+	}
 
-	zmq.AddOptions(ZMQ_CONFLATE, 1);
-	zmq.AddOptions(ZMQ_RCVHWM, 2);
-
-	const char* zmq_address = "tcp://127.0.0.1:5555";
-	zmq.Connect(zmq_address);
-	zmq.SubscribeToAllMessages();
-
-	std::cout << "Connected to " << zmq_address << std::endl;
 	std::cout << "Waiting for data from GNU Radio..." << std::endl;
 	std::cout << "Press Ctrl+C to stop." << std::endl;
 

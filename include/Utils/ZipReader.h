@@ -26,5 +26,6 @@ namespace NEURAL_NETWORK
 	private:
 		void* reader_;
 	};
-}
+} // namespace NEURAL_NETWORK
+
 #endif // __ZIP_READER_H__

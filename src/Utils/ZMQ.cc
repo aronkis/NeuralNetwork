@@ -1,7 +1,8 @@
-#include "ZMQ.h"
+#include "ZMQWrapper.h"
 
 #include <iostream>
 #include <cstring>
+#include <stdexcept>
 
 volatile sig_atomic_t NEURAL_NETWORK::ZMQ::stop_ = 0;
 
@@ -26,13 +27,10 @@ NEURAL_NETWORK::ZMQ::ZMQ()
 	context_ = zmq_ctx_new();
 	if (!context_) 
 	{
-		std::cerr << "Failed to create ZMQ context" << std::endl;
-		return;
+		throw std::runtime_error("Failed to create ZMQ context");
 	}
 	stop_ = 0;
 	subscriber_ = nullptr;
-	data_ = nullptr;
-	size_ = 0;
 	signal(SIGINT, SignalHandler);
 }
 
@@ -47,11 +45,6 @@ NEURAL_NETWORK::ZMQ::~ZMQ()
 	{
 		zmq_ctx_destroy(context_);
 	}
-
-	if (data_)
-	{
-		delete[] static_cast<char*>(data_);
-	}
 }
 
 void NEURAL_NETWORK::ZMQ::CreateSubscriber()
@@ -59,8 +52,7 @@ void NEURAL_NETWORK::ZMQ::CreateSubscriber()
 	subscriber_ = zmq_socket(context_, ZMQ_SUB);
 	if (!subscriber_) 
 	{
-		std::cerr << "Failed to create socket" << std::endl;
-		return;
+		throw std::runtime_error("Failed to create ZMQ socket");
 	}
 }
 
@@ -69,8 +61,7 @@ void NEURAL_NETWORK::ZMQ::Connect(const char* address)
 	int rc = zmq_connect(subscriber_, address);
 	if (rc != 0) 
 	{
-		std::cerr << "Failed to connect: " << zmq_strerror(errno) << std::endl;
-		return;
+		throw std::runtime_error(std::string("Failed to connect to ZMQ: ") + zmq_strerror(errno));
 	}
 }
 
@@ -79,8 +70,7 @@ void NEURAL_NETWORK::ZMQ::SubscribeToAllMessages()
 	int rc = zmq_setsockopt(subscriber_, ZMQ_SUBSCRIBE, "", 0);
 	if (rc != 0) 
 	{
-		std::cerr << "Failed to subscribe: " << zmq_strerror(errno) << std::endl;
-		return;
+		throw std::runtime_error(std::string("Failed to subscribe to ZMQ: ") + zmq_strerror(errno));
 	}
 }
 
@@ -89,8 +79,7 @@ void NEURAL_NETWORK::ZMQ::AddOptions(int option, int value)
 	int rc = zmq_setsockopt(subscriber_, option, &value, sizeof(value));
 	if (rc != 0) 
 	{
-		std::cerr << "Failed to set option: " << zmq_strerror(errno) << std::endl;
-		return;
+		throw std::runtime_error(std::string("Failed to set ZMQ option: ") + zmq_strerror(errno));
 	}
 }
 
@@ -117,34 +106,36 @@ bool NEURAL_NETWORK::ZMQ::ReceiveMessage(int flags)
 	size_t msg_size = zmq_msg_size(&message_);
 	void* msg_data = zmq_msg_data(&message_);
 
-	if (data_)
-	{
-		delete[] static_cast<char*>(data_);
-		data_ = nullptr;
-	}
-
 	if (msg_size > 0)
 	{
-		data_ = new char[msg_size];
-		std::memcpy(data_, msg_data, msg_size);
+		data_.resize(msg_size);
+		std::memcpy(data_.data(), msg_data, msg_size);
 	}
-	size_ = msg_size;
+	else
+	{
+		data_.clear();
+	}
 
 	zmq_msg_close(&message_);
 	return true;
 }
 
-bool NEURAL_NETWORK::ZMQ::Running() const
+bool NEURAL_NETWORK::ZMQ::Running() const noexcept
 {
-	return stop_ == 0;
+	return !stop_;
 }
 
-size_t NEURAL_NETWORK::ZMQ::GetMessageSize()
+bool NEURAL_NETWORK::ZMQ::IsValid() const noexcept
 {
-	return size_;
+	return context_ && subscriber_;
 }
 
-void* NEURAL_NETWORK::ZMQ::GetMessageData()
+size_t NEURAL_NETWORK::ZMQ::GetMessageSize() const noexcept
 {
-	return data_;
+	return data_.size();
+}
+
+void* NEURAL_NETWORK::ZMQ::GetMessageData() noexcept
+{
+	return data_.empty() ? nullptr : data_.data();
 }

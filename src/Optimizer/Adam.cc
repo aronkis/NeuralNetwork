@@ -99,8 +99,8 @@ double NEURAL_NETWORK::Adam::GetEpsilon() const
 
 void NEURAL_NETWORK::Adam::UpdateBatchNormalizationParameters(NEURAL_NETWORK::BatchNormalization& bn_layer)
 {
-	Eigen::MatrixXd gamma = bn_layer.GetWeights();  // gamma (scale parameters)
-	Eigen::RowVectorXd beta = bn_layer.GetBiases(); // beta (shift parameters)
+	Eigen::MatrixXd gamma = bn_layer.GetWeights();
+	Eigen::RowVectorXd beta = bn_layer.GetBiases();
 	Eigen::MatrixXd d_gamma = bn_layer.GetDWeights();
 	Eigen::RowVectorXd d_beta = bn_layer.GetDBiases();
 

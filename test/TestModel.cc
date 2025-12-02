@@ -441,20 +441,16 @@ TEST_F(ModelTest, EmptyDataHandling)
 	}
 }
 
-TEST_F(ModelTest, LoadModelGracefullyHandlesCorruptedFile)
+TEST_F(ModelTest, LoadModelThrowsOnCorruptedFile)
 {
 	std::string corrupt_path = WriteMinimalModelFile("/tmp/corrupt_model.bin");
 
-	EXPECT_NO_THROW(model->LoadModel(corrupt_path));
-	EXPECT_TRUE(model->GetParameters().empty());
+	EXPECT_THROW(model->LoadModel(corrupt_path), std::runtime_error);
 
 	if (std::filesystem::exists(corrupt_path))
 	{
 		std::filesystem::remove(corrupt_path);
 	}
-
-	BuildSimpleClassificationModel();
-	EXPECT_NO_THROW(model->Train(X_train, y_train_multiclass, 1, 1, 1, 0, X_test, y_test_multiclass));
 }
 
 TEST_F(ModelTest, SingleSampleTraining) 
@@ -482,25 +478,20 @@ TEST_F(ModelTest, SingleSampleTraining)
 	EXPECT_TRUE(changed);
 }
 
-// Tests for MaxPooling layer serialization (new functionality)
 TEST_F(ModelTest, SaveLoadModelWithMaxPooling)
 {
 	std::string temp_model_file = "test_maxpool_model.bin";
-	
-	// Build CNN model with MaxPooling
+
 	auto model = std::make_unique<NEURAL_NETWORK::Model>();
 	model->Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-	
-	// Add Convolution2D layer
+
 	model->Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
 		8, 3, 3, 28, 28, 1, true, 1, 1, 0.0, 1e-4));
 	model->Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
-	
-	// Add MaxPooling layer
+
 	model->Add(std::make_shared<NEURAL_NETWORK::MaxPooling>(
 		32, 2, 28, 28, 8, 2));
-	
-	// Add Dense layer for classification
+
 	model->Add(std::make_shared<NEURAL_NETWORK::LayerDense>(14*14*8, 10));
 	model->Add(std::make_shared<NEURAL_NETWORK::ActivationSoftmax>());
 	
@@ -510,20 +501,16 @@ TEST_F(ModelTest, SaveLoadModelWithMaxPooling)
 		std::make_unique<NEURAL_NETWORK::Adam>());
 	
 	model->Finalize();
-	
-	// Save the model
+
 	EXPECT_NO_THROW(model->SaveModel(temp_model_file));
 	EXPECT_TRUE(std::filesystem::exists(temp_model_file));
-	
-	// Load the model
+
 	auto loaded_model = std::make_unique<NEURAL_NETWORK::Model>();
 	EXPECT_NO_THROW(loaded_model->LoadModel(temp_model_file));
-	
-	// Test that loaded model can make predictions
+
 	Eigen::MatrixXd test_input = Eigen::MatrixXd::Random(2, 28*28);
 	EXPECT_NO_THROW(loaded_model->Predict(test_input, 2));
-	
-	// Cleanup
+
 	if (std::filesystem::exists(temp_model_file)) {
 		std::filesystem::remove(temp_model_file);
 	}
@@ -532,17 +519,15 @@ TEST_F(ModelTest, SaveLoadModelWithMaxPooling)
 TEST_F(ModelTest, MaxPoolingParametersSavedCorrectly)
 {
 	std::string temp_model_file = "test_maxpool_params.bin";
-	
-	// Create model with specific MaxPooling parameters
+
 	auto model = std::make_unique<NEURAL_NETWORK::Model>();
 	model->Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
 	model->Add(std::make_shared<NEURAL_NETWORK::Convolution2D>(
-		4, 5, 5, 16, 16, 1, false, 2, 2)); // stride 2 conv
+		4, 5, 5, 16, 16, 1, false, 2, 2));
 	model->Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
-	
-	// MaxPooling with specific parameters
+
 	auto maxpool = std::make_shared<NEURAL_NETWORK::MaxPooling>(
-		16, 3, 6, 6, 4, 3); // pool_size=3, stride=3, input 6x6x4
+		16, 3, 6, 6, 4, 3);
 	model->Add(maxpool);
 	
 	model->Add(std::make_shared<NEURAL_NETWORK::LayerDense>(2*2*4, 5));
@@ -554,21 +539,17 @@ TEST_F(ModelTest, MaxPoolingParametersSavedCorrectly)
 		std::make_unique<NEURAL_NETWORK::Adam>());
 	
 	model->Finalize();
-	
-	// Test forward pass before saving
+
 	Eigen::MatrixXd test_input = Eigen::MatrixXd::Random(1, 16*16);
 	Eigen::MatrixXd original_output = model->Predict(test_input, 1);
-	
-	// Save and load
+
 	model->SaveModel(temp_model_file);
 	
 	auto loaded_model = std::make_unique<NEURAL_NETWORK::Model>();
 	loaded_model->LoadModel(temp_model_file);
-	
-	// Test that loaded model produces same output
+
 	Eigen::MatrixXd loaded_output = loaded_model->Predict(test_input, 1);
 	
-	// Outputs should be very close (allowing for small numerical differences)
 	const double tolerance = 1e-10;
 	for (int i = 0; i < original_output.rows(); ++i) {
 		for (int j = 0; j < original_output.cols(); ++j) {
@@ -576,8 +557,7 @@ TEST_F(ModelTest, MaxPoolingParametersSavedCorrectly)
 				<< "Mismatch at (" << i << "," << j << ")";
 		}
 	}
-	
-	// Cleanup
+
 	if (std::filesystem::exists(temp_model_file)) {
 		std::filesystem::remove(temp_model_file);
 	}

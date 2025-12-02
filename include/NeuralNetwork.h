@@ -20,7 +20,7 @@
 #include "ActivationSoftmax.h"
 #include "ActivationSoftmaxLossCategoricalCrossentropy.h"
 
-//Losses
+// Losses
 #include "Loss.h"
 #include "LossBinaryCrossEntropy.h"
 #include "LossCategoricalCrossentropy.h"
@@ -32,16 +32,18 @@
 #include "AccuracyCategorical.h"
 #include "AccuracyRegression.h"
 
-//Optimizers
+// Optimizers
 #include "Optimizer.h"
 #include "AdaGrad.h"
 #include "Adam.h"
 #include "RMSProp.h"
 #include "StochasticGradientDescent.h"
 
-//Utils
+// Utils
 #include "Helpers.h"
 #include "Serialization.h"
 #include "ZipReader.h"
+#include "TensorUtils.h"
+#include "ZMQWrapper.h"
 
 #endif // __NEURAL_NETWORK_H__

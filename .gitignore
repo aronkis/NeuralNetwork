@@ -2,4 +2,4 @@
 build
 venv
 data
-Models
+__pycache__

@@ -5,6 +5,7 @@
 #include "mz_zip_rw.h"
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 
 NEURAL_NETWORK::ZipReader::ZipReader()
 {
@@ -24,8 +25,7 @@ bool NEURAL_NETWORK::ZipReader::Open(const std::filesystem::path& zipPath)
 {
 	if (!reader_) 
 	{
-		std::cerr << "Error: ZipReader not initialized." << std::endl;
-		return false;
+		throw std::logic_error("ZipReader not initialized");
 	}
 	int err = mz_zip_reader_open_file(reader_, zipPath.string().c_str());
 	return err == MZ_OK;
@@ -102,10 +102,10 @@ bool NEURAL_NETWORK::ZipReader::ExtractEntry(const std::filesystem::path& target
 			outFile.write(buffer, bytesRead);
 			if (!outFile.good()) 
 			{
-				std::cerr << "Error: Failed to write to output file: " 
-						  << fullPath.string() << std::endl;
-				success = false;
-				break;
+				outFile.close();
+				mz_zip_reader_entry_close(reader_);
+				throw std::runtime_error("Failed to write to output file: " + 
+					fullPath.string());
 			}
 		} 
 		else if (bytesRead < 0) 

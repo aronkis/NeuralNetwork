@@ -59,7 +59,7 @@ protected:
 		int compression = 0;
 		out.write(reinterpret_cast<const char*>(&compression), 4);
 		out.write(reinterpret_cast<const char*>(&pixel_data_size), 4);
-		int ppm = 2835; // 72 DPI
+		int ppm = 2835; 
 		out.write(reinterpret_cast<const char*>(&ppm), 4);
 		out.write(reinterpret_cast<const char*>(&ppm), 4);
 		int palette_colors = 0;
@@ -83,9 +83,9 @@ protected:
 				{
 					throw std::out_of_range("WriteBMP computed row stride smaller than required for pixel data");
 				}
-				row[bmp_idx + 0] = rgba[rgba_idx + 2]; // B
-				row[bmp_idx + 1] = rgba[rgba_idx + 1]; // G
-				row[bmp_idx + 2] = rgba[rgba_idx + 0]; // R
+				row[bmp_idx + 0] = rgba[rgba_idx + 2]; 
+				row[bmp_idx + 1] = rgba[rgba_idx + 1]; 
+				row[bmp_idx + 2] = rgba[rgba_idx + 0]; 
 			}
 			out.write(reinterpret_cast<const char*>(row.data()), row_stride);
 		}
@@ -145,103 +145,13 @@ protected:
 	const double tolerance = 1e-10;
 };
 
-TEST_F(HelpersTest, ReadFromCSVIntoEigenBasic) 
-{
-	Eigen::MatrixXd input, output;
-
-	EXPECT_NO_THROW(NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(test_csv_file, input, output));
-
-	EXPECT_EQ(input.rows(), 4);
-	EXPECT_EQ(input.cols(), 2);
-	EXPECT_EQ(output.rows(), 4);
-	EXPECT_EQ(output.cols(), 2);
-
-	EXPECT_DOUBLE_EQ(input(0, 0), 1.0);
-	EXPECT_DOUBLE_EQ(input(0, 1), 2.0);
-	EXPECT_DOUBLE_EQ(output(0, 0), 10.0);
-	EXPECT_DOUBLE_EQ(output(0, 1), 0.0);
-
-	EXPECT_DOUBLE_EQ(input(3, 0), 10.0);
-	EXPECT_DOUBLE_EQ(input(3, 1), 11.0);
-	EXPECT_DOUBLE_EQ(output(3, 0), 40.0);
-	EXPECT_DOUBLE_EQ(output(3, 1), 1.0);
-}
-
-TEST_F(HelpersTest, ReadFromCSVWithDifferentDelimiter) 
-{
-	std::string semicolon_file = temp_dir + "semicolon.csv";
-	std::ofstream file(semicolon_file);
-	file << "1.5;2.5;15.0;1\n";
-	file << "4.5;5.5;25.0;0\n";
-	file.close();
-
-	Eigen::MatrixXd input, output;
-	EXPECT_NO_THROW(NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(semicolon_file, input, output, ';'));
-
-	EXPECT_EQ(input.rows(), 2);
-	EXPECT_EQ(input.cols(), 2);
-	EXPECT_DOUBLE_EQ(input(0, 0), 1.5);
-	EXPECT_DOUBLE_EQ(input(0, 1), 2.5);
-	EXPECT_DOUBLE_EQ(output(0, 0), 15.0);
-	EXPECT_DOUBLE_EQ(output(0, 1), 1.0);
-}
-
-TEST_F(HelpersTest, ReadCSVNonExistentFile) 
-{
-	Eigen::MatrixXd input, output;
-	std::string non_existent = temp_dir + "does_not_exist.csv";
-	
-	NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(non_existent, input, output);
-	EXPECT_EQ(input.rows(), 0);
-	EXPECT_EQ(input.cols(), 0);
-	EXPECT_EQ(output.rows(), 0);
-	EXPECT_EQ(output.cols(), 0);
-}
-
-TEST_F(HelpersTest, Read1DIntoEigenBasic) 
-{
-	Eigen::MatrixXd input, output;
-
-	EXPECT_NO_THROW(NEURAL_NETWORK::Helpers::Read1DIntoEigen(test_1d_file, input, output));
-
-	EXPECT_EQ(input.rows(), 4);
-	EXPECT_EQ(input.cols(), 1);    
-	EXPECT_EQ(output.rows(), 4);
-	EXPECT_EQ(output.cols(), 1);   
-
-	EXPECT_DOUBLE_EQ(input(0, 0), 1.0);
-	EXPECT_DOUBLE_EQ(output(0, 0), 10.0);
-	EXPECT_DOUBLE_EQ(input(3, 0), 4.0);
-	EXPECT_DOUBLE_EQ(output(3, 0), 40.0);
-}
-
-TEST_F(HelpersTest, ReadSpiralIntoEigenBasic) 
-{
-	Eigen::MatrixXd coordinates, classes;
-
-	EXPECT_NO_THROW(NEURAL_NETWORK::Helpers::ReadSpiralIntoEigen(test_spiral_file, coordinates, classes));
-
-	EXPECT_EQ(coordinates.rows(), 4);
-	EXPECT_EQ(coordinates.cols(), 2);
-	EXPECT_EQ(classes.rows(), 4);
-	EXPECT_EQ(classes.cols(), 1);
-
-	EXPECT_DOUBLE_EQ(coordinates(0, 0), 1.0);
-	EXPECT_DOUBLE_EQ(coordinates(0, 1), 2.0);
-	EXPECT_DOUBLE_EQ(classes(0, 0), 0.0);
-
-	EXPECT_DOUBLE_EQ(coordinates(1, 0), 3.0);
-	EXPECT_DOUBLE_EQ(coordinates(1, 1), 4.0);
-	EXPECT_DOUBLE_EQ(classes(1, 0), 1.0);
-}
-
 TEST_F(HelpersTest, ShuffleDataBasic) 
 {
 	Eigen::MatrixXd X(4, 2);
 	X << 1, 2,
-			3, 4,
-			5, 6,
-			7, 8;
+		 3, 4,
+		 5, 6,
+		 7, 8;
 
 	Eigen::MatrixXd y(4, 1);
 	y << 10, 20, 30, 40;
@@ -300,9 +210,9 @@ TEST_F(HelpersTest, ScaleDataBasic)
 {
 	Eigen::MatrixXd X(4, 2);
 	X << 1, 10,
-			2, 20,
-			3, 30,
-			4, 40;
+		 2, 20,
+		 3, 30,
+		 4, 40;
 
 	Eigen::MatrixXd X_original = X;
 
@@ -369,67 +279,6 @@ TEST_F(HelpersDataCreationTest, ReadSingleImageHandling)
 	EXPECT_NEAR(image(0, 1),   0.0, tolerance);
 	EXPECT_NEAR(image(0, 2),   0.0, tolerance);
 	EXPECT_NEAR(image(0, 3), 255.0, tolerance);
-}
-
-TEST_F(HelpersTest, EmptyFileHandling) 
-{
-	std::string empty_file = temp_dir + "empty.csv";
-	std::ofstream(empty_file).close();  
-
-	Eigen::MatrixXd input, output;
-	NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(empty_file, input, output);
-
-	EXPECT_EQ(input.rows(), 0);
-	EXPECT_EQ(input.cols(), 0);
-	EXPECT_EQ(output.rows(), 0);
-	EXPECT_EQ(output.cols(), 0);
-}
-
-TEST_F(HelpersTest, MalformedCSVHandling) 
-{
-	std::string malformed_file = temp_dir + "malformed.csv";
-	std::ofstream file(malformed_file);
-	file << "1,2,3\n";           
-	file << "4,5\n";             
-	file << "7,8,9,10,11\n";     
-	file.close();
-
-	Eigen::MatrixXd input, output;
-	NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(malformed_file, input, output);
-
-	EXPECT_EQ(input.rows(), 0);
-	EXPECT_EQ(input.cols(), 0);
-	EXPECT_EQ(output.rows(), 0);
-	EXPECT_EQ(output.cols(), 0);
-}
-
-TEST_F(HelpersTest, LargeNumberHandling) 
-{
-	std::string large_num_file = temp_dir + "large_numbers.csv";
-	std::ofstream file(large_num_file);
-	file << "1e10,2e-10,3e20,1\n";
-	file << "1e-20,2e30,3e-30,0\n";
-	file.close();
-
-	Eigen::MatrixXd input, output;
-	EXPECT_NO_THROW(NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(large_num_file, input, output));
-
-	EXPECT_DOUBLE_EQ(input(0, 0), 1e10);
-	EXPECT_DOUBLE_EQ(input(0, 1), 2e-10);
-	EXPECT_DOUBLE_EQ(input(1, 0), 1e-20);
-}
-
-TEST_F(HelpersTest, SpecialFloatValuesHandling) 
-{
-	std::string special_file = temp_dir + "special_values.csv";
-	std::ofstream file(special_file);
-	file << "inf,-inf,nan,1\n";
-	file << "1.0,2.0,3.0,0\n";
-	file.close();
-
-	Eigen::MatrixXd input, output;
-
-	EXPECT_NO_THROW(NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(special_file, input, output));
 }
 
 TEST_F(HelpersTest, ScalingPerformanceReasonable) 

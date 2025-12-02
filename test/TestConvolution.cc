@@ -298,10 +298,8 @@ TEST_F(ConvolutionTest, BackwardPassConsistency)
 	}
 }
 
-// Simplified tests for Convolution2D regularization
 TEST_F(ConvolutionTest, RegularizationParametersStored)
 {
-	// Test that regularization parameters are stored correctly
 	NEURAL_NETWORK::Convolution2D conv(2, 3, 3, 4, 4, 1, false, 1, 1, 0.1, 0.2);
 	
 	EXPECT_NEAR(conv.GetWeightRegularizerL1(), 0.1, tolerance);
@@ -310,10 +308,8 @@ TEST_F(ConvolutionTest, RegularizationParametersStored)
 
 TEST_F(ConvolutionTest, RegularizationInBackwardPass)
 {
-	// Test that backward pass works with regularization (basic functionality)
 	NEURAL_NETWORK::Convolution2D conv(2, 3, 3, 4, 4, 1, false, 1, 1, 0.01, 0.01);
 	
-	// Forward and backward pass should work
 	EXPECT_NO_THROW(conv.forward(test_input_4x4, true));
 	
 	const auto& output = conv.GetOutput();
@@ -321,7 +317,6 @@ TEST_F(ConvolutionTest, RegularizationInBackwardPass)
 	
 	EXPECT_NO_THROW(conv.backward(d_output));
 	
-	// Check that gradients exist
 	const auto& d_weights = conv.GetDWeights();
 	const auto& d_biases = conv.GetDBiases();
 	

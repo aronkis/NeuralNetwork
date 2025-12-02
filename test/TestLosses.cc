@@ -46,8 +46,7 @@ protected:
 	const double tolerance = 1e-10;
 };
 
-class CategoricalCrossEntropyTest : public LossTest 
-{};
+class CategoricalCrossEntropyTest : public LossTest {};
 
 TEST_F(CategoricalCrossEntropyTest, CalculateReturnsPositiveLoss) 
 {
@@ -122,8 +121,7 @@ TEST_F(CategoricalCrossEntropyTest, ClippingPreventsLogZero)
 	EXPECT_GT(loss_value, 0.0);
 }
 
-class BinaryCrossEntropyTest : public LossTest 
-{};
+class BinaryCrossEntropyTest : public LossTest {};
 
 TEST_F(BinaryCrossEntropyTest, CalculateReturnsPositiveLoss) 
 {
@@ -190,8 +188,7 @@ TEST_F(BinaryCrossEntropyTest, GradientSignCorrectness)
 	}
 }
 
-class MeanSquaredErrorTest : public LossTest 
-{};
+class MeanSquaredErrorTest : public LossTest {};
 
 TEST_F(MeanSquaredErrorTest, CalculateCorrectness) 
 {
@@ -245,8 +242,7 @@ TEST_F(MeanSquaredErrorTest, ScaleInvariance)
 	EXPECT_NEAR(scaled_loss, scale * scale * original_loss, tolerance);
 }
 
-class MeanAbsoluteErrorTest : public LossTest 
-{};
+class MeanAbsoluteErrorTest : public LossTest {};
 
 TEST_F(MeanAbsoluteErrorTest, CalculateCorrectness) 
 {
@@ -332,9 +328,9 @@ TEST_F(CategoricalCrossEntropyTest, RegularizationLossComputed)
 	auto layer = std::make_shared<NEURAL_NETWORK::LayerDense>(3, 3,
 		0.05, 0.1, 0.02, 0.03);
 	Eigen::MatrixXd weights(3, 3);
-	weights << 0.2, -0.1, 0.05,
-		0.3, 0.4, -0.2,
-		-0.15, 0.25, 0.1;
+	weights <<  0.2, -0.1,  0.05,
+		        0.3,  0.4, -0.2,
+		       -0.15, 0.25, 0.1;
 	Eigen::RowVectorXd biases(3);
 	biases << 0.05, -0.02, 0.01;
 	layer->SetParameters(weights, biases);

@@ -6,11 +6,25 @@ int neural_train_main()
 	std::string output_dir = "data/";
 	
 	Eigen::MatrixXd X, X_test, y, y_test;
-	NEURAL_NETWORK::Helpers::CreateDataSets(dataset_url, output_dir, X, y, X_test, y_test);
+	try
+	{
+		NEURAL_NETWORK::Helpers::CreateDataSets(dataset_url, output_dir, X, y, X_test, y_test);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Failed to load dataset: " << e.what() << std::endl;
+		return 1;
+	}
 	
 	NEURAL_NETWORK::Model model;
 	model.Add(std::make_shared<NEURAL_NETWORK::LayerInput>());
-	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(X.cols(), 128, 0.0, 5e-4, 0.0, 5e-4));
+	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(X.cols(),
+		128, 
+		0.0, 
+		5e-4, 
+		0.0, 
+		5e-4
+	));
 	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());
 	model.Add(std::make_shared<NEURAL_NETWORK::LayerDense>(128, 128));
 	model.Add(std::make_shared<NEURAL_NETWORK::ActivationReLU>());

@@ -8,19 +8,6 @@ namespace NEURAL_NETWORK
 {
 	namespace Helpers
 	{
-		void ReadSpiralIntoEigen(const std::string& filename,
-								 Eigen::MatrixXd& coordinates,
-								 Eigen::MatrixXd& classes);
-
-		void Read1DIntoEigen(const std::string& filename,
-							 Eigen::MatrixXd& input,
-							 Eigen::MatrixXd& output);
-
-		void ReadFromCSVIntoEigen(const std::string & filename,
-								  Eigen::MatrixXd& input,
-								  Eigen::MatrixXd& output,
-								  char delimiter = ',');
-
 		void ReadCSVMatrix(const std::string& filename,
 						   Eigen::MatrixXd& matrix,
 						   char delimiter = ',');
@@ -33,8 +20,8 @@ namespace NEURAL_NETWORK
 						  const std::string filename);
 		
 		void UnzipFile(const std::string& directory,
-				   const std::string& filename,
-				   const std::string& target);
+					   const std::string& filename,
+					   const std::string& target);
 
 		void FetchData(const std::string url,
 					   const std::string output_path,
@@ -59,8 +46,6 @@ namespace NEURAL_NETWORK
 
 		void ReadSingleImage(const std::string& filename,
 							 Eigen::MatrixXd& image);
-
-		Eigen::MatrixXd Flatten(const Eigen::MatrixXd& spatial_data);
 	};
 } // namespace NEURAL_NETWORK
 

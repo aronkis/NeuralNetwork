@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 # GNU Radio Python Flow Graph
-# Title: Variable Modulations
+# Title: Variable Modulations Test
 # GNU Radio version: 3.10.12.0
 
 from PyQt5 import Qt
@@ -40,9 +40,9 @@ from gnuradio import eng_notation
 class VariableModulation(gr.top_block, Qt.QWidget):
 
     def __init__(self):
-        gr.top_block.__init__(self, "Variable Modulations", catch_exceptions=True)
+        gr.top_block.__init__(self, "Variable Modulations Test", catch_exceptions=True)
         Qt.QWidget.__init__(self)
-        self.setWindowTitle("Variable Modulations")
+        self.setWindowTitle("Variable Modulations Test")
         qtgui.util.check_set_qss()
         try:
             self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))

@@ -30,8 +30,7 @@ protected:
 };
 
 
-class ReLUTest : public ActivationTest 
-{};
+class ReLUTest : public ActivationTest {};
 
 TEST_F(ReLUTest, ForwardPassCorrectness) 
 {
@@ -87,8 +86,7 @@ TEST_F(ReLUTest, PositiveInputsUnchanged)
 }
 
 
-class SigmoidTest : public ActivationTest 
-{};
+class SigmoidTest : public ActivationTest {};
 
 TEST_F(SigmoidTest, ForwardPassCorrectness) 
 {
@@ -160,8 +158,7 @@ TEST_F(SigmoidTest, ExtremeValuesHandled)
 }
 
 
-class SoftmaxTest : public ActivationTest 
-{};
+class SoftmaxTest : public ActivationTest {};
 
 TEST_F(SoftmaxTest, ForwardPassSumsToOne) 
 {
@@ -237,8 +234,7 @@ TEST_F(SoftmaxTest, NumericalStability)
 }
 
 
-class LinearTest : public ActivationTest 
-{};
+class LinearTest : public ActivationTest {};
 
 TEST_F(LinearTest, ForwardPassIsIdentity) 
 {
@@ -260,8 +256,7 @@ TEST_F(LinearTest, BackwardPassIsIdentity)
 }
 
 
-class SoftmaxLossTest : public ActivationTest 
-{};
+class SoftmaxLossTest : public ActivationTest {};
 
 TEST_F(SoftmaxLossTest, CombinedForwardAndLoss)
 {

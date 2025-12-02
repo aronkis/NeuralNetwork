@@ -46,8 +46,7 @@ protected:
 	const double tolerance = 1e-10;
 };
 
-class CategoricalAccuracyTest : public AccuracyTest 
-{};
+class CategoricalAccuracyTest : public AccuracyTest {};
 
 TEST_F(CategoricalAccuracyTest, PerfectClassificationGivesFullAccuracy) 
 {
@@ -190,8 +189,7 @@ TEST_F(CategoricalAccuracyTest, SingleSampleTest)
 	EXPECT_DOUBLE_EQ(wrong_result, 0.0);
 }
 
-class RegressionAccuracyTest : public AccuracyTest 
-{};
+class RegressionAccuracyTest : public AccuracyTest {};
 
 TEST_F(RegressionAccuracyTest, DefaultPrecisionTest) 
 {
@@ -281,8 +279,7 @@ TEST_F(RegressionAccuracyTest, ReinitializationUpdatesThreshold)
 	EXPECT_GT(second_eps, first_eps);
 }
 
-class BaseAccuracyTest : public AccuracyTest 
-{};
+class BaseAccuracyTest : public AccuracyTest {};
 
 TEST_F(BaseAccuracyTest, AccumulatedAccuracyCalculation) 
 {

@@ -26,25 +26,13 @@ jobs:
           libopenblas-dev \
           liblzma-dev libbz2-dev
 
-    - name: Setup ccache
-      if: runner.os != 'Windows'
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        key: ${{ runner.os }}-ccache
-        variant: sccache
-
     - name: Configure CMake
       run: |
         cmake -S . -B build \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
           -DNN_BUILD_TESTS=ON \
           -DNN_DISABLE_EIGEN_PARALLELISM=OFF \
           -DNN_ENABLE_FAST_MATH=OFF \
-          -DNN_EPOCHS=5 \
-          -DNN_PRINT_EVERY=100 \
-          -DBATCH_SIZE=128
 
     - name: Build
       run: cmake --build build --config Release -- -j$(nproc)
@@ -69,19 +57,10 @@ jobs:
         python3 -m pip install --upgrade pip --break-system-packages
         python3 -m pip install matplotlib numpy --break-system-packages
     
-    - name: Setup ccache
-      if: runner.os != 'Windows'
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        key: ${{ runner.os }}-ccache
-        variant: sccache
-    
     - name: Configure CMake
       run: |
         cmake -S . -B build \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
           -DNN_BUILD_TESTS=ON \
           -DNN_DISABLE_EIGEN_PARALLELISM=OFF \
           -DNN_ENABLE_FAST_MATH=OFF \
@@ -126,10 +105,6 @@ jobs:
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v1.1
     
-    - name: Setup sccache (Windows)
-      if: runner.os == 'Windows'
-      uses: mozilla-actions/sccache-action@v0.0.3
-    
     - name: Configure CMake
       shell: pwsh
       env:
@@ -141,8 +116,6 @@ jobs:
           -A x64 `
           -DCMAKE_BUILD_TYPE=Release `
           -DCMAKE_TOOLCHAIN_FILE="$vcpkgPath" `
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache `
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
           -DNN_BUILD_TESTS=ON `
           -DNN_DISABLE_EIGEN_PARALLELISM=OFF `
           -DNN_ENABLE_FAST_MATH=OFF `

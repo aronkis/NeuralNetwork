@@ -7,215 +7,6 @@
 #include <random>
 #include <algorithm>
 
-void NEURAL_NETWORK::Helpers::ReadSpiralIntoEigen(const std::string& filename,
-												  Eigen::MatrixXd& coordinates,
-												  Eigen::MatrixXd& classes) 
-{
-	std::ifstream input_file(filename);
-
-	if (!input_file.is_open()) 
-	{
-		std::cerr << "Error: Could not open file " << filename << std::endl;
-		coordinates.resize(0, 0); 
-		classes.resize(0, 0);
-		return;
-	}
-
-	std::vector<double> x_coords;
-	std::vector<double> y_coords;
-	std::vector<int> class_values;
-
-	std::string line;
-	int line_num = 0;
-
-	while (std::getline(input_file, line)) 
-	{
-		line_num++;
-		std::stringstream ss(line);
-		double x_val, y_val;
-		int class_val;
-
-		if (ss >> x_val >> y_val >> class_val) 
-		{
-			x_coords.push_back(x_val);
-			y_coords.push_back(y_val);
-			class_values.push_back(class_val);
-		} 
-		else 
-		{
-			std::cerr << "Warning: Skipping malformed line " 
-					  << line_num << ": '" << line
-					  << "' (expected 2 doubles and 1 integer)" << std::endl;
-		}
-	}
-
-	input_file.close();
-	
-	long num_rows = x_coords.size();
-
-	if (num_rows > 0)
-	{
-		coordinates.resize(num_rows, 2);
-		classes.resize(num_rows, 1);
-
-		for (long i = 0; i < num_rows; i++)
-		{
-			coordinates(i, 0) = x_coords[i];
-			coordinates(i, 1) = y_coords[i];
-			classes(i) = class_values[i];
-		}
-	}
-	else
-	{
-		std::cout << "No valid data lines found in the file." << std::endl;
-		coordinates.resize(0, 0);
-		classes.resize(0, 0);
-	}
-}
-
-void NEURAL_NETWORK::Helpers::Read1DIntoEigen(const std::string& filename,
-												  Eigen::MatrixXd& input,
-												  Eigen::MatrixXd& output) 
-{
-	std::ifstream input_file(filename);
-
-	if (!input_file.is_open()) 
-	{
-		std::cerr << "Error: Could not open file " << filename << std::endl;
-		input.resize(0, 0); 
-		output.resize(0, 0);
-		return;
-	}
-
-	std::vector<double> input_values;
-	std::vector<double> output_values;
-
-	std::string line;
-
-	while (std::getline(input_file, line)) 
-	{
-		std::stringstream ss(line);
-		double in_val, out_val;
-
-		if (ss >> in_val >> out_val) 
-		{
-			input_values.push_back(in_val);
-			output_values.push_back(out_val);
-		} 
-		else 
-		{
-			std::cerr << "Warning: Skipping malformed line: '" << line
-					  << "' (expected 2 doubles)" << std::endl;
-		}
-	}
-
-	input_file.close();
-	
-	long num_rows = input_values.size();
-
-	if (num_rows > 0)
-	{
-		input.resize(num_rows, 1);
-		output.resize(num_rows, 1);
-
-		for (long i = 0; i < num_rows; i++)
-		{
-			input(i, 0) = input_values[i];
-			output(i, 0) = output_values[i];
-		}
-	}
-	else
-	{
-		std::cout << "No valid data lines found in the file." << std::endl;
-		input.resize(0, 0);
-		output.resize(0, 0);
-	}
-}
-
-void NEURAL_NETWORK::Helpers::ReadFromCSVIntoEigen(const std::string& filename,
-                                  				   Eigen::MatrixXd& input,
-                                  				   Eigen::MatrixXd& output,
-                                  				   char delimiter)
-{
-    std::ifstream input_file(filename);
-
-    if (!input_file.is_open()) 
-    {
-        std::cerr << "Error: Could not open file " << filename << std::endl;
-        input.resize(0, 0); 
-        output.resize(0, 0);
-        return;
-    }
-
-    std::vector<double> input1_values;
-    std::vector<double> input2_values;
-    std::vector<double> output1_values;
-    std::vector<double> output2_values;
-
-    std::string line;
-    int line_num = 0;
-
-    while (std::getline(input_file, line)) 
-    {
-        line_num++;
-        std::stringstream ss(line);
-        std::string token;
-        std::vector<double> values;
-
-        while (std::getline(ss, token, delimiter)) 
-        {
-            try 
-            {
-                values.push_back(std::stod(token));
-            } 
-            catch (const std::invalid_argument&) 
-            {
-                std::cerr << "Warning: Invalid number in line " << line_num 
-                          << ": '" << token << "'" << std::endl;
-                values.clear();
-                break;
-            }
-        }
-
-        if (values.size() == 4) 
-        {
-            input1_values.push_back(values[0]);
-            input2_values.push_back(values[1]);
-            output1_values.push_back(values[2]);
-            output2_values.push_back(values[3]);
-        } 
-        else if (!values.empty()) 
-        {
-            std::cerr << "Warning: Skipping malformed line " << line_num 
-                      << ": '" << line << "' (expected 4 columns)" << std::endl;
-        }
-    }
-
-    input_file.close();
-    
-    long num_rows = input1_values.size();
-
-    if (num_rows > 0)
-    {
-        input.resize(num_rows, 2);
-        output.resize(num_rows, 2);
-
-        for (long i = 0; i < num_rows; i++)
-        {
-            input(i, 0) = input1_values[i];
-            input(i, 1) = input2_values[i];
-            output(i, 0) = output1_values[i];
-            output(i, 1) = output2_values[i];
-        }
-    }
-    else
-    {
-        std::cout << "No valid data lines found in the file." << std::endl;
-        input.resize(0, 0);
-        output.resize(0, 0);
-    }
-}
-
 void NEURAL_NETWORK::Helpers::ReadCSVMatrix(const std::string& filename,
 											 Eigen::MatrixXd& matrix,
 											 char delimiter)
@@ -224,9 +15,7 @@ void NEURAL_NETWORK::Helpers::ReadCSVMatrix(const std::string& filename,
 
     if (!input_file.is_open())
     {
-        std::cerr << "Error: Could not open file " << filename << std::endl;
-        matrix.resize(0, 0);
-        return;
+        throw std::runtime_error("Could not open file: " + filename);
     }
 
     std::string line;
@@ -292,9 +81,7 @@ void NEURAL_NETWORK::Helpers::ReadCSVLabels(const std::string& filename,
 
     if (!input_file.is_open())
     {
-        std::cerr << "Error: Could not open file " << filename << std::endl;
-        labels.resize(0);
-        return;
+        throw std::runtime_error("Could not open file: " + filename);
     }
 
     std::string line;
@@ -406,9 +193,7 @@ void NEURAL_NETWORK::Helpers::UnzipFile(const std::string& directory,
     std::filesystem::path zipPath = std::filesystem::path(directory) / filename;
     if (!std::filesystem::exists(zipPath)) 
 	{
-        std::cerr << "Error: ZIP file not found: " 
-				  << zipPath.string() << std::endl;
-        return;
+        throw std::runtime_error("ZIP file not found: " + zipPath.string());
     }
 
     std::filesystem::path targetPath = target;
@@ -416,9 +201,7 @@ void NEURAL_NETWORK::Helpers::UnzipFile(const std::string& directory,
 	{
         if (!std::filesystem::create_directories(targetPath)) 
 		{
-            std::cerr << "Failed to create directory: " 
-					  << targetPath.string() << std::endl;
-            return;
+            throw std::runtime_error("Failed to create directory: " + targetPath.string());
         }
     }
 
@@ -454,8 +237,7 @@ void NEURAL_NETWORK::Helpers::UnzipFile(const std::string& directory,
 		}
 		else
 		{
-			std::cerr << "Failed to extract an entry." << std::endl;
-			exit(1);
+			throw std::runtime_error("Failed to extract ZIP entry");
 		}
 		err = reader.GoToNextEntry();
 	}
@@ -575,6 +357,18 @@ void NEURAL_NETWORK::Helpers::LoadData(const std::string& path,
 									   Eigen::MatrixXd& X,
 									   Eigen::MatrixXd& y) 
 {
+	try
+	{
+		if (!std::filesystem::exists(path) || 
+			!std::filesystem::is_directory(path)) 
+		{
+			throw std::runtime_error("Dataset path not found or is not a directory: " + path);
+		}
+	}
+	catch (const std::filesystem::filesystem_error& e)
+	{
+		throw std::runtime_error("Filesystem error: " + std::string(e.what()));
+	}
 	std::vector<std::string> labels = GetFolderContent(path, true);
 
 	int total_images = 0;
@@ -600,10 +394,9 @@ void NEURAL_NETWORK::Helpers::LoadData(const std::string& path,
 
 	if (first_img.size() == 0) 
 	{
-        std::cerr << "Could not load any images to determine dimensions." 
-				  << std::endl;
         X.resize(0, 0);
         y.resize(0, 0);
+		throw std::runtime_error("Failed to load image: " + imgPath.string());
         return;
     }
 
@@ -628,7 +421,7 @@ void NEURAL_NETWORK::Helpers::LoadData(const std::string& path,
 			{
 		    	std::cerr << "Failed to load image: " 
 						  << imgPath.string() << std::endl;
-				continue;
+				return;
 			}
 
 			Eigen::RowVectorXd correct_flattened(img.size());
@@ -691,8 +484,8 @@ void NEURAL_NETWORK::Helpers::ShuffleData(Eigen::MatrixXd& X,
 {
     if (X.rows() != y.rows()) 
     {
-        std::cerr << "Error: X and y row counts do not match." << std::endl;
-        return;
+        throw std::invalid_argument("ShuffleData: X and y row counts do not match (" +
+            std::to_string(X.rows()) + " vs " + std::to_string(y.rows()) + ")");
     }
 
     Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> perm(X.rows());
@@ -718,15 +511,14 @@ void NEURAL_NETWORK::Helpers::ScaleData(Eigen::MatrixXd& X)
 }
 
 void NEURAL_NETWORK::Helpers::ReadSingleImage(const std::string& filename, 
-											   Eigen::MatrixXd& image)
+											  Eigen::MatrixXd& image)
 {    
 	int width = 0, height = 0, channels = 0;
 	image = LoadImage(filename, width, height, channels);
 
 	if (image.size() == 0) 
 	{
-		std::cerr << "Failed to load image: " << filename << std::endl;
-		return;
+		throw std::runtime_error("Failed to load image: " + filename);		
 	}
 	image = Eigen::Map<Eigen::RowVectorXd>(image.data(), image.size());
 	std::cout << "Image loaded successfully: " << filename << std::endl;
