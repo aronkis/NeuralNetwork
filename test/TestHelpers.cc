@@ -275,10 +275,10 @@ TEST_F(HelpersDataCreationTest, ReadSingleImageHandling)
 
 	EXPECT_EQ(image.rows(), 1);
 	EXPECT_EQ(image.cols(), 4);
-	EXPECT_NEAR(image(0, 0), 255.0, tolerance);
-	EXPECT_NEAR(image(0, 1),   0.0, tolerance);
-	EXPECT_NEAR(image(0, 2),   0.0, tolerance);
-	EXPECT_NEAR(image(0, 3), 255.0, tolerance);
+	EXPECT_NEAR(image(0, 0), 1, tolerance);
+	EXPECT_NEAR(image(0, 1),   -1, tolerance);
+	EXPECT_NEAR(image(0, 2),   -1, tolerance);
+	EXPECT_NEAR(image(0, 3), 1, tolerance);
 }
 
 TEST_F(HelpersTest, ScalingPerformanceReasonable) 
