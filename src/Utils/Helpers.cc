@@ -520,6 +520,17 @@ void NEURAL_NETWORK::Helpers::ReadSingleImage(const std::string& filename,
 	{
 		throw std::runtime_error("Failed to load image: " + filename);		
 	}
-	image = Eigen::Map<Eigen::RowVectorXd>(image.data(), image.size());
+	
+	Eigen::RowVectorXd correct_flattened(image.size());
+	int idx = 0;
+	for (int y = 0; y < image.rows(); y++)
+	{
+		for (int x = 0; x < image.cols(); x++)
+		{
+			correct_flattened(idx++) = image(y, x);
+		}
+	}
+	image = correct_flattened;
+	NEURAL_NETWORK::Helpers::ScaleData(image);
 	std::cout << "Image loaded successfully: " << filename << std::endl;
 }

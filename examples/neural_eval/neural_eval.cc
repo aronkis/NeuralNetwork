@@ -58,8 +58,10 @@ int neural_eval_main(int argc, char **argv)
 				std::cerr << e.what() << std::endl;
 				continue;
 			}
+
 			Eigen::MatrixXd predictions = model.Predict(image, 1);
 			std::cout << fashion_mnist_labels[static_cast<int>(predictions(0, 0))] << std::endl;
+			std::cout << "The confidence values are: " << model.GetConfidenceValues() << std::endl;
 		}
 	}
 	

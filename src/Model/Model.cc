@@ -441,6 +441,16 @@ std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> NEURAL_NETWORK::Mode
 	return params;
 }
 
+Eigen::MatrixXd NEURAL_NETWORK::Model::GetConfidenceValues() const
+{
+	if (output_.size() == 0)
+	{
+		throw(std::runtime_error("Model::GetConfidenceValues error: Please call Model::Predict before using this method."));
+	}
+	return output_;
+}
+
+
 void NEURAL_NETWORK::Model::SetParameters(const std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>>& params)
 {
 	for (size_t i = 0; i < trainable_layers_.size(); i++)

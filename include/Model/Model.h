@@ -30,6 +30,8 @@ namespace NEURAL_NETWORK
 		Eigen::MatrixXd Predict(const Eigen::MatrixXd& X, int batch_size);
 
 		std::vector<std::pair<Eigen::MatrixXd, Eigen::RowVectorXd>> GetParameters() const;
+		Eigen::MatrixXd GetConfidenceValues() const;
+
 		void SaveParameters(const std::string& path) const;
 		void SaveModel(const std::string& path, bool for_training = false) const;
 
